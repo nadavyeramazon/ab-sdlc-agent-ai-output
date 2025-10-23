@@ -1,35 +1,17 @@
+"""Project configuration and build settings."""
+
 [build-system]
 requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.black]
-line-length = 79
-target-version = ['py38']
+line-length = 88
+target-version = ['py38', 'py39', 'py310', 'py311']
 include = '\.pyi?$'
 
 [tool.isort]
 profile = "black"
-line_length = 79
 multi_line_output = 3
-include_trailing_comma = true
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-addopts = "--verbose --cov=hello_world --cov-report=term-missing"
-
-[tool.coverage.run]
-source = ["hello_world"]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "if __name__ == .__main__.:",
-    "raise NotImplementedError",
-    "raise ImportError",
-    "except ImportError:",
-]
 
 [tool.mypy]
 python_version = "3.8"
@@ -45,16 +27,27 @@ warn_unused_ignores = true
 warn_no_return = true
 warn_unreachable = true
 
-[tool.pylint.messages_control]
-disable = [
-    "C0111",  # missing-docstring
-    "C0103",  # invalid-name
-    "C0330",  # bad-continuation
-    "C0326",  # bad-whitespace
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+addopts = "-ra -q --cov=hello_world --cov-report=term-missing"
+testpaths = ["tests"]
+python_files = "test_*.py"
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "raise ImportError",
+    "except ImportError:",
+    "if TYPE_CHECKING:"
 ]
-
-[tool.pylint.format]
-max-line-length = 79
-
-[tool.pylint.basic]
-good-names = ["i", "j", "k", "ex", "Run", "_"]
+ignore_errors = true

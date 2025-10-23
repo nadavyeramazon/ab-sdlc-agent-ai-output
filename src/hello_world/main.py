@@ -1,111 +1,101 @@
 """Main module for the Hello World application.
 
-Provides command line interface and core functionality.
+This module implements a simple Hello World application with logging
+and command line interface.
 """
+
+from __future__ import annotations
 
 import argparse
 import sys
-from typing import Optional, Sequence
+from pathlib import Path
+from typing import List, Optional, NoReturn, Dict, Any
 
-from hello_world.config import get_config
-from hello_world.logger import HelloWorldLogger
+from .logger import LogConfig, setup_logger
 
-__version__ = '1.0.0'
-
-def validate_name(name: str) -> bool:
-    """Validate the input name.
-
-    Args:
-        name: The name to validate.
+def create_parser() -> argparse.ArgumentParser:
+    """Create and configure the argument parser.
 
     Returns:
-        bool: True if name is valid, False otherwise.
-
-    Raises:
-        ValueError: If name is empty or exceeds maximum length.
-    """
-    config = get_config()
-    
-    if not name:
-        raise ValueError('Name cannot be empty')
-    
-    if len(name) > config.max_name_length:
-        raise ValueError(
-            f'Name length exceeds maximum of {config.max_name_length} characters'
-        )
-    
-    if not name.strip():  # Check for whitespace-only input
-        raise ValueError('Name cannot be only whitespace')
-    
-    if not all(c.isprintable() for c in name):  # Check for non-printable characters
-        raise ValueError('Name contains invalid characters')
-    
-    return True
-
-def create_greeting(name: str) -> str:
-    """Create a greeting message.
-
-    Args:
-        name: The name to include in the greeting.
-
-    Returns:
-        str: The formatted greeting message.
-
-    Raises:
-        ValueError: If name validation fails.
-    """
-    validate_name(name)
-    return f'Hello, {name}!'
-
-def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
-    """Parse command line arguments.
-
-    Args:
-        argv: List of command line arguments.
-
-    Returns:
-        argparse.Namespace: Parsed command line arguments.
+        argparse.ArgumentParser: Configured parser instance
     """
     parser = argparse.ArgumentParser(
-        description='A simple Hello World application.'
-    )
-    parser.add_argument(
-        '--name',
-        help='Name to greet',
-        type=str,
-        required=True
+        description='Simple Hello World application with logging',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(
         '--version',
         action='version',
-        version=f'%(prog)s {__version__}'
+        version='%(prog)s 1.0.0'
     )
-    return parser.parse_args(argv)
+    parser.add_argument(
+        '--log-level',
+        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        default='INFO',
+        help='Set the logging level'
+    )
+    parser.add_argument(
+        '--log-file',
+        type=str,
+        default=str(Path.home() / '.hello_world' / 'hello.log'),
+        help='Path to the log file'
+    )
+    parser.add_argument(
+        '--max-log-size',
+        type=int,
+        default=1024 * 1024,  # 1MB
+        help='Maximum size of log file in bytes before rotation'
+    )
+    return parser
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
-    """Main entry point for the application.
+def validate_args(args: argparse.Namespace) -> None:
+    """Validate command line arguments.
 
     Args:
-        argv: Command line arguments.
+        args: Parsed command line arguments
+
+    Raises:
+        ValueError: If any argument is invalid
+    """
+    if args.max_log_size <= 0:
+        raise ValueError(f'max-log-size must be positive, got {args.max_log_size}')
+
+def main(argv: Optional[List[str]] = None) -> int:
+    """Main entry point for the Hello World application.
+
+    Args:
+        argv: List of command line arguments (uses sys.argv if None)
 
     Returns:
-        int: Exit code (0 for success, non-zero for failure).
+        int: Exit code (0 for success, non-zero for failure)
     """
-    logger = HelloWorldLogger()
-    
     try:
-        args = parse_args(argv)
-        greeting = create_greeting(args.name)
-        print(greeting)
-        logger.info(f'Successfully created greeting for {args.name}')
+        # Parse arguments
+        parser = create_parser()
+        args = parser.parse_args(argv)
+
+        # Validate arguments
+        validate_args(args)
+
+        # Configure logging
+        log_config = LogConfig(
+            log_level=args.log_level,
+            log_file=args.log_file,
+            max_bytes=args.max_log_size
+        )
+        logger = setup_logger('hello_world', log_config)
+
+        # Log hello world message
+        logger.info('Hello, World!')
+        print('Hello, World!')
+
         return 0
+
     except ValueError as e:
-        logger.error(f'Validation error: {str(e)}')
-        print(f'Error: {str(e)}', file=sys.stderr)
+        print(f'Error: {e}', file=sys.stderr)
         return 1
     except Exception as e:
-        logger.error(f'Unexpected error: {str(e)}')
-        print(f'Error: An unexpected error occurred', file=sys.stderr)
+        print(f'Unexpected error: {e}', file=sys.stderr)
         return 2
 
 if __name__ == '__main__':

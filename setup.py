@@ -2,18 +2,10 @@
 
 from setuptools import setup, find_packages
 
-with open('README.md', encoding='utf-8') as f:
-    long_description = f.read()
-
 setup(
     name='hello_world',
     version='1.0.0',
-    description='A simple Hello World application',
-    long_description=long_description,
-    long_description_content_type='text/markdown',
-    author='Developer',
-    author_email='developer@example.com',
-    packages=find_packages(where='src'),
+    packages=find_packages('src'),
     package_dir={'': 'src'},
     python_requires='>=3.8',
     entry_points={
@@ -21,11 +13,16 @@ setup(
             'hello-world=hello_world.main:main',
         ],
     },
+    author='Your Name',
+    author_email='your.email@example.com',
+    description='A simple Hello World application with logging',
+    long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
+    url='https://github.com/yourusername/hello_world',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
-        'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
