@@ -1,56 +1,85 @@
-"""Hello World application main entry point.
-
-This module provides the core functionality for the Hello World application,
-including command-line interface and main execution logic.
-"""
+#!/usr/bin/env python3
 
 import argparse
 import sys
-from typing import List, Optional
+from typing import Optional, Tuple
+from .logger import setup_logger
 
-from hello_world import __version__
-from hello_world.logger import get_logger
+__version__ = '1.0.0'
 
-logger = get_logger(__name__)
-
-def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
+def parse_args() -> argparse.Namespace:
     """Parse command line arguments.
 
-    Args:
-        argv: List of command line arguments, defaults to sys.argv[1:]
-
     Returns:
-        Parsed command line arguments
+        argparse.Namespace: Parsed command-line arguments containing:
+            - name (str, optional): Name to greet
+            - version (bool): Show version information
+            - log_level (str): Logging level (default: INFO)
     """
     parser = argparse.ArgumentParser(
-        description='A simple Hello World application',
+        description='A friendly greeting program.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument(
-        '--version',
-        action='version',
-        version=f'%(prog)s {__version__}'
-    )
-    return parser.parse_args(argv)
+    parser.add_argument('--name', type=str, help='Name to greet')
+    parser.add_argument('--version', action='store_true', help='Show version information')
+    parser.add_argument('--log-level', 
+                      choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+                      default='INFO',
+                      help='Set the logging level')
+    return parser.parse_args()
 
-def main(argv: Optional[List[str]] = None) -> int:
-    """Main entry point for the application.
+def generate_greeting(name: Optional[str] = None) -> Tuple[str, int]:
+    """Generate a greeting message.
 
     Args:
-        argv: List of command line arguments
+        name (Optional[str]): Name to include in greeting. Defaults to None.
 
     Returns:
-        Exit code (0 for success, non-zero for failure)
+        Tuple[str, int]: A tuple containing:
+            - str: The greeting message
+            - int: Exit code (0 for success, 1 for error)
+
+    Raises:
+        ValueError: If the provided name is empty or contains invalid characters.
+    """
+    if name:
+        # Validate name
+        if not name.strip():
+            raise ValueError('Name cannot be empty or whitespace')
+        if not all(c.isalnum() or c.isspace() for c in name):
+            raise ValueError('Name can only contain alphanumeric characters and spaces')
+        return f'Hello, {name}!', 0
+    return 'Hello, World!', 0
+
+def main() -> int:
+    """Main entry point for the application.
+
+    Parses command-line arguments, sets up logging, and generates a greeting.
+
+    Returns:
+        int: Exit code (0 for success, non-zero for failure)
     """
     try:
-        parse_args(argv)
-        logger.info('Starting Hello World application')
-        print('Hello World!')
-        logger.info('Successfully printed greeting')
-        return 0
-    except Exception as e:
-        logger.error('Application error: %s', str(e))
+        args = parse_args()
+        logger = setup_logger(args.log_level)
+
+        if args.version:
+            print(f'Hello World version {__version__}')
+            return 0
+
+        logger.debug('Generating greeting message')
+        message, exit_code = generate_greeting(args.name)
+        
+        logger.info('Message generated successfully')
+        print(message)
+        return exit_code
+
+    except ValueError as e:
+        logger.error(f'Invalid input: {str(e)}')
         return 1
+    except Exception as e:
+        logger.critical(f'Unexpected error: {str(e)}')
+        return 2
 
 if __name__ == '__main__':
     sys.exit(main())

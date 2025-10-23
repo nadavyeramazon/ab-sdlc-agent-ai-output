@@ -1,30 +1,43 @@
-"""Logging configuration for Hello World application.
-
-This module provides consistent logging configuration across the application.
-"""
-
 import logging
+import sys
 from typing import Optional
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
+def setup_logger(level: str = 'INFO', log_format: Optional[str] = None) -> logging.Logger:
     """Configure and return a logger instance.
 
     Args:
-        name: Logger name, typically __name__ of the calling module
+        level (str): Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+            Defaults to 'INFO'.
+        log_format (Optional[str]): Custom log format string. If None, uses default format.
+            Defaults to None.
 
     Returns:
-        Configured logger instance
+        logging.Logger: Configured logger instance.
+
+    Raises:
+        ValueError: If invalid logging level is provided.
     """
-    logger = logging.getLogger(name)
+    logger = logging.getLogger('hello_world')
     
-    if not logger.handlers:  # Avoid adding handlers multiple times
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
+    # Clear any existing handlers
+    logger.handlers.clear()
+    
+    # Set logging level
+    try:
+        logger.setLevel(level.upper())
+    except (AttributeError, ValueError) as e:
+        raise ValueError(f'Invalid logging level: {level}') from e
+
+    # Create console handler
+    handler = logging.StreamHandler(sys.stderr)
+    
+    # Set format
+    if log_format is None:
+        log_format = '%(asctime)s [%(levelname)s] %(message)s'
+    formatter = logging.Formatter(log_format)
+    handler.setFormatter(formatter)
+    
+    logger.addHandler(handler)
+    logger.debug('Logger initialized with level: %s', level)
     
     return logger
