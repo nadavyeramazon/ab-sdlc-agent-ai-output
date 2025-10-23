@@ -1,56 +1,67 @@
-import json
-from typing import Optional, Dict, Any
-from .exceptions import ConfigError
-from .logger import get_logger
-
-logger = get_logger(__name__)
-
+from typing import Dict, Any
+import yaml
 
 class Config:
-    DEFAULT_CONFIG = {
-        'debug': False,
-        'encoding': 'utf-8',
-        'max_name_length': 100
-    }
-    
-    def __init__(self, config_path: Optional[str] = None) -> None:
-        self._config = self.DEFAULT_CONFIG.copy()
-        
-        if config_path:
-            try:
-                with open(config_path, 'r', encoding='utf-8') as f:
-                    custom_config = json.load(f)
-                self._validate_config(custom_config)
-                self._config.update(custom_config)
-                logger.info('Loaded configuration from: %s', config_path)
-            except (IOError, json.JSONDecodeError) as e:
-                error_msg = f'Failed to load config from {config_path}: {str(e)}'
-                logger.error(error_msg)
-                raise ConfigError(error_msg)
-        
-        for key, value in self._config.items():
-            setattr(self, key, value)
-            
-    def _validate_config(self, config: Dict[str, Any]) -> None:
-        if not isinstance(config, dict):
-            raise ConfigError('Configuration must be a dictionary')
-            
-        if 'debug' in config and not isinstance(config['debug'], bool):
-            raise ConfigError('debug must be a boolean value')
-            
-        if 'encoding' in config:
-            if not isinstance(config['encoding'], str):
-                raise ConfigError('encoding must be a string')
-            try:
-                'test'.encode(config['encoding'])
-            except LookupError:
-                raise ConfigError(f'Invalid encoding: {config["encoding"]}')
-                
-        if 'max_name_length' in config:
-            if not isinstance(config['max_name_length'], int):
-                raise ConfigError('max_name_length must be an integer')
-            if config['max_name_length'] <= 0:
-                raise ConfigError('max_name_length must be positive')
-                
-    def as_dict(self) -> Dict[str, Any]:
-        return self._config.copy()
+    """Configuration class for the application.
+
+    Attributes:
+        message_prefix: Optional prefix for messages.
+        message_suffix: Optional suffix for messages.
+        log_config: Logging configuration dictionary.
+    """
+    def __init__(self, config_dict: Dict[str, Any]):
+        self.message_prefix = config_dict.get('message_prefix', '')
+        self.message_suffix = config_dict.get('message_suffix', '')
+        self.log_config = config_dict.get('logging', {})
+
+def load_config(config_path: str) -> Dict[str, Any]:
+    """Load configuration from YAML file.
+
+    Args:
+        config_path: Path to the YAML configuration file.
+
+    Returns:
+        Dict[str, Any]: Configuration dictionary.
+
+    Raises:
+        FileNotFoundError: If configuration file doesn't exist.
+        yaml.YAMLError: If configuration file is invalid YAML.
+    """
+    with open(config_path, 'r', encoding='utf-8') as f:
+        return yaml.safe_load(f)
+
+def validate_config(config: Dict[str, Any]) -> None:
+    """Validate configuration values.
+
+    Args:
+        config: Configuration dictionary to validate.
+
+    Raises:
+        ValueError: If configuration is invalid.
+    """
+    if not isinstance(config, dict):
+        raise ValueError("Configuration must be a dictionary")
+
+    # Validate message prefix/suffix
+    prefix = config.get('message_prefix', '')
+    suffix = config.get('message_suffix', '')
+    if not isinstance(prefix, str) or not isinstance(suffix, str):
+        raise ValueError("Message prefix and suffix must be strings")
+    if len(prefix) > 100 or len(suffix) > 100:
+        raise ValueError("Message prefix and suffix must not exceed 100 characters")
+
+    # Validate logging configuration
+    log_config = config.get('logging', {})
+    if not isinstance(log_config, dict):
+        raise ValueError("Logging configuration must be a dictionary")
+
+    required_log_keys = ['level', 'file', 'max_size', 'backup_count']
+    for key in required_log_keys:
+        if key not in log_config:
+            raise ValueError(f"Missing required logging configuration key: {key}")
+
+    if not isinstance(log_config['max_size'], int) or log_config['max_size'] <= 0:
+        raise ValueError("Log max_size must be a positive integer")
+
+    if not isinstance(log_config['backup_count'], int) or log_config['backup_count'] <= 0:
+        raise ValueError("Log backup_count must be a positive integer")

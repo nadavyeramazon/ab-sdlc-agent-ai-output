@@ -1,105 +1,115 @@
-import json
 import pytest
-from hello_world.main import HelloWorld
-from hello_world.config import Config
-from hello_world.exceptions import HelloWorldError, ConfigError
+import os
+from unittest.mock import patch, MagicMock
+from typing import Dict, Any
+from hello_world.main import main, process_message, validate_input, MAX_MESSAGE_LENGTH
+from hello_world.config import load_config, validate_config
+from hello_world.logger import setup_logger, set_log_level
 
+# Test configuration
+@pytest.fixture
+def valid_config() -> Dict[str, Any]:
+    return {
+        'message_prefix': '[Test] ',
+        'message_suffix': ' !',
+        'logging': {
+            'level': 'INFO',
+            'file': 'app.log',
+            'max_size': 5242880,
+            'backup_count': 5
+        }
+    }
 
-class TestHelloWorld:
-    def test_valid_message_generation(self):
-        app = HelloWorld()
-        assert app.generate_message('World') == 'Hello, World!'
-        assert app.generate_message('OpenAI') == 'Hello, OpenAI!'
-        
-    def test_empty_name(self):
-        app = HelloWorld()
-        with pytest.raises(HelloWorldError) as exc:
-            app.generate_message('')
-        assert 'Name cannot be empty' in str(exc.value)
-        
-    def test_whitespace_name(self):
-        app = HelloWorld()
-        with pytest.raises(HelloWorldError) as exc:
-            app.generate_message('   ')
-        assert 'Name cannot be empty' in str(exc.value)
-        
-    def test_name_stripping(self):
-        app = HelloWorld()
-        assert app.generate_message('  World  ') == 'Hello, World!'
-        
-    def test_valid_json_input(self):
-        app = HelloWorld()
-        input_json = '{"name": "World"}'
-        result = app.process_json_input(input_json)
-        assert result['message'] == 'Hello, World!'
-        assert result['status'] == 'success'
-        assert result['input']['name'] == 'World'
-        
-    def test_invalid_json_format(self):
-        app = HelloWorld()
-        with pytest.raises(HelloWorldError) as exc:
-            app.process_json_input('{invalid json}')
-        assert 'Invalid JSON format' in str(exc.value)
-        
-    def test_missing_name_in_json(self):
-        app = HelloWorld()
-        with pytest.raises(HelloWorldError) as exc:
-            app.process_json_input('{"message": "test"}')
-        assert 'Missing required field: name' in str(exc.value)
-        
-    def test_empty_json_input(self):
-        app = HelloWorld()
-        with pytest.raises(HelloWorldError) as exc:
-            app.process_json_input('')
-        assert 'JSON input cannot be empty' in str(exc.value)
-        
-    def test_non_object_json(self):
-        app = HelloWorld()
-        with pytest.raises(HelloWorldError) as exc:
-            app.process_json_input('["not an object"]')
-        assert 'JSON must contain an object' in str(exc.value)
+def test_validate_input_valid():
+    """Test input validation with valid message."""
+    validate_input("Hello, World!")
 
+def test_validate_input_too_long():
+    """Test input validation with message exceeding max length."""
+    with pytest.raises(ValueError, match=f"Message length exceeds maximum of {MAX_MESSAGE_LENGTH} characters"):
+        validate_input("x" * (MAX_MESSAGE_LENGTH + 1))
 
-class TestConfig:
-    def test_default_config(self):
-        config = Config()
-        assert config.debug is False
-        assert config.encoding == 'utf-8'
-        assert config.max_name_length == 100
-        
-    def test_invalid_config_type(self, tmp_path):
-        config_file = tmp_path / 'config.json'
-        config_file.write_text('["invalid"]')
-        
-        with pytest.raises(ConfigError) as exc:
-            Config(str(config_file))
-        assert 'Configuration must be a dictionary' in str(exc.value)
-        
-    def test_invalid_debug_type(self, tmp_path):
-        config_file = tmp_path / 'config.json'
-        config_file.write_text('{"debug": "invalid"}')
-        
-        with pytest.raises(ConfigError) as exc:
-            Config(str(config_file))
-        assert 'debug must be a boolean value' in str(exc.value)
-        
-    def test_invalid_encoding(self, tmp_path):
-        config_file = tmp_path / 'config.json'
-        config_file.write_text('{"encoding": "invalid-encoding"}')
-        
-        with pytest.raises(ConfigError) as exc:
-            Config(str(config_file))
-        assert 'Invalid encoding' in str(exc.value)
-        
-    def test_invalid_max_name_length(self, tmp_path):
-        config_file = tmp_path / 'config.json'
-        
-        config_file.write_text('{"max_name_length": -1}')
-        with pytest.raises(ConfigError) as exc:
-            Config(str(config_file))
-        assert 'max_name_length must be positive' in str(exc.value)
-        
-        config_file.write_text('{"max_name_length": "invalid"}')
-        with pytest.raises(ConfigError) as exc:
-            Config(str(config_file))
-        assert 'max_name_length must be an integer' in str(exc.value)
+def test_validate_input_invalid_chars():
+    """Test input validation with invalid characters."""
+    with pytest.raises(ValueError, match="Message contains invalid characters"):
+        validate_input("Hello\x00World")
+
+def test_process_message(valid_config):
+    """Test message processing with configuration."""
+    result = process_message("Hello", valid_config)
+    assert result == "[Test] Hello !"
+
+def test_process_message_validation(valid_config):
+    """Test message processing with invalid input."""
+    with pytest.raises(ValueError):
+        process_message("x" * (MAX_MESSAGE_LENGTH + 1), valid_config)
+
+def test_config_validation(valid_config):
+    """Test configuration validation."""
+    validate_config(valid_config)
+
+def test_config_validation_invalid_type():
+    """Test configuration validation with invalid type."""
+    with pytest.raises(ValueError, match="Configuration must be a dictionary"):
+        validate_config([])
+
+def test_config_validation_missing_log_keys():
+    """Test configuration validation with missing logging keys."""
+    invalid_config = {'logging': {}}
+    with pytest.raises(ValueError, match="Missing required logging configuration key"):
+        validate_config(invalid_config)
+
+def test_config_validation_invalid_log_values():
+    """Test configuration validation with invalid logging values."""
+    invalid_config = {
+        'logging': {
+            'level': 'INFO',
+            'file': 'app.log',
+            'max_size': -1,
+            'backup_count': 5
+        }
+    }
+    with pytest.raises(ValueError, match="Log max_size must be a positive integer"):
+        validate_config(invalid_config)
+
+def test_logger_setup():
+    """Test logger setup and configuration."""
+    logger = setup_logger("test_logger")
+    assert logger.name == "test_logger"
+    assert logger.level == logging.INFO
+    assert len(logger.handlers) == 2  # Console and file handlers
+
+def test_logger_level_setting():
+    """Test log level configuration."""
+    logger = setup_logger("test_logger")
+    set_log_level(logger, "DEBUG")
+    assert logger.level == logging.DEBUG
+
+def test_logger_invalid_level():
+    """Test setting invalid log level."""
+    logger = setup_logger("test_logger")
+    with pytest.raises(ValueError, match="Invalid log level"):
+        set_log_level(logger, "INVALID")
+
+def test_main_success(valid_config, tmp_path):
+    """Test main function success path."""
+    config_file = tmp_path / "config.yaml"
+    with open(config_file, 'w') as f:
+        yaml.dump(valid_config, f)
+
+    with patch('sys.argv', ['main.py', '--config', str(config_file)]):
+        assert main() == 0
+
+def test_main_file_not_found():
+    """Test main function with missing config file."""
+    with patch('sys.argv', ['main.py', '--config', 'nonexistent.yaml']):
+        assert main() == 1
+
+def test_main_validation_error(tmp_path):
+    """Test main function with invalid configuration."""
+    config_file = tmp_path / "invalid_config.yaml"
+    with open(config_file, 'w') as f:
+        yaml.dump([], f)
+
+    with patch('sys.argv', ['main.py', '--config', str(config_file)]):
+        assert main() == 1

@@ -1,94 +1,97 @@
-import json
+#!/usr/bin/env python3
+
+from typing import Optional, NoReturn, Dict, Any
 import sys
-from typing import Optional, Dict, Any, Union
+import argparse
+from .logger import setup_logger
+from .config import Config, load_config, validate_config
 
-from .config import Config
-from .exceptions import HelloWorldError, ConfigError
-from .logger import get_logger
+MAX_MESSAGE_LENGTH = 1000
 
-logger = get_logger(__name__)
+def validate_input(message: str) -> None:
+    """Validate the input message.
 
+    Args:
+        message: The message to validate.
 
-class HelloWorld:
-    def __init__(self, config_path: Optional[str] = None) -> None:
-        try:
-            self.config = Config(config_path) if config_path else Config()
-            logger.info('HelloWorld initialized with config: %s', self.config.as_dict())
-        except Exception as e:
-            logger.error('Failed to initialize HelloWorld: %s', str(e))
-            raise ConfigError(f'Configuration initialization failed: {str(e)}')
+    Raises:
+        ValueError: If message exceeds max length or contains invalid characters.
+    """
+    if len(message) > MAX_MESSAGE_LENGTH:
+        raise ValueError(f"Message length exceeds maximum of {MAX_MESSAGE_LENGTH} characters")
+    if not message.isprintable():
+        raise ValueError("Message contains invalid characters")
 
-    def generate_message(self, name: str) -> str:
-        if not name or not name.strip():
-            error_msg = 'Name cannot be empty or whitespace only'
-            logger.error(error_msg)
-            raise HelloWorldError(error_msg)
-            
-        try:
-            name = name.strip()
-            message = f'Hello, {name}!'
-            logger.info('Generated message for name: %s', name)
-            return message
-        except Exception as e:
-            error_msg = f'Failed to generate message: {str(e)}'
-            logger.error(error_msg)
-            raise HelloWorldError(error_msg)
+def parse_args() -> argparse.Namespace:
+    """Parse command line arguments.
 
-    def process_json_input(self, json_str: str) -> Dict[str, Any]:
-        if not json_str or not json_str.strip():
-            error_msg = 'JSON input cannot be empty'
-            logger.error(error_msg)
-            raise HelloWorldError(error_msg)
-            
-        try:
-            data = json.loads(json_str)
-        except json.JSONDecodeError as e:
-            error_msg = f'Invalid JSON format: {str(e)}'
-            logger.error(error_msg)
-            raise HelloWorldError(error_msg)
-            
-        if not isinstance(data, dict):
-            error_msg = 'JSON must contain an object'
-            logger.error(error_msg)
-            raise HelloWorldError(error_msg)
-            
-        if 'name' not in data:
-            error_msg = 'Missing required field: name'
-            logger.error(error_msg)
-            raise HelloWorldError(error_msg)
-            
-        message = self.generate_message(data['name'])
-        result = {
-            'message': message,
-            'status': 'success',
-            'input': data
-        }
-        
-        logger.info('Successfully processed JSON input: %s', json_str)
-        return result
+    Returns:
+        argparse.Namespace: Parsed command line arguments.
+    """
+    parser = argparse.ArgumentParser(description="Simple Hello World application")
+    parser.add_argument(
+        "--config", 
+        type=str,
+        default="config.yaml",
+        help="Path to configuration file"
+    )
+    parser.add_argument(
+        "--message",
+        type=str,
+        default="Hello, World!",
+        help="Custom message to display"
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s 1.0.0"
+    )
+    return parser.parse_args()
 
+def process_message(message: str, config: Dict[str, Any]) -> str:
+    """Process the input message according to configuration.
 
-def main() -> Union[str, int]:
-    if len(sys.argv) < 2 or sys.argv[1] in ['-h', '--help']:
-        print('Usage: hello_world [name]')
-        print('Options:')
-        print('  --help     Show this help message')
-        print('  --version  Show version information')
-        return 0
-        
-    if sys.argv[1] in ['-v', '--version']:
-        print('Hello World v1.0.0')
-        return 0
-        
+    Args:
+        message: The input message to process.
+        config: Configuration dictionary.
+
+    Returns:
+        str: The processed message.
+
+    Raises:
+        ValueError: If message validation fails.
+    """
+    validate_input(message)
+    prefix = config.get('message_prefix', '')
+    suffix = config.get('message_suffix', '')
+    return f"{prefix}{message}{suffix}"
+
+def main() -> Optional[NoReturn]:
+    """Main entry point for the application.
+
+    Returns:
+        Optional[NoReturn]: Exits with status code 0 on success, 1 on error.
+    """
+    logger = setup_logger()
     try:
-        app = HelloWorld()
-        message = app.generate_message(sys.argv[1])
-        print(message)
+        args = parse_args()
+        config = load_config(args.config)
+        validate_config(config)
+        
+        logger.info("Processing message with configuration")
+        result = process_message(args.message, config)
+        print(result)
         return 0
+
+    except FileNotFoundError as e:
+        logger.error(f"Configuration file not found: {e}")
+        return 1
+    except ValueError as e:
+        logger.error(f"Validation error: {e}")
+        return 1
     except Exception as e:
-        print(f'Error: {str(e)}', file=sys.stderr)
+        logger.error(f"Unexpected error: {e}")
         return 1
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())
