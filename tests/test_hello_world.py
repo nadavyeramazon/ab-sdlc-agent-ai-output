@@ -1,32 +1,52 @@
+"""Test suite for the Hello World application.
+
+This module contains comprehensive tests for the Hello World
+application's core functionality.
+"""
+
 import pytest
-from src.hello_world import HelloWorld
+from src.hello_world import greet
 
-@pytest.fixture
-def hello_world():
-    """Fixture that provides a HelloWorld instance."""
-    return HelloWorld()
 
-def test_default_greeting(hello_world):
-    """Test the default greeting without a name."""
-    assert hello_world.greet() == "Hello, World!"
+def test_greet_with_default():
+    """Test greeting with default parameter."""
+    assert greet() == 'Hello, World!'
 
-def test_custom_greeting(hello_world):
-    """Test greeting with a custom name."""
-    assert hello_world.greet("John") == "Hello, John!"
 
-def test_greeting_with_spaces(hello_world):
-    """Test greeting with a name containing spaces."""
-    assert hello_world.greet("John Doe") == "Hello, John Doe!"
+def test_greet_with_name():
+    """Test greeting with a specific name."""
+    assert greet('Alice') == 'Hello, Alice!'
 
-def test_invalid_name(hello_world):
-    """Test greeting with invalid name characters."""
+
+def test_greet_with_whitespace_name():
+    """Test greeting with whitespace in name."""
+    assert greet('  Bob  ') == 'Hello, Bob!'
+
+
+def test_greet_with_empty_string():
+    """Test greeting with empty string raises ValueError."""
     with pytest.raises(ValueError):
-        hello_world.greet("John@Doe#")
+        greet('')
 
-def test_empty_name(hello_world):
-    """Test greeting with empty name should return default greeting."""
-    assert hello_world.greet("") == "Hello, !"
 
-def test_none_name(hello_world):
-    """Test greeting with None should return default greeting."""
-    assert hello_world.greet(None) == "Hello, World!"
+def test_greet_with_whitespace_only():
+    """Test greeting with whitespace-only string raises ValueError."""
+    with pytest.raises(ValueError):
+        greet('   ')
+
+
+def test_greet_with_invalid_type():
+    """Test greeting with invalid type raises TypeError."""
+    with pytest.raises(TypeError):
+        greet(123)
+
+
+@pytest.mark.parametrize('name,expected', [
+    ('World', 'Hello, World!'),
+    ('Alice', 'Hello, Alice!'),
+    ('  Bob  ', 'Hello, Bob!'),
+    ('🌍', 'Hello, 🌍!'),  # Test Unicode support
+])
+def test_greet_parametrized(name, expected):
+    """Parametrized test for greeting with various inputs."""
+    assert greet(name) == expected
