@@ -1,80 +1,115 @@
-"""Test suite for the hello_world application."""
+"""Test suite for the Hello World application."""
 
-import logging
 import os
-from pathlib import Path
+import sys
+import io
 import tempfile
-import unittest
-from unittest.mock import patch
-
+import json
+import pytest
+from hello_world.main import main, generate_message, create_parser
 from hello_world.config import Config
-from hello_world.exceptions import LoggingSetupError
-from hello_world.logger import LogLevel, setup_logging
-from hello_world.main import generate_greeting, main, parse_args
+from hello_world.exceptions import ConfigError, ValidationError, LoggingError
 
-class TestHelloWorld(unittest.TestCase):
-    """Test cases for the hello_world application."""
+def test_version_flag(capsys):
+    """Test that --version outputs correct version."""
+    with pytest.raises(SystemExit) as e:
+        main(['--version'])
+    assert e.value.code == 0
+    captured = capsys.readouterr()
+    assert '1.0.0' in captured.out
 
-    def setUp(self):
-        """Set up test fixtures."""
-        self.temp_dir = tempfile.mkdtemp()
+def test_help_flag(capsys):
+    """Test that --help outputs help message."""
+    with pytest.raises(SystemExit) as e:
+        main(['--help'])
+    assert e.value.code == 0
+    captured = capsys.readouterr()
+    assert 'usage:' in captured.out
+    assert '--version' in captured.out
+    assert '--config' in captured.out
+    assert '--greeting' in captured.out
 
-    def tearDown(self):
-        """Clean up test fixtures."""
-        for handler in logging.getLogger().handlers[:]: 
-            logging.getLogger().removeHandler(handler)
+def test_default_greeting(capsys):
+    """Test default greeting output."""
+    assert main([]) == 0
+    captured = capsys.readouterr()
+    assert captured.out == "Hello, World!\n"
 
-    def test_generate_greeting_default(self):
-        """Test greeting generation with default parameter."""
-        self.assertEqual(generate_greeting(), "Hello, World!")
+def test_custom_greeting(capsys):
+    """Test custom greeting via command line."""
+    greeting = "Hi there!"
+    assert main(['--greeting', greeting]) == 0
+    captured = capsys.readouterr()
+    assert captured.out == f"{greeting}\n"
 
-    def test_generate_greeting_custom(self):
-        """Test greeting generation with custom name."""
-        self.assertEqual(generate_greeting("Alice"), "Hello, Alice!")
+def test_empty_greeting():
+    """Test that empty greeting raises error."""
+    assert main(['--greeting', '']) == 2
 
-    def test_generate_greeting_non_ascii(self):
-        """Test greeting generation with non-ASCII characters."""
-        self.assertEqual(generate_greeting("José"), "Hello, José!")
-        self.assertEqual(generate_greeting("中文"), "Hello, 中文!")
-        self.assertEqual(generate_greeting("🌍"), "Hello, 🌍!")
+def test_config_file():
+    """Test loading configuration from file."""
+    config = {
+        "greeting": "Greetings from config!",
+        "log_level": "DEBUG"
+    }
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        json.dump(config, f)
+        f.flush()
+        try:
+            exit_code = main(['--config', f.name])
+            assert exit_code == 0
+        finally:
+            os.unlink(f.name)
 
-    @patch('argparse.ArgumentParser.parse_args')
-    def test_parse_args_default(self, mock_args):
-        """Test argument parsing with default values."""
-        mock_args.return_value = parse_args()
-        args = parse_args()
-        self.assertEqual(args.name, "World")
-        self.assertIsNone(args.config)
+def test_invalid_config_file():
+    """Test error handling for invalid config file."""
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        f.write("invalid json")
+        f.flush()
+        try:
+            exit_code = main(['--config', f.name])
+            assert exit_code == 1
+        finally:
+            os.unlink(f.name)
 
-    def test_logging_setup_success(self):
-        """Test successful logging setup."""
-        log_dir = Path(self.temp_dir) / 'logs'
-        setup_logging(str(log_dir), LogLevel.DEBUG)
-        self.assertTrue(log_dir.exists())
-        self.assertTrue((log_dir / 'hello_world.log').exists())
+def test_environment_variables(monkeypatch):
+    """Test loading configuration from environment variables."""
+    greeting = "Hi from ENV!"
+    monkeypatch.setenv("HELLO_WORLD_GREETING", greeting)
+    assert main([]) == 0
 
-    @patch('pathlib.Path.mkdir')
-    def test_logging_setup_permission_error(self, mock_mkdir):
-        """Test logging setup with permission error."""
-        mock_mkdir.side_effect = PermissionError("Permission denied")
-        with self.assertRaises(LoggingSetupError):
-            setup_logging("logs")
+def test_invalid_log_level():
+    """Test error handling for invalid log level."""
+    assert main(['--log-level', 'INVALID']) == 2
 
-    @patch('hello_world.main.print')
-    @patch('argparse.ArgumentParser.parse_args')
-    def test_main_success(self, mock_args, mock_print):
-        """Test successful execution of main function."""
-        mock_args.return_value = parse_args()
-        exit_code = main()
-        self.assertEqual(exit_code, 0)
-        mock_print.assert_called_once_with("Hello, World!")
+def test_generate_message_validation():
+    """Test message generation validation."""
+    with pytest.raises(ValidationError):
+        generate_message("")
+    with pytest.raises(ValidationError):
+        generate_message(None)
+    assert generate_message("Test") == "Test\n"
 
-    @patch('argparse.ArgumentParser.parse_args')
-    def test_main_error(self, mock_args):
-        """Test main function error handling."""
-        mock_args.side_effect = Exception("Test error")
-        exit_code = main()
-        self.assertEqual(exit_code, 1)
+def test_config_validation():
+    """Test configuration validation."""
+    config = Config()
+    
+    # Test invalid log level
+    with pytest.raises(ConfigError):
+        config._validate_config_value("log_level", "INVALID")
+    
+    # Test invalid encoding
+    with pytest.raises(ConfigError):
+        config._validate_config_value("output_encoding", "invalid-encoding")
+    
+    # Test invalid greeting
+    with pytest.raises(ConfigError):
+        config._validate_config_value("greeting", "")
 
-if __name__ == '__main__':
-    unittest.main()
+def test_argument_parser():
+    """Test argument parser configuration."""
+    parser = create_parser()
+    args = parser.parse_args(['--greeting', 'Test'])
+    assert args.greeting == 'Test'
+    assert args.log_level is None
+    assert args.config is None

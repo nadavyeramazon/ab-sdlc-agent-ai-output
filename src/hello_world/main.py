@@ -1,74 +1,133 @@
-"""Main module for the hello_world application.
+"""Main module for the Hello World application.
 
-This module provides the core functionality for the hello_world application,
-including command-line interface and greeting generation.
+This module provides the core functionality for the Hello World application,
+including command-line interface and message generation.
 """
 
+import sys
 import argparse
 import logging
-from typing import Optional, Tuple
+from typing import List, Optional
+from .config import Config
+from .logger import setup_logging
+from .exceptions import ConfigError, ValidationError, LoggingError
 
-from hello_world.config import Config
-from hello_world.logger import LogLevel, setup_logging
+logger = logging.getLogger(__name__)
 
-def parse_args() -> argparse.Namespace:
-    """Parse command line arguments.
+VERSION = "1.0.0"
 
+def create_parser() -> argparse.ArgumentParser:
+    """Create and configure the command-line argument parser.
+    
     Returns:
-        argparse.Namespace: Parsed command-line arguments.
+        An ArgumentParser instance configured with all supported arguments.
     """
     parser = argparse.ArgumentParser(
-        description='A friendly Hello World application')
-    parser.add_argument('--name',
-                       type=str,
-                       help='Name to greet',
-                       default='World')
-    parser.add_argument('--config',
-                       type=str,
-                       help='Path to config file',
-                       default=None)
-    return parser.parse_args()
+        description="A sophisticated Hello World application",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        '--version',
+        action='version',
+        version=f'%(prog)s {VERSION}'
+    )
+    parser.add_argument(
+        '--config',
+        help='Path to configuration file'
+    )
+    parser.add_argument(
+        '--greeting',
+        help='Custom greeting message'
+    )
+    parser.add_argument(
+        '--log-level',
+        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        help='Set the logging level'
+    )
+    return parser
 
-def generate_greeting(name: str = 'World') -> str:
-    """Generate a greeting message.
-
+def validate_args(args: argparse.Namespace) -> None:
+    """Validate command-line arguments.
+    
     Args:
-        name: Name to include in the greeting.
-
-    Returns:
-        str: A formatted greeting message.
+        args: Parsed command-line arguments.
+        
+    Raises:
+        ValidationError: If any arguments are invalid.
     """
-    logging.debug('Generating greeting for name: %s', name)
-    greeting = f"Hello, {name}!"
-    logging.debug('Generated greeting: %s', greeting)
-    return greeting
+    logger.debug("Validating command-line arguments: %s", vars(args))
+    if args.greeting and not args.greeting.strip():
+        raise ValidationError("Greeting cannot be empty", "greeting")
 
-def main() -> int:
-    """Main entry point for the hello_world application.
-
-    This function sets up logging, processes command-line arguments,
-    generates a greeting, and handles any errors that occur.
-
+def generate_message(greeting: str) -> str:
+    """Generate the formatted greeting message.
+    
+    Args:
+        greeting: The greeting text to use.
+        
     Returns:
-        int: Exit code (0 for success, non-zero for failure)
+        A formatted greeting message.
+        
+    Raises:
+        ValidationError: If greeting is invalid.
     """
+    if not greeting or not greeting.strip():
+        raise ValidationError("Greeting cannot be empty", "greeting")
+    
+    logger.debug("Generating message with greeting: %s", greeting)
+    return f"{greeting.strip()}\n"
+
+def main(argv: Optional[List[str]] = None) -> int:
+    """Main entry point for the Hello World application.
+    
+    Args:
+        argv: List of command-line arguments (defaults to sys.argv[1:]).
+        
+    Returns:
+        Exit code (0 for success, non-zero for errors).
+    """
+    if argv is None:
+        argv = sys.argv[1:]
+
     try:
-        args = parse_args()
-        config = Config.from_file(args.config) if args.config else Config()
-        
-        # Setup logging with configured level
-        setup_logging(log_level=LogLevel[config.log_level.upper()])
-        
-        # Generate and display greeting
-        greeting = generate_greeting(args.name)
-        print(greeting)
-        
-        logging.debug('Application completed successfully')
-        return 0
-        
-    except Exception as e:
-        logging.error('Application error: %s', str(e))
-        return 1
+        # Parse arguments
+        parser = create_parser()
+        args = parser.parse_args(argv)
+        logger.debug("Parsed arguments: %s", vars(args))
 
-if __name__ == '__main__':
-    exit(main())
+        # Load configuration
+        config = Config()
+        if args.config:
+            config.load_from_file(args.config)
+        config.load_from_env()
+
+        # Setup logging
+        log_level = args.log_level or config.get("log_level", "INFO")
+        setup_logging(level=log_level)
+
+        # Validate arguments
+        validate_args(args)
+
+        # Generate and output message
+        greeting = args.greeting or config.get("greeting")
+        message = generate_message(greeting)
+        encoding = config.get("output_encoding", "utf-8")
+        sys.stdout.buffer.write(message.encode(encoding))
+        logger.info("Successfully output greeting message")
+        return 0
+
+    except ConfigError as e:
+        logger.error("Configuration error: %s", str(e))
+        return 1
+    except ValidationError as e:
+        logger.error("Validation error: %s", str(e))
+        return 2
+    except LoggingError as e:
+        logger.error("Logging error: %s", str(e))
+        return 3
+    except Exception as e:
+        logger.error("Unexpected error: %s", str(e))
+        return 4
+
+if __name__ == "__main__":
+    sys.exit(main())
