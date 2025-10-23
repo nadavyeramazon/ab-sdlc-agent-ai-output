@@ -1,43 +1,55 @@
-#!/usr/bin/env python3
+"""
+Hello World Application
 
-import signal
-import sys
-from typing import NoReturn
-from logger import get_logger
+This module implements a simple Hello World application with configurable greeting functionality.
+The application focuses on performance, maintainability, and proper logging.
 
-logger = get_logger(__name__)
+Performance targets:
+- Execution time: <100ms
+- Memory usage: <20MB
 
-def signal_handler(signum: int, frame) -> NoReturn:
-    """Handle system signals gracefully.
+Author: AI Agent
+Version: 1.0
+"""
+
+import logging
+from typing import Optional
+from .logger import setup_logger
+
+logger = setup_logger(__name__)
+
+class HelloWorld:
+    """A class that provides greeting functionality with customizable messages."""
     
-    Args:
-        signum: Signal number received
-        frame: Current stack frame
-    """
-    logger.info(f'Received signal {signum}. Shutting down...')
-    sys.exit(0)
-
-def hello_world() -> str:
-    """Generate the hello world message.
+    def __init__(self, default_name: str = 'World'):
+        """Initialize HelloWorld with a default name.
+        
+        Args:
+            default_name (str): Default name to use in greetings
+        """
+        self.default_name = default_name
+        logger.info(f'HelloWorld initialized with default name: {default_name}')
     
-    Returns:
-        str: The hello world message
-    """
-    return 'Hello, World!'
-
-def main() -> None:
-    """Main application entry point."""
-    # Setup signal handlers
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-    
-    try:
-        message = hello_world()
-        logger.info(message)
-        print(message)
-    except Exception as e:
-        logger.error(f'Error in main execution: {str(e)}')
-        sys.exit(1)
+    def greet(self, name: Optional[str] = None) -> str:
+        """Generate a greeting message.
+        
+        Args:
+            name (Optional[str]): Name to include in greeting. Uses default if None.
+            
+        Returns:
+            str: Formatted greeting message
+        """
+        try:
+            actual_name = name if name is not None else self.default_name
+            message = f'Hello, {actual_name}!'
+            logger.info(f'Generated greeting: {message}')
+            return message
+        except Exception as e:
+            logger.error(f'Error generating greeting: {str(e)}')
+            raise
 
 if __name__ == '__main__':
-    main()
+    # Command line execution example
+    hello = HelloWorld()
+    print(hello.greet())  # Uses default 'World'
+    print(hello.greet('User'))  # Custom greeting
