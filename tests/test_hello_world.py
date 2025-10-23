@@ -1,115 +1,131 @@
-"""Test suite for the Hello World application."""
-
-import os
-import sys
-import io
+from typing import Optional, Dict, Any
+import pytest
+from pathlib import Path
 import tempfile
 import json
-import pytest
-from hello_world.main import main, generate_message, create_parser
+import logging
+from concurrent.futures import TimeoutError
+
+from hello_world.main import validate_message, load_config, display_message, main
 from hello_world.config import Config
-from hello_world.exceptions import ConfigError, ValidationError, LoggingError
+from hello_world.exceptions import HelloWorldError, ConfigurationError
+from hello_world.logger import setup_logger
 
-def test_version_flag(capsys):
-    """Test that --version outputs correct version."""
-    with pytest.raises(SystemExit) as e:
-        main(['--version'])
-    assert e.value.code == 0
-    captured = capsys.readouterr()
-    assert '1.0.0' in captured.out
+# Test message validation
+def test_validate_message_default() -> None:
+    assert validate_message(None) == "Hello, World!"
 
-def test_help_flag(capsys):
-    """Test that --help outputs help message."""
-    with pytest.raises(SystemExit) as e:
-        main(['--help'])
-    assert e.value.code == 0
-    captured = capsys.readouterr()
-    assert 'usage:' in captured.out
-    assert '--version' in captured.out
-    assert '--config' in captured.out
-    assert '--greeting' in captured.out
+def test_validate_message_custom() -> None:
+    assert validate_message("Custom message") == "Custom message"
 
-def test_default_greeting(capsys):
-    """Test default greeting output."""
-    assert main([]) == 0
-    captured = capsys.readouterr()
-    assert captured.out == "Hello, World!\n"
+def test_validate_message_empty() -> None:
+    with pytest.raises(HelloWorldError, match="Message cannot be empty"):
+        validate_message("")
+    with pytest.raises(HelloWorldError, match="Message cannot be empty"):
+        validate_message("   ")
 
-def test_custom_greeting(capsys):
-    """Test custom greeting via command line."""
-    greeting = "Hi there!"
-    assert main(['--greeting', greeting]) == 0
-    captured = capsys.readouterr()
-    assert captured.out == f"{greeting}\n"
+def test_validate_message_type_error() -> None:
+    with pytest.raises(HelloWorldError, match="Invalid message type"):
+        validate_message(123)  # type: ignore
 
-def test_empty_greeting():
-    """Test that empty greeting raises error."""
-    assert main(['--greeting', '']) == 2
+def test_validate_message_too_long() -> None:
+    with pytest.raises(HelloWorldError, match="exceeds maximum length"):
+        validate_message("a" * 1001)
 
-def test_config_file():
-    """Test loading configuration from file."""
+# Test configuration
+@pytest.fixture
+def config_file(tmp_path: Path) -> Path:
     config = {
-        "greeting": "Greetings from config!",
+        "default_message": "Test message",
+        "timeout": 3,
         "log_level": "DEBUG"
     }
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+    path = tmp_path / "config.json"
+    with path.open('w', encoding='utf-8') as f:
         json.dump(config, f)
-        f.flush()
-        try:
-            exit_code = main(['--config', f.name])
-            assert exit_code == 0
-        finally:
-            os.unlink(f.name)
+    return path
 
-def test_invalid_config_file():
-    """Test error handling for invalid config file."""
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
-        f.write("invalid json")
-        f.flush()
-        try:
-            exit_code = main(['--config', f.name])
-            assert exit_code == 1
-        finally:
-            os.unlink(f.name)
+def test_load_config_valid(config_file: Path) -> None:
+    config = load_config(str(config_file))
+    assert config["default_message"] == "Test message"
+    assert config["timeout"] == 3
 
-def test_environment_variables(monkeypatch):
-    """Test loading configuration from environment variables."""
-    greeting = "Hi from ENV!"
-    monkeypatch.setenv("HELLO_WORLD_GREETING", greeting)
-    assert main([]) == 0
+def test_load_config_missing_file() -> None:
+    with pytest.raises(ConfigurationError, match="Config file not found"):
+        load_config("/nonexistent/path.json")
 
-def test_invalid_log_level():
-    """Test error handling for invalid log level."""
-    assert main(['--log-level', 'INVALID']) == 2
+def test_load_config_invalid_json(tmp_path: Path) -> None:
+    path = tmp_path / "invalid.json"
+    path.write_text("{invalid json")
+    with pytest.raises(ConfigurationError, match="Invalid JSON"):
+        load_config(str(path))
 
-def test_generate_message_validation():
-    """Test message generation validation."""
-    with pytest.raises(ValidationError):
-        generate_message("")
-    with pytest.raises(ValidationError):
-        generate_message(None)
-    assert generate_message("Test") == "Test\n"
+def test_config_validation() -> None:
+    with pytest.raises(ConfigurationError, match="Missing required configuration"):
+        Config({}).validate()
 
-def test_config_validation():
-    """Test configuration validation."""
-    config = Config()
+    with pytest.raises(ConfigurationError, match="must be a non-empty string"):
+        Config({"default_message": ""}).validate()
+
+    with pytest.raises(ConfigurationError, match="timeout must be a positive"):
+        Config({"default_message": "test", "timeout": 0}).validate()
+
+# Test message display
+def test_display_message(capsys: pytest.CaptureFixture) -> None:
+    message = "Test display"
+    display_message(message)
+    captured = capsys.readouterr()
+    assert captured.out.strip() == message
+
+def test_display_message_timeout() -> None:
+    def slow_print() -> None:
+        import time
+        time.sleep(2)
+        print("Too late")
+
+    with pytest.raises(HelloWorldError, match="timed out"):
+        with tempfile.TemporaryFile('w') as f:
+            # Redirect stdout to avoid actual printing
+            import sys
+            old_stdout = sys.stdout
+            sys.stdout = f
+            try:
+                display_message(slow_print(), timeout=1)  # type: ignore
+            finally:
+                sys.stdout = old_stdout
+
+# Test logger setup
+def test_logger_setup(tmp_path: Path) -> None:
+    log_file = tmp_path / "test.log"
+    logger = setup_logger("test", level="DEBUG", log_file=str(log_file))
+    assert isinstance(logger, logging.Logger)
+    assert logger.level == logging.DEBUG
+    assert len(logger.handlers) == 2  # Console and file handlers
+    assert log_file.exists()
+
+def test_logger_invalid_level() -> None:
+    logger = setup_logger("test", level="INVALID")
+    assert logger.level == logging.INFO  # Falls back to default
+
+# Test main function error handling
+def test_main_with_invalid_config(monkeypatch: pytest.MonkeyPatch) -> None:
+    class MockArgs:
+        config = "/nonexistent/config.json"
+        message = None
+
+    monkeypatch.setattr("argparse.ArgumentParser.parse_args", lambda _: MockArgs())
+    assert main() == 1  # Should return error code 1
+
+# Test concurrent access
+def test_concurrent_display(capsys: pytest.CaptureFixture) -> None:
+    from concurrent.futures import ThreadPoolExecutor
+    messages = [f"Message {i}" for i in range(5)]
     
-    # Test invalid log level
-    with pytest.raises(ConfigError):
-        config._validate_config_value("log_level", "INVALID")
+    with ThreadPoolExecutor() as executor:
+        futures = [executor.submit(display_message, msg) for msg in messages]
+        for future in futures:
+            future.result()
     
-    # Test invalid encoding
-    with pytest.raises(ConfigError):
-        config._validate_config_value("output_encoding", "invalid-encoding")
-    
-    # Test invalid greeting
-    with pytest.raises(ConfigError):
-        config._validate_config_value("greeting", "")
-
-def test_argument_parser():
-    """Test argument parser configuration."""
-    parser = create_parser()
-    args = parser.parse_args(['--greeting', 'Test'])
-    assert args.greeting == 'Test'
-    assert args.log_level is None
-    assert args.config is None
+    captured = capsys.readouterr()
+    for msg in messages:
+        assert msg in captured.out

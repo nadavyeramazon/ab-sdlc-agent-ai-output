@@ -1,133 +1,132 @@
-"""Main module for the Hello World application.
+#!/usr/bin/env python3
 
-This module provides the core functionality for the Hello World application,
-including command-line interface and message generation.
-"""
-
+from typing import Optional, NoReturn, Dict, Any
 import sys
 import argparse
-import logging
-from typing import List, Optional
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
+from pathlib import Path
+
 from .config import Config
-from .logger import setup_logging
-from .exceptions import ConfigError, ValidationError, LoggingError
+from .logger import setup_logger
+from .exceptions import HelloWorldError, ConfigurationError
 
-logger = logging.getLogger(__name__)
+log = setup_logger(__name__)
 
-VERSION = "1.0.0"
+def parse_args() -> argparse.Namespace:
+    """Parse command line arguments.
 
-def create_parser() -> argparse.ArgumentParser:
-    """Create and configure the command-line argument parser.
-    
     Returns:
-        An ArgumentParser instance configured with all supported arguments.
+        argparse.Namespace: Parsed command line arguments.
     """
     parser = argparse.ArgumentParser(
-        description="A sophisticated Hello World application",
+        description='Hello World Application',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument(
-        '--version',
-        action='version',
-        version=f'%(prog)s {VERSION}'
-    )
-    parser.add_argument(
-        '--config',
-        help='Path to configuration file'
-    )
-    parser.add_argument(
-        '--greeting',
-        help='Custom greeting message'
-    )
-    parser.add_argument(
-        '--log-level',
-        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-        help='Set the logging level'
-    )
-    return parser
+    parser.add_argument('--version', action='version', version='%(prog)s 1.0.0')
+    parser.add_argument('--config', type=str, help='Path to config file')
+    parser.add_argument('--message', type=str, help='Custom message to display')
+    return parser.parse_args()
 
-def validate_args(args: argparse.Namespace) -> None:
-    """Validate command-line arguments.
-    
-    Args:
-        args: Parsed command-line arguments.
-        
-    Raises:
-        ValidationError: If any arguments are invalid.
-    """
-    logger.debug("Validating command-line arguments: %s", vars(args))
-    if args.greeting and not args.greeting.strip():
-        raise ValidationError("Greeting cannot be empty", "greeting")
+def validate_message(message: Optional[str]) -> str:
+    """Validate and sanitize the input message.
 
-def generate_message(greeting: str) -> str:
-    """Generate the formatted greeting message.
-    
     Args:
-        greeting: The greeting text to use.
-        
+        message: Optional input message to validate
+
     Returns:
-        A formatted greeting message.
-        
+        str: Validated message
+
     Raises:
-        ValidationError: If greeting is invalid.
+        HelloWorldError: If message validation fails
     """
-    if not greeting or not greeting.strip():
-        raise ValidationError("Greeting cannot be empty", "greeting")
+    if message is None:
+        return "Hello, World!"
     
-    logger.debug("Generating message with greeting: %s", greeting)
-    return f"{greeting.strip()}\n"
-
-def main(argv: Optional[List[str]] = None) -> int:
-    """Main entry point for the Hello World application.
+    if not isinstance(message, str):
+        raise HelloWorldError(f"Invalid message type: {type(message)}. Expected string.")
     
-    Args:
-        argv: List of command-line arguments (defaults to sys.argv[1:]).
+    message = message.strip()
+    if not message:
+        raise HelloWorldError("Message cannot be empty or whitespace only")
         
-    Returns:
-        Exit code (0 for success, non-zero for errors).
-    """
-    if argv is None:
-        argv = sys.argv[1:]
+    if len(message) > 1000:
+        raise HelloWorldError("Message exceeds maximum length of 1000 characters")
+        
+    return message
 
+def load_config(config_path: Optional[str]) -> Dict[str, Any]:
+    """Load and validate configuration.
+
+    Args:
+        config_path: Optional path to config file
+
+    Returns:
+        Dict[str, Any]: Configuration dictionary
+
+    Raises:
+        ConfigurationError: If config loading or validation fails
+    """
     try:
-        # Parse arguments
-        parser = create_parser()
-        args = parser.parse_args(argv)
-        logger.debug("Parsed arguments: %s", vars(args))
+        if config_path:
+            path = Path(config_path)
+            if not path.exists():
+                raise ConfigurationError(f"Config file not found: {config_path}")
+            config = Config.from_file(path)
+        else:
+            config = Config.default()
+        
+        return config.validate()
+    except Exception as e:
+        raise ConfigurationError(f"Failed to load configuration: {str(e)}")
 
-        # Load configuration
-        config = Config()
-        if args.config:
-            config.load_from_file(args.config)
-        config.load_from_env()
+def display_message(message: str, timeout: int = 5) -> None:
+    """Display the message with timeout protection.
 
-        # Setup logging
-        log_level = args.log_level or config.get("log_level", "INFO")
-        setup_logging(level=log_level)
+    Args:
+        message: Message to display
+        timeout: Timeout in seconds
 
-        # Validate arguments
-        validate_args(args)
+    Raises:
+        HelloWorldError: If display operation times out or fails
+    """
+    def _display() -> None:
+        try:
+            print(message, flush=True)
+        except IOError as e:
+            raise HelloWorldError(f"Failed to display message: {str(e)}")
 
-        # Generate and output message
-        greeting = args.greeting or config.get("greeting")
-        message = generate_message(greeting)
-        encoding = config.get("output_encoding", "utf-8")
-        sys.stdout.buffer.write(message.encode(encoding))
-        logger.info("Successfully output greeting message")
+    with ThreadPoolExecutor() as executor:
+        try:
+            future = executor.submit(_display)
+            future.result(timeout=timeout)
+        except TimeoutError:
+            raise HelloWorldError(f"Display operation timed out after {timeout} seconds")
+        except Exception as e:
+            raise HelloWorldError(f"Unexpected error during display: {str(e)}")
+
+def main() -> int:
+    """Main entry point for the application.
+
+    Returns:
+        int: Exit code (0 for success, non-zero for failure)
+    """
+    try:
+        args = parse_args()
+        config = load_config(args.config)
+        message = validate_message(args.message or config.get('default_message'))
+        display_message(message, config.get('timeout', 5))
         return 0
 
-    except ConfigError as e:
-        logger.error("Configuration error: %s", str(e))
+    except (HelloWorldError, ConfigurationError) as e:
+        log.error(str(e))
         return 1
-    except ValidationError as e:
-        logger.error("Validation error: %s", str(e))
-        return 2
-    except LoggingError as e:
-        logger.error("Logging error: %s", str(e))
-        return 3
     except Exception as e:
-        logger.error("Unexpected error: %s", str(e))
-        return 4
+        log.exception(f"Unexpected error: {str(e)}")
+        return 2
 
-if __name__ == "__main__":
+def run() -> NoReturn:
+    """Run the application and exit with appropriate status code."""
     sys.exit(main())
+
+if __name__ == '__main__':
+    run()
