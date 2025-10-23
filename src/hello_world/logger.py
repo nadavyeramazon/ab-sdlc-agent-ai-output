@@ -1,43 +1,95 @@
+"""Logging configuration for the Hello World application.
+
+Implements a thread-safe singleton logger with rotation functionality.
+"""
+
 import logging
-import sys
+import logging.handlers
+import os
 from typing import Optional
 
-def setup_logger(level: str = 'INFO', log_format: Optional[str] = None) -> logging.Logger:
-    """Configure and return a logger instance.
+class HelloWorldLogger:
+    _instance: Optional['HelloWorldLogger'] = None
+    _logger: Optional[logging.Logger] = None
 
-    Args:
-        level (str): Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).
-            Defaults to 'INFO'.
-        log_format (Optional[str]): Custom log format string. If None, uses default format.
-            Defaults to None.
+    def __new__(cls) -> 'HelloWorldLogger':
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
-    Returns:
-        logging.Logger: Configured logger instance.
+    def __init__(self) -> None:
+        if self._logger is None:
+            self._setup_logger()
 
-    Raises:
-        ValueError: If invalid logging level is provided.
-    """
-    logger = logging.getLogger('hello_world')
-    
-    # Clear any existing handlers
-    logger.handlers.clear()
-    
-    # Set logging level
-    try:
-        logger.setLevel(level.upper())
-    except (AttributeError, ValueError) as e:
-        raise ValueError(f'Invalid logging level: {level}') from e
+    def _setup_logger(self) -> None:
+        """Configure the logger with rotation and formatting."""
+        self._logger = logging.getLogger('hello_world')
+        self._logger.setLevel(logging.INFO)
 
-    # Create console handler
-    handler = logging.StreamHandler(sys.stderr)
-    
-    # Set format
-    if log_format is None:
-        log_format = '%(asctime)s [%(levelname)s] %(message)s'
-    formatter = logging.Formatter(log_format)
-    handler.setFormatter(formatter)
-    
-    logger.addHandler(handler)
-    logger.debug('Logger initialized with level: %s', level)
-    
-    return logger
+        # Create logs directory if it doesn't exist
+        log_dir = 'logs'
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+
+        # File handler with rotation
+        file_handler = logging.handlers.RotatingFileHandler(
+            filename=os.path.join(log_dir, 'hello_world.log'),
+            maxBytes=1024 * 1024,  # 1MB
+            backupCount=5,
+            encoding='utf-8'
+        )
+
+        # Console handler
+        console_handler = logging.StreamHandler()
+
+        # Formatter
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+
+        file_handler.setFormatter(formatter)
+        console_handler.setFormatter(formatter)
+
+        self._logger.addHandler(file_handler)
+        self._logger.addHandler(console_handler)
+
+    @property
+    def logger(self) -> logging.Logger:
+        """Get the configured logger instance.
+
+        Returns:
+            logging.Logger: The configured logger instance.
+        """
+        return self._logger
+
+    def info(self, message: str) -> None:
+        """Log an info message.
+
+        Args:
+            message: The message to log.
+        """
+        self.logger.info(message)
+
+    def error(self, message: str) -> None:
+        """Log an error message.
+
+        Args:
+            message: The message to log.
+        """
+        self.logger.error(message)
+
+    def debug(self, message: str) -> None:
+        """Log a debug message.
+
+        Args:
+            message: The message to log.
+        """
+        self.logger.debug(message)
+
+    def warning(self, message: str) -> None:
+        """Log a warning message.
+
+        Args:
+            message: The message to log.
+        """
+        self.logger.warning(message)

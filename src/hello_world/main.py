@@ -1,84 +1,111 @@
-#!/usr/bin/env python3
+"""Main module for the Hello World application.
+
+Provides command line interface and core functionality.
+"""
 
 import argparse
 import sys
-from typing import Optional, Tuple
-from .logger import setup_logger
+from typing import Optional, Sequence
+
+from hello_world.config import get_config
+from hello_world.logger import HelloWorldLogger
 
 __version__ = '1.0.0'
 
-def parse_args() -> argparse.Namespace:
-    """Parse command line arguments.
-
-    Returns:
-        argparse.Namespace: Parsed command-line arguments containing:
-            - name (str, optional): Name to greet
-            - version (bool): Show version information
-            - log_level (str): Logging level (default: INFO)
-    """
-    parser = argparse.ArgumentParser(
-        description='A friendly greeting program.',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    parser.add_argument('--name', type=str, help='Name to greet')
-    parser.add_argument('--version', action='store_true', help='Show version information')
-    parser.add_argument('--log-level', 
-                      choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-                      default='INFO',
-                      help='Set the logging level')
-    return parser.parse_args()
-
-def generate_greeting(name: Optional[str] = None) -> Tuple[str, int]:
-    """Generate a greeting message.
+def validate_name(name: str) -> bool:
+    """Validate the input name.
 
     Args:
-        name (Optional[str]): Name to include in greeting. Defaults to None.
+        name: The name to validate.
 
     Returns:
-        Tuple[str, int]: A tuple containing:
-            - str: The greeting message
-            - int: Exit code (0 for success, 1 for error)
+        bool: True if name is valid, False otherwise.
 
     Raises:
-        ValueError: If the provided name is empty or contains invalid characters.
+        ValueError: If name is empty or exceeds maximum length.
     """
-    if name:
-        # Validate name
-        if not name.strip():
-            raise ValueError('Name cannot be empty or whitespace')
-        if not all(c.isalnum() or c.isspace() for c in name):
-            raise ValueError('Name can only contain alphanumeric characters and spaces')
-        return f'Hello, {name}!', 0
-    return 'Hello, World!', 0
+    config = get_config()
+    
+    if not name:
+        raise ValueError('Name cannot be empty')
+    
+    if len(name) > config.max_name_length:
+        raise ValueError(
+            f'Name length exceeds maximum of {config.max_name_length} characters'
+        )
+    
+    if not name.strip():  # Check for whitespace-only input
+        raise ValueError('Name cannot be only whitespace')
+    
+    if not all(c.isprintable() for c in name):  # Check for non-printable characters
+        raise ValueError('Name contains invalid characters')
+    
+    return True
 
-def main() -> int:
-    """Main entry point for the application.
+def create_greeting(name: str) -> str:
+    """Create a greeting message.
 
-    Parses command-line arguments, sets up logging, and generates a greeting.
+    Args:
+        name: The name to include in the greeting.
 
     Returns:
-        int: Exit code (0 for success, non-zero for failure)
+        str: The formatted greeting message.
+
+    Raises:
+        ValueError: If name validation fails.
     """
+    validate_name(name)
+    return f'Hello, {name}!'
+
+def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
+    """Parse command line arguments.
+
+    Args:
+        argv: List of command line arguments.
+
+    Returns:
+        argparse.Namespace: Parsed command line arguments.
+    """
+    parser = argparse.ArgumentParser(
+        description='A simple Hello World application.'
+    )
+    parser.add_argument(
+        '--name',
+        help='Name to greet',
+        type=str,
+        required=True
+    )
+    parser.add_argument(
+        '--version',
+        action='version',
+        version=f'%(prog)s {__version__}'
+    )
+    return parser.parse_args(argv)
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    """Main entry point for the application.
+
+    Args:
+        argv: Command line arguments.
+
+    Returns:
+        int: Exit code (0 for success, non-zero for failure).
+    """
+    logger = HelloWorldLogger()
+    
     try:
-        args = parse_args()
-        logger = setup_logger(args.log_level)
-
-        if args.version:
-            print(f'Hello World version {__version__}')
-            return 0
-
-        logger.debug('Generating greeting message')
-        message, exit_code = generate_greeting(args.name)
-        
-        logger.info('Message generated successfully')
-        print(message)
-        return exit_code
-
+        args = parse_args(argv)
+        greeting = create_greeting(args.name)
+        print(greeting)
+        logger.info(f'Successfully created greeting for {args.name}')
+        return 0
     except ValueError as e:
-        logger.error(f'Invalid input: {str(e)}')
+        logger.error(f'Validation error: {str(e)}')
+        print(f'Error: {str(e)}', file=sys.stderr)
         return 1
     except Exception as e:
-        logger.critical(f'Unexpected error: {str(e)}')
+        logger.error(f'Unexpected error: {str(e)}')
+        print(f'Error: An unexpected error occurred', file=sys.stderr)
         return 2
 
 if __name__ == '__main__':

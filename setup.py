@@ -1,19 +1,26 @@
+"""Setup configuration for the Hello World package."""
+
 from setuptools import setup, find_packages
 
-with open('README.md', 'r', encoding='utf-8') as f:
+with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='hello-world',
+    name='hello_world',
     version='1.0.0',
-    author='AI Agent',
-    author_email='ai.agent@example.com',
-    description='A friendly greeting program',
+    description='A simple Hello World application',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/nadavyeramazon/ab-sdlc-agent-ai-backend',
+    author='Developer',
+    author_email='developer@example.com',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
+    python_requires='>=3.8',
+    entry_points={
+        'console_scripts': [
+            'hello-world=hello_world.main:main',
+        ],
+    },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
@@ -25,10 +32,4 @@ setup(
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
     ],
-    python_requires='>=3.8',
-    entry_points={
-        'console_scripts': [
-            'hello-world=hello_world.main:main',
-        ],
-    },
 )
