@@ -1,0 +1,12 @@
+# Production dependencies
+logging-utils>=2.0.0
+
+# Development dependencies
+coverage>=6.0.0
+flake8>=4.0.0
+mypy>=0.900
+pytest>=7.0.0
+pytest-cov>=3.0.0
+
+# Type stubs
+types-setuptools>=57.0.0
