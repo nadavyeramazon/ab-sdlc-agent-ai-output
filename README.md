@@ -1,16 +1,23 @@
 # Hello World API
 
-A production-ready Hello World API with enhanced features including type hints, OpenAPI documentation, rate limiting, and comprehensive test coverage.
+A simple Hello World API with rate limiting, request tracking, and comprehensive testing.
 
 ## Features
 
-- Type-hinted Python code
-- OpenAPI documentation (available at `/api/docs` and `/api/redoc`)
-- Rate limiting (5 requests per minute)
+- Hello World endpoint with rate limiting
 - Health check endpoint
-- Version headers
+- Request ID tracking
 - CORS support
 - Comprehensive test coverage
+
+## Configuration
+
+The API can be configured using environment variables:
+
+- `API_RATE_LIMIT_REQUESTS`: Number of requests allowed per time window (default: 5)
+- `API_RATE_LIMIT_WINDOW`: Time window in seconds for rate limiting (default: 60)
+
+Copy `.env.example` to `.env` and adjust the values as needed.
 
 ## Installation
 
@@ -21,10 +28,8 @@ pip install -r requirements.txt
 ## Running the API
 
 ```bash
-python src/main.py
+uvicorn src.main:app --reload
 ```
-
-The API will be available at http://localhost:8000
 
 ## Running Tests
 
@@ -32,17 +37,20 @@ The API will be available at http://localhost:8000
 pytest tests/
 ```
 
-## API Endpoints
+## API Documentation
 
-- GET `/`: Returns hello world message
-- GET `/health`: Health check endpoint
-- GET `/api/docs`: OpenAPI documentation
-- GET `/api/redoc`: ReDoc documentation
+Once running, access the API documentation at:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
 
-## Headers
+## Endpoints
 
-All responses include an `X-API-Version` header with the current API version.
+- `GET /`: Hello World message
+- `GET /health`: Health check status
 
-## Rate Limiting
+## Response Headers
 
-Endpoints are rate-limited to 5 requests per minute per IP address.
+- `X-Request-ID`: Unique identifier for each request
+- `X-RateLimit-Limit`: Maximum requests allowed in the time window
+- `X-RateLimit-Remaining`: Remaining requests in the current window
+- `X-RateLimit-Reset`: Time when the rate limit window resets

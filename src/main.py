@@ -1,27 +1,20 @@
-from typing import Dict, Any
+"""Hello World API implementation with rate limiting and request tracking."""
+
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+import uuid
 
-__version__ = '1.0.0'
+from .config import settings
 
-app = FastAPI(
-    title="Hello World API",
-    description="A simple Hello World API with enhanced features",
-    version=__version__,
-    docs_url="/api/docs",
-    redoc_url="/api/redoc"
-)
+app = FastAPI(title="Hello World API",
+             description="A simple Hello World API with rate limiting",
+             version="1.0.0")
 
-# Rate limiter configuration
-limiter = Limiter(key_func=get_remote_address)
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-# CORS configuration
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -30,32 +23,50 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Configure rate limiter
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 @app.middleware("http")
-async def add_version_header(request: Request, call_next) -> Response:
-    """Middleware to add API version header to all responses."""
+async def add_request_id(request: Request, call_next):
+    """Add a unique request ID to all responses."""
+    request_id = str(uuid.uuid4())
     response = await call_next(request)
-    response.headers["X-API-Version"] = __version__
+    response.headers["X-Request-ID"] = request_id
     return response
 
-@app.get("/", response_model=Dict[str, str])
-@limiter.limit("5/minute")
-async def hello_world(request: Request) -> Dict[str, str]:
-    """Return a hello world message.
+@app.get("/")
+@limiter.limit(f"{settings.rate_limit_requests}/{settings.rate_limit_window}s")
+async def hello_world(request: Request):
+    """Return a Hello World message.
     
     Returns:
-        Dict[str, str]: A dictionary containing a greeting message
+        dict: A greeting message
     """
     return {"message": "Hello, World!"}
 
-@app.get("/health", response_model=Dict[str, str])
-async def health_check() -> Dict[str, str]:
-    """Health check endpoint for monitoring.
+@app.get("/health")
+async def health_check():
+    """Health check endpoint.
     
     Returns:
-        Dict[str, str]: A dictionary containing the API status
+        dict: API health status
     """
     return {"status": "healthy"}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+@app.exception_handler(404)
+async def custom_404_handler(request: Request, exc):
+    """Custom 404 error handler.
+    
+    Args:
+        request (Request): The incoming request
+        exc: The exception raised
+    
+    Returns:
+        JSONResponse: Custom 404 error message
+    """
+    return JSONResponse(
+        status_code=404,
+        content={"error": "The requested resource was not found"}
+    )

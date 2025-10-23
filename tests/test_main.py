@@ -1,54 +1,66 @@
-from typing import Generator
-import pytest
+"""Test suite for the Hello World API."""
+
 from fastapi.testclient import TestClient
-from src.main import app, __version__
+import pytest
+from unittest.mock import patch
+from src.main import app
+from src.config import Settings
 
-@pytest.fixture
-def client() -> Generator:
-    """Create a test client fixture.
-    
-    Returns:
-        Generator: A TestClient instance for testing the API
-    """
-    with TestClient(app) as test_client:
-        yield test_client
+client = TestClient(app)
 
-def test_hello_world(client: TestClient) -> None:
+def test_hello_world():
     """Test the hello world endpoint."""
     response = client.get("/")
     assert response.status_code == 200
     assert response.json() == {"message": "Hello, World!"}
-    assert "X-API-Version" in response.headers
-    assert response.headers["X-API-Version"] == __version__
+    assert "X-Request-ID" in response.headers
 
-def test_health_check(client: TestClient) -> None:
+def test_health_check():
     """Test the health check endpoint."""
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "healthy"}
 
-def test_rate_limiting(client: TestClient) -> None:
-    """Test rate limiting functionality."""
-    # Make 6 requests (exceeding the 5/minute limit)
-    for _ in range(5):
+def test_404_handler():
+    """Test custom 404 error handling."""
+    response = client.get("/nonexistent")
+    assert response.status_code == 404
+    assert response.json() == {"error": "The requested resource was not found"}
+
+def test_rate_limiting():
+    """Test rate limiting behavior."""
+    # Override rate limit settings for testing
+    test_settings = Settings(
+        rate_limit_requests=2,
+        rate_limit_window=5
+    )
+    
+    with patch('src.main.settings', test_settings):
+        # First request should succeed
         response = client.get("/")
         assert response.status_code == 200
-    
-    # The 6th request should be rate limited
-    response = client.get("/")
-    assert response.status_code == 429
+        
+        # Second request should succeed
+        response = client.get("/")
+        assert response.status_code == 200
+        
+        # Third request should be rate limited
+        response = client.get("/")
+        assert response.status_code == 429
+        assert "Retry-After" in response.headers
 
-def test_cors_headers(client: TestClient) -> None:
+def test_cors_headers():
     """Test CORS headers are properly set."""
-    response = client.options(
-        "/",
-        headers={"Origin": "http://example.com", "Access-Control-Request-Method": "GET"}
-    )
+    response = client.options("/", headers={"Origin": "http://example.com"})
     assert response.status_code == 200
     assert "access-control-allow-origin" in response.headers
     assert response.headers["access-control-allow-origin"] == "*"
 
-def test_invalid_route(client: TestClient) -> None:
-    """Test handling of invalid routes."""
-    response = client.get("/invalid")
-    assert response.status_code == 404
+def test_request_id():
+    """Test that each request gets a unique request ID."""
+    response1 = client.get("/")
+    response2 = client.get("/")
+    
+    assert "X-Request-ID" in response1.headers
+    assert "X-Request-ID" in response2.headers
+    assert response1.headers["X-Request-ID"] != response2.headers["X-Request-ID"]
