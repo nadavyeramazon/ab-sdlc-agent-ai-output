@@ -1,23 +1,57 @@
-"""Application configuration module.
+"""Configuration management for the Hello World service."""
+import os
+from typing import Optional
+from dataclasses import dataclass
+from functools import lru_cache
 
-Handles all configuration and environment variables.
-"""
+from .exceptions import ConfigurationError
 
-from pydantic_settings import BaseSettings
-
-class Settings(BaseSettings):
-    """Application settings and configuration.
-
+@dataclass
+class Settings:
+    """Service configuration settings.
+    
     Attributes:
-        APP_NAME (str): Name of the application
-        DEFAULT_MESSAGE (str): Default hello world message
-        LOG_LEVEL (str): Logging level
+        app_name: Name of the application
+        debug_mode: Enable debug logging
+        log_level: Logging level (DEBUG, INFO, WARNING, ERROR)
+        api_prefix: API URL prefix
     """
-    APP_NAME: str = "Hello World Service"
-    DEFAULT_MESSAGE: str = "Hello, World!"
-    LOG_LEVEL: str = "INFO"
+    app_name: str
+    debug_mode: bool
+    log_level: str
+    api_prefix: str
 
-    class Config:
-        env_file = ".env"
+    def validate(self) -> None:
+        """Validate configuration settings.
+        
+        Raises:
+            ConfigurationError: If any settings are invalid
+        """
+        valid_log_levels = {'DEBUG', 'INFO', 'WARNING', 'ERROR'}
+        if self.log_level not in valid_log_levels:
+            raise ConfigurationError(f'Invalid log level: {self.log_level}')
+        
+        if not self.app_name:
+            raise ConfigurationError('Application name cannot be empty')
+        
+        if not self.api_prefix.startswith('/'):
+            raise ConfigurationError('API prefix must start with /')
 
-settings = Settings()
+@lru_cache()
+def get_settings() -> Settings:
+    """Get validated application settings.
+    
+    Returns:
+        Settings: Application configuration
+
+    Raises:
+        ConfigurationError: If environment variables are invalid
+    """
+    settings = Settings(
+        app_name=os.getenv('APP_NAME', 'Hello World Service'),
+        debug_mode=os.getenv('DEBUG', 'false').lower() == 'true',
+        log_level=os.getenv('LOG_LEVEL', 'INFO').upper(),
+        api_prefix=os.getenv('API_PREFIX', '/api/v1')
+    )
+    settings.validate()
+    return settings

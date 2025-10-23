@@ -1,27 +1,62 @@
-"""Business logic services module.
+"""Business logic for the Hello World service."""
+import uuid
+import logging
+from typing import Dict
 
-Contains core business logic for the Hello World service.
-"""
+from .exceptions import ServiceError
+from .schemas import HelloRequest, HelloResponse
 
-from typing import Optional
-from .config import settings
+logger = logging.getLogger(__name__)
 
 class HelloWorldService:
-    """Service for generating hello world messages."""
-
+    """Service class for generating greetings."""
+    
     def __init__(self):
-        """Initialize the HelloWorldService."""
-        self._message = settings.DEFAULT_MESSAGE
-
-    def get_message(self) -> str:
-        """Get the hello world message.
-
+        """Initialize the service."""
+        self._request_counter = 0
+    
+    def get_greeting(self, request: HelloRequest) -> HelloResponse:
+        """Generate a greeting response.
+        
+        Args:
+            request: Validated request model
+            
         Returns:
-            str: Hello world message
-
+            HelloResponse: Greeting response
+            
         Raises:
-            ValueError: If message generation fails
+            ServiceError: If greeting generation fails
         """
-        if not self._message:
-            raise ValueError("Message not initialized")
-        return self._message
+        try:
+            self._request_counter += 1
+            logger.debug(f'Generating greeting for {request.name}')
+            
+            # Generate unique request ID
+            request_id = str(uuid.uuid4())
+            
+            # Create greeting message
+            message = f'Hello, {request.name}!'
+            
+            logger.info(
+                f'Generated greeting - RequestID: {request_id} '
+                f'Counter: {self._request_counter}'
+            )
+            
+            return HelloResponse(
+                message=message,
+                request_id=request_id
+            )
+            
+        except Exception as e:
+            logger.error(f'Failed to generate greeting: {str(e)}')
+            raise ServiceError('Failed to generate greeting') from e
+    
+    def get_stats(self) -> Dict:
+        """Get service statistics.
+        
+        Returns:
+            Dict with service stats
+        """
+        return {
+            'total_requests': self._request_counter
+        }

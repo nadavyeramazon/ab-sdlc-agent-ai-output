@@ -1,14 +1,25 @@
-"""Pydantic schemas for request/response models.
+"""Pydantic models for request/response validation."""
+from pydantic import BaseModel, Field
 
-Defines data validation and serialization schemas.
-"""
-
-from pydantic import BaseModel
+class HelloRequest(BaseModel):
+    """Request model for hello endpoint.
+    
+    Attributes:
+        name: Name to greet (optional)
+    """
+    name: str = Field(
+        default='World',
+        min_length=1,
+        max_length=50,
+        description='Name to greet'
+    )
 
 class HelloResponse(BaseModel):
     """Response model for hello endpoint.
-
+    
     Attributes:
-        message (str): Hello world message
+        message: Greeting message
+        request_id: Unique request identifier
     """
-    message: str
+    message: str = Field(..., description='Greeting message')
+    request_id: str = Field(..., description='Unique request identifier')

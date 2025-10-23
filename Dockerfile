@@ -6,6 +6,12 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ src/
+COPY tests/ tests/
+
+ENV APP_NAME="Hello World Service"
+ENV DEBUG=false
+ENV LOG_LEVEL=INFO
+ENV API_PREFIX=/api/v1
 
 EXPOSE 8000
 

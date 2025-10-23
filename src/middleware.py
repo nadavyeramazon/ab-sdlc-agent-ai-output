@@ -1,37 +1,47 @@
-"""Custom middleware implementations.
-
-Defines request/response middleware for logging and monitoring.
-"""
-
+"""Middleware components for request/response processing and logging."""
 import time
 import logging
-from fastapi import Request
+from typing import Callable
+from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = logging.getLogger(__name__)
 
-class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    """Middleware for logging request/response metrics."""
-
-    async def dispatch(self, request: Request, call_next):
-        """Process the request and log metrics.
-
+class LoggingMiddleware(BaseHTTPMiddleware):
+    """Middleware for request/response logging and timing."""
+    
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        """Process and log request/response cycle.
+        
         Args:
-            request (Request): The incoming request
-            call_next (Callable): The next middleware/route handler
-
+            request: Incoming HTTP request
+            call_next: Next middleware in chain
+            
         Returns:
-            Response: The response from the next handler
+            Response: HTTP response
         """
         start_time = time.time()
         
-        response = await call_next(request)
-        
-        # Log request details
-        process_time = (time.time() - start_time) * 1000
+        # Log request
         logger.info(
-            f"Method: {request.method} Path: {request.url.path} "
-            f"Status: {response.status_code} Duration: {process_time:.2f}ms"
+            f'Request: {request.method} {request.url.path} '
+            f'Client: {request.client.host if request.client else "unknown"}'
         )
         
-        return response
+        try:
+            response = await call_next(request)
+            process_time = (time.time() - start_time) * 1000
+            
+            # Log response
+            logger.info(
+                f'Response: {response.status_code} '
+                f'Duration: {process_time:.2f}ms'
+            )
+            
+            # Add timing header
+            response.headers['X-Process-Time'] = f'{process_time:.2f}ms'
+            return response
+            
+        except Exception as e:
+            logger.error(f'Request failed: {str(e)}')
+            raise
