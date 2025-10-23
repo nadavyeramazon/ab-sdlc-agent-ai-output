@@ -1,20 +1,8 @@
-"""Custom exceptions for the Hello World application."""
-
 class HelloWorldError(Exception):
-    """Base exception class for Hello World application."""
-    pass
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(self.message)
 
 
-class NetworkTimeoutError(HelloWorldError):
-    """Raised when a network operation times out."""
-    pass
-
-
-class ConfigurationError(HelloWorldError):
-    """Raised when there is an issue with configuration."""
-    pass
-
-
-class ValidationError(HelloWorldError):
-    """Raised when input validation fails."""
+class ConfigError(HelloWorldError):
     pass
