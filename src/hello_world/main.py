@@ -1,112 +1,68 @@
 """Main module for Hello World application."""
+
 import argparse
 import logging
 import sys
-from typing import List, Optional, Tuple
+from typing import NoReturn, Optional
+import urllib.request
 
-from hello_world.config import AppConfig, LogConfig
-from hello_world.logger import setup_logger
+from .config import Config
+from .exceptions import NetworkTimeoutError, ValidationError
+from .logger import setup_logging
 
-__version__ = '0.1.0'
+logger = logging.getLogger(__name__)
 
-
-def parse_args(args: List[str]) -> Tuple[AppConfig, Optional[LogConfig]]:
+def parse_args() -> argparse.Namespace:
     """Parse command line arguments.
+
+    Returns:
+        Parsed command line arguments.
+    """
+    parser = argparse.ArgumentParser(description="Hello World Application")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s 1.0.0"
+    )
+    return parser.parse_args()
+
+def validate_external_service(timeout: float) -> None:
+    """Validate external service connectivity.
     
     Args:
-        args: Command line arguments
-        
-    Returns:
-        Tuple[AppConfig, Optional[LogConfig]]: Application and logging configuration
+        timeout: Request timeout in seconds.
         
     Raises:
-        ValueError: If validation fails for any arguments
+        NetworkTimeoutError: If request times out.
     """
-    parser = argparse.ArgumentParser(
-        description='Print a message to stdout and optionally log it.'
-    )
-    parser.add_argument(
-        'message',
-        help='Message to print (non-empty string)'
-    )
-    parser.add_argument(
-        '--log-file',
-        help='Path to log file'
-    )
-    parser.add_argument(
-        '--log-max-bytes',
-        type=int,
-        default=1048576,  # 1MB
-        help='Maximum size of log file before rotation (must be positive)'
-    )
-    parser.add_argument(
-        '--log-backup-count',
-        type=int,
-        default=3,
-        help='Number of backup files to keep (must be non-negative)'
-    )
-    parser.add_argument(
-        '--log-level',
-        default='INFO',
-        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-        help='Logging level'
-    )
-    parser.add_argument(
-        '--version',
-        action='version',
-        version=f'%(prog)s {__version__}'
-    )
-    
-    parsed_args = parser.parse_args(args)
-    
-    log_config = None
-    if parsed_args.log_file:
-        try:
-            log_config = LogConfig(
-                log_file=parsed_args.log_file,
-                max_bytes=parsed_args.log_max_bytes,
-                backup_count=parsed_args.log_backup_count,
-                log_level=parsed_args.log_level
-            )
-        except ValueError as e:
-            parser.error(str(e))
-    
     try:
-        app_config = AppConfig(message=parsed_args.message, log_config=log_config)
-    except ValueError as e:
-        parser.error(str(e))
-        
-    return app_config, log_config
+        urllib.request.urlopen("http://example.com", timeout=timeout)
+    except urllib.error.URLError as e:
+        raise NetworkTimeoutError("Failed to connect to external service") from e
 
+def main() -> Optional[NoReturn]:
+    """Main entry point for the application.
 
-def main(argv: Optional[List[str]] = None) -> int:
-    """Application entry point.
-    
-    Args:
-        argv: Command line arguments. If None, sys.argv[1:] is used.
-        
     Returns:
-        int: Exit code (0 for success, non-zero for failure)
-        
-    Raises:
-        SystemExit: On argument parsing errors
+        None on success, or calls sys.exit() on error.
     """
-    if argv is None:
-        argv = sys.argv[1:]
-    
     try:
-        app_config, log_config = parse_args(argv)
-        logger = setup_logger(log_config)
+        args = parse_args()
+        config = Config()
+        setup_logging(config)
         
-        print(app_config.message)
-        logger.info('Message printed: %s', app_config.message)
+        validate_external_service(config.request_timeout)
         
-        return 0
+        print("Hello, World!")
+        logger.info("Successfully printed greeting")
+        return None
         
+    except (NetworkTimeoutError, ValidationError) as e:
+        logger.error(f"Application error: {e}")
+        sys.exit(1)
     except Exception as e:
-        logging.error('Application error: %s', str(e))
-        return 1
+        logger.exception("Unexpected error occurred")
+        sys.exit(2)
 
-
-if __name__ == '__main__':
-    sys.exit(main())
+if __name__ == "__main__":
+    main()
