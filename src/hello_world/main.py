@@ -1,102 +1,112 @@
-"""Main module for the Hello World application.
-
-This module implements a simple Hello World application with logging
-and command line interface.
-"""
-
-from __future__ import annotations
-
+"""Main module for Hello World application."""
 import argparse
+import logging
 import sys
-from pathlib import Path
-from typing import List, Optional, NoReturn, Dict, Any
+from typing import List, Optional, Tuple
 
-from .logger import LogConfig, setup_logger
+from hello_world.config import AppConfig, LogConfig
+from hello_world.logger import setup_logger
 
-def create_parser() -> argparse.ArgumentParser:
-    """Create and configure the argument parser.
+__version__ = '0.1.0'
 
+
+def parse_args(args: List[str]) -> Tuple[AppConfig, Optional[LogConfig]]:
+    """Parse command line arguments.
+    
+    Args:
+        args: Command line arguments
+        
     Returns:
-        argparse.ArgumentParser: Configured parser instance
+        Tuple[AppConfig, Optional[LogConfig]]: Application and logging configuration
+        
+    Raises:
+        ValueError: If validation fails for any arguments
     """
     parser = argparse.ArgumentParser(
-        description='Simple Hello World application with logging',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        description='Print a message to stdout and optionally log it.'
+    )
+    parser.add_argument(
+        'message',
+        help='Message to print (non-empty string)'
+    )
+    parser.add_argument(
+        '--log-file',
+        help='Path to log file'
+    )
+    parser.add_argument(
+        '--log-max-bytes',
+        type=int,
+        default=1048576,  # 1MB
+        help='Maximum size of log file before rotation (must be positive)'
+    )
+    parser.add_argument(
+        '--log-backup-count',
+        type=int,
+        default=3,
+        help='Number of backup files to keep (must be non-negative)'
+    )
+    parser.add_argument(
+        '--log-level',
+        default='INFO',
+        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        help='Logging level'
     )
     parser.add_argument(
         '--version',
         action='version',
-        version='%(prog)s 1.0.0'
+        version=f'%(prog)s {__version__}'
     )
-    parser.add_argument(
-        '--log-level',
-        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-        default='INFO',
-        help='Set the logging level'
-    )
-    parser.add_argument(
-        '--log-file',
-        type=str,
-        default=str(Path.home() / '.hello_world' / 'hello.log'),
-        help='Path to the log file'
-    )
-    parser.add_argument(
-        '--max-log-size',
-        type=int,
-        default=1024 * 1024,  # 1MB
-        help='Maximum size of log file in bytes before rotation'
-    )
-    return parser
+    
+    parsed_args = parser.parse_args(args)
+    
+    log_config = None
+    if parsed_args.log_file:
+        try:
+            log_config = LogConfig(
+                log_file=parsed_args.log_file,
+                max_bytes=parsed_args.log_max_bytes,
+                backup_count=parsed_args.log_backup_count,
+                log_level=parsed_args.log_level
+            )
+        except ValueError as e:
+            parser.error(str(e))
+    
+    try:
+        app_config = AppConfig(message=parsed_args.message, log_config=log_config)
+    except ValueError as e:
+        parser.error(str(e))
+        
+    return app_config, log_config
 
-def validate_args(args: argparse.Namespace) -> None:
-    """Validate command line arguments.
-
-    Args:
-        args: Parsed command line arguments
-
-    Raises:
-        ValueError: If any argument is invalid
-    """
-    if args.max_log_size <= 0:
-        raise ValueError(f'max-log-size must be positive, got {args.max_log_size}')
 
 def main(argv: Optional[List[str]] = None) -> int:
-    """Main entry point for the Hello World application.
-
+    """Application entry point.
+    
     Args:
-        argv: List of command line arguments (uses sys.argv if None)
-
+        argv: Command line arguments. If None, sys.argv[1:] is used.
+        
     Returns:
         int: Exit code (0 for success, non-zero for failure)
+        
+    Raises:
+        SystemExit: On argument parsing errors
     """
+    if argv is None:
+        argv = sys.argv[1:]
+    
     try:
-        # Parse arguments
-        parser = create_parser()
-        args = parser.parse_args(argv)
-
-        # Validate arguments
-        validate_args(args)
-
-        # Configure logging
-        log_config = LogConfig(
-            log_level=args.log_level,
-            log_file=args.log_file,
-            max_bytes=args.max_log_size
-        )
-        logger = setup_logger('hello_world', log_config)
-
-        # Log hello world message
-        logger.info('Hello, World!')
-        print('Hello, World!')
-
+        app_config, log_config = parse_args(argv)
+        logger = setup_logger(log_config)
+        
+        print(app_config.message)
+        logger.info('Message printed: %s', app_config.message)
+        
         return 0
-
-    except ValueError as e:
-        print(f'Error: {e}', file=sys.stderr)
-        return 1
+        
     except Exception as e:
-        print(f'Unexpected error: {e}', file=sys.stderr)
-        return 2
+        logging.error('Application error: %s', str(e))
+        return 1
+
 
 if __name__ == '__main__':
     sys.exit(main())

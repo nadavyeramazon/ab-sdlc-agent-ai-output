@@ -1,16 +1,15 @@
-"""Project configuration and build settings."""
-
 [build-system]
 requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.black]
-line-length = 88
-target-version = ['py38', 'py39', 'py310', 'py311']
+line-length = 79
+target-version = ['py38']
 include = '\.pyi?$'
 
 [tool.isort]
 profile = "black"
+line_length = 79
 multi_line_output = 3
 
 [tool.mypy]
@@ -29,25 +28,22 @@ warn_unreachable = true
 
 [[tool.mypy.overrides]]
 module = "tests.*"
-disallow_untyped_defs = false
+disallow_untyped_decorators = false
 
 [tool.pytest.ini_options]
-addopts = "-ra -q --cov=hello_world --cov-report=term-missing"
+addopts = "--cov=hello_world --cov-report=term-missing --cov-fail-under=95"
 testpaths = ["tests"]
-python_files = "test_*.py"
 
 [tool.coverage.run]
-source = ["src"]
-omit = ["tests/*"]
+branch = true
 
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
-    "if __name__ == .__main__.:",
+    "if self.debug:",
     "raise NotImplementedError",
-    "raise ImportError",
-    "except ImportError:",
-    "if TYPE_CHECKING:"
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError"
 ]
-ignore_errors = true

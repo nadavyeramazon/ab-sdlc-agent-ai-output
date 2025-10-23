@@ -1,145 +1,161 @@
-"""Test suite for the Hello World application.
-
-This module contains comprehensive tests for the application including
-edge cases and error conditions.
-"""
-
-from __future__ import annotations
-
+"""Test suite for Hello World application."""
 import logging
 import os
-from pathlib import Path
 import tempfile
-import pytest
-from typing import Generator, Any
+from pathlib import Path
+from unittest import TestCase, mock
 
-from hello_world.logger import LogConfig, setup_logger
-from hello_world.main import main, create_parser
+from hello_world.config import AppConfig, LogConfig
+from hello_world.logger import setup_logger
+from hello_world.main import main, parse_args
 
-@pytest.fixture
-def temp_log_file() -> Generator[Path, None, None]:
-    """Create a temporary log file for testing.
 
-    Yields:
-        Path: Path to temporary log file
-    """
-    with tempfile.TemporaryDirectory() as temp_dir:
-        log_file = Path(temp_dir) / 'test.log'
-        yield log_file
-
-def test_logger_configuration(temp_log_file: Path) -> None:
-    """Test logger configuration with valid parameters."""
-    config = LogConfig(
-        log_level='INFO',
-        log_file=temp_log_file,
-        max_bytes=1024,
-        backup_count=2
-    )
-    logger = setup_logger('test', config)
+class TestHelloWorld(TestCase):
+    """Test cases for Hello World application."""
     
-    assert logger.level == logging.INFO
-    assert len(logger.handlers) == 2
-    assert isinstance(logger.handlers[0], logging.handlers.RotatingFileHandler)
-    assert isinstance(logger.handlers[1], logging.StreamHandler)
-
-def test_logger_invalid_level(temp_log_file: Path) -> None:
-    """Test logger configuration with invalid log level."""
-    config = LogConfig(
-        log_level='INVALID',
-        log_file=temp_log_file
-    )
-    with pytest.raises(ValueError, match='Invalid log level'):
-        setup_logger('test', config)
-
-def test_logger_invalid_max_bytes(temp_log_file: Path) -> None:
-    """Test logger configuration with invalid max_bytes."""
-    config = LogConfig(
-        log_level='INFO',
-        log_file=temp_log_file,
-        max_bytes=-1
-    )
-    with pytest.raises(ValueError, match='max_bytes must be positive'):
-        setup_logger('test', config)
-
-def test_logger_rotation(temp_log_file: Path) -> None:
-    """Test log file rotation."""
-    config = LogConfig(
-        log_level='INFO',
-        log_file=temp_log_file,
-        max_bytes=100,
-        backup_count=2
-    )
-    logger = setup_logger('test', config)
-
-    # Write enough data to trigger rotation
-    long_message = 'x' * 50
-    for _ in range(5):
-        logger.info(long_message)
-
-    # Check that rotation files exist
-    assert temp_log_file.exists()
-    assert (temp_log_file.parent / f'{temp_log_file.name}.1').exists()
-
-def test_main_success(temp_log_file: Path, capsys: Any) -> None:
-    """Test successful execution of main function."""
-    argv = [
-        '--log-level', 'INFO',
-        '--log-file', str(temp_log_file),
-        '--max-log-size', '1024'
-    ]
-    exit_code = main(argv)
-    assert exit_code == 0
-
-    # Check stdout
-    captured = capsys.readouterr()
-    assert 'Hello, World!' in captured.out
-
-    # Check log file
-    assert temp_log_file.exists()
-    log_content = temp_log_file.read_text()
-    assert 'Hello, World!' in log_content
-
-def test_main_invalid_args(capsys: Any) -> None:
-    """Test main function with invalid arguments."""
-    argv = ['--max-log-size', '-1']
-    exit_code = main(argv)
-    assert exit_code == 1
-
-    captured = capsys.readouterr()
-    assert 'Error:' in captured.err
-
-def test_create_parser() -> None:
-    """Test argument parser creation and defaults."""
-    parser = create_parser()
-    args = parser.parse_args([])
-
-    assert args.log_level == 'INFO'
-    assert isinstance(args.log_file, str)
-    assert args.max_log_size == 1024 * 1024
-
-def test_unicode_logging(temp_log_file: Path) -> None:
-    """Test logging with Unicode characters."""
-    config = LogConfig(
-        log_level='INFO',
-        log_file=temp_log_file
-    )
-    logger = setup_logger('test', config)
-
-    unicode_message = 'Hello, 世界!'
-    logger.info(unicode_message)
-
-    log_content = temp_log_file.read_text(encoding='utf-8')
-    assert unicode_message in log_content
-
-def test_log_directory_creation(temp_log_file: Path) -> None:
-    """Test automatic creation of log directory."""
-    nested_path = temp_log_file.parent / 'nested' / 'dirs' / 'test.log'
-    config = LogConfig(
-        log_level='INFO',
-        log_file=nested_path
-    )
-    logger = setup_logger('test', config)
-
-    assert nested_path.parent.exists()
-    logger.info('Test message')
-    assert nested_path.exists()
+    def setUp(self) -> None:
+        """Set up test environment."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.log_file = os.path.join(self.temp_dir, 'test.log')
+    
+    def test_parse_args_minimal(self) -> None:
+        """Test parsing minimal command line arguments."""
+        app_config, log_config = parse_args(['Hello, World!'])
+        self.assertEqual(app_config.message, 'Hello, World!')
+        self.assertIsNone(log_config)
+    
+    def test_parse_args_with_logging(self) -> None:
+        """Test parsing arguments with logging configuration."""
+        app_config, log_config = parse_args([
+            'Hello, World!',
+            '--log-file', self.log_file,
+            '--log-max-bytes', '2048',
+            '--log-backup-count', '5',
+            '--log-level', 'DEBUG'
+        ])
+        
+        self.assertEqual(app_config.message, 'Hello, World!')
+        self.assertIsNotNone(log_config)
+        assert log_config is not None  # for type checking
+        self.assertEqual(log_config.log_file, self.log_file)
+        self.assertEqual(log_config.max_bytes, 2048)
+        self.assertEqual(log_config.backup_count, 5)
+        self.assertEqual(log_config.log_level, 'DEBUG')
+    
+    def test_empty_message(self) -> None:
+        """Test handling of empty message."""
+        with self.assertRaises(SystemExit):
+            parse_args([""])
+            
+        with self.assertRaises(SystemExit):
+            parse_args(["  "])
+    
+    def test_invalid_log_config(self) -> None:
+        """Test handling of invalid logging configuration."""
+        # Negative max_bytes
+        with self.assertRaises(SystemExit):
+            parse_args([
+                'test',
+                '--log-file', self.log_file,
+                '--log-max-bytes', '-1'
+            ])
+        
+        # Negative backup_count
+        with self.assertRaises(SystemExit):
+            parse_args([
+                'test',
+                '--log-file', self.log_file,
+                '--log-backup-count', '-1'
+            ])
+        
+        # Invalid log level
+        with self.assertRaises(SystemExit):
+            parse_args([
+                'test',
+                '--log-file', self.log_file,
+                '--log-level', 'INVALID'
+            ])
+    
+    def test_logger_setup_stderr(self) -> None:
+        """Test logger setup without configuration (stderr)."""
+        logger = setup_logger()
+        self.assertEqual(len(logger.handlers), 1)
+        self.assertIsInstance(logger.handlers[0], logging.StreamHandler)
+    
+    def test_logger_setup_file(self) -> None:
+        """Test logger setup with file configuration."""
+        config = LogConfig(
+            log_file=self.log_file,
+            max_bytes=1024,
+            backup_count=3
+        )
+        logger = setup_logger(config)
+        
+        self.assertEqual(len(logger.handlers), 1)
+        handler = logger.handlers[0]
+        self.assertIsInstance(handler, logging.handlers.RotatingFileHandler)
+        self.assertEqual(handler.baseFilename, self.log_file)
+        self.assertEqual(handler.maxBytes, 1024)
+        self.assertEqual(handler.backupCount, 3)
+    
+    def test_logger_setup_unwritable(self) -> None:
+        """Test logger setup with unwritable directory."""
+        with mock.patch('os.access', return_value=False):
+            with self.assertRaises(OSError) as ctx:
+                setup_logger(LogConfig(
+                    log_file=self.log_file,
+                    max_bytes=1024,
+                    backup_count=3
+                ))
+            self.assertIn('not writable', str(ctx.exception))
+    
+    def test_logger_rotation_failure(self) -> None:
+        """Test handling of log rotation failures."""
+        config = LogConfig(
+            log_file=self.log_file,
+            max_bytes=1024,
+            backup_count=3
+        )
+        
+        with mock.patch('logging.handlers.RotatingFileHandler.doRollover',
+                       side_effect=Exception('Rotation failed')):
+            with self.assertRaises(ValueError) as ctx:
+                setup_logger(config)
+            self.assertIn('Failed to rotate', str(ctx.exception))
+    
+    def test_main_success(self) -> None:
+        """Test successful execution of main function."""
+        with mock.patch('builtins.print') as mock_print:
+            exit_code = main(['Hello, World!'])
+            
+        self.assertEqual(exit_code, 0)
+        mock_print.assert_called_once_with('Hello, World!')
+    
+    def test_main_with_logging(self) -> None:
+        """Test main function with logging enabled."""
+        exit_code = main([
+            'Hello, World!',
+            '--log-file', self.log_file
+        ])
+        
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(os.path.exists(self.log_file))
+        with open(self.log_file, 'r', encoding='utf-8') as f:
+            log_content = f.read()
+        self.assertIn('Hello, World!', log_content)
+    
+    def test_main_error(self) -> None:
+        """Test main function error handling."""
+        with mock.patch('hello_world.main.parse_args',
+                       side_effect=Exception('Test error')):
+            exit_code = main(['test'])
+            
+        self.assertEqual(exit_code, 1)
+    
+    def tearDown(self) -> None:
+        """Clean up test environment."""
+        # Clean up log files
+        if os.path.exists(self.temp_dir):
+            for file in Path(self.temp_dir).glob('*'):
+                file.unlink()
+            Path(self.temp_dir).rmdir()

@@ -1,47 +1,71 @@
-"""Configuration management for the Hello World application.
-
-Provides centralized configuration handling with environment variable support.
-"""
-
-import os
+"""Configuration module for Hello World application."""
 from dataclasses import dataclass
 from typing import Optional
 
+
+@dataclass
+class LogConfig:
+    """Configuration for logging.
+    
+    Args:
+        log_file: Path to the log file
+        max_bytes: Maximum size of log file before rotation (must be positive)
+        backup_count: Number of backup files to keep (must be non-negative)
+        log_level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    
+    Raises:
+        ValueError: If max_bytes is not positive or backup_count is negative
+    """
+    log_file: str
+    max_bytes: int
+    backup_count: int
+    log_level: str = 'INFO'
+
+    def __post_init__(self) -> None:
+        """Validate configuration parameters.
+        
+        Returns:
+            None
+            
+        Raises:
+            ValueError: If parameters are invalid
+        """
+        if not self.log_file.strip():
+            raise ValueError('Log file path cannot be empty')
+            
+        if self.max_bytes <= 0:
+            raise ValueError('max_bytes must be positive')
+            
+        if self.backup_count < 0:
+            raise ValueError('backup_count cannot be negative')
+            
+        valid_levels = {'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'}
+        if self.log_level not in valid_levels:
+            raise ValueError(f'Invalid log_level. Must be one of: {", ".join(valid_levels)}')
+
+
 @dataclass
 class AppConfig:
-    """Application configuration settings.
-
-    Attributes:
-        log_level: Logging level (default: INFO)
-        log_dir: Directory for log files (default: logs)
-        max_name_length: Maximum allowed length for name input
+    """Application configuration.
+    
+    Args:
+        message: Message to print (non-empty string)
+        log_config: Optional logging configuration
+        
+    Raises:
+        ValueError: If message is empty
     """
-    log_level: str = 'INFO'
-    log_dir: str = 'logs'
-    max_name_length: int = 100
+    message: str
+    log_config: Optional[LogConfig] = None
 
-    @classmethod
-    def from_env(cls) -> 'AppConfig':
-        """Create configuration from environment variables.
-
+    def __post_init__(self) -> None:
+        """Validate configuration parameters.
+        
         Returns:
-            AppConfig: Configuration instance with values from environment.
+            None
+            
+        Raises:
+            ValueError: If message is empty
         """
-        return cls(
-            log_level=os.getenv('HELLO_WORLD_LOG_LEVEL', 'INFO'),
-            log_dir=os.getenv('HELLO_WORLD_LOG_DIR', 'logs'),
-            max_name_length=int(os.getenv('HELLO_WORLD_MAX_NAME_LENGTH', '100'))
-        )
-
-_config_instance: Optional[AppConfig] = None
-
-def get_config() -> AppConfig:
-    """Get the application configuration singleton.
-
-    Returns:
-        AppConfig: The application configuration instance.
-    """
-    global _config_instance
-    if _config_instance is None:
-        _config_instance = AppConfig.from_env()
-    return _config_instance
+        if not self.message.strip():
+            raise ValueError('Message cannot be empty')
