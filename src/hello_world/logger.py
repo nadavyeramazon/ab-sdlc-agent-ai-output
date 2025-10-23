@@ -1,63 +1,59 @@
+"""Logging configuration and utilities for the hello_world application."""
+
+from enum import Enum
 import logging
-from logging.handlers import RotatingFileHandler
+import os
+from pathlib import Path
 from typing import Optional
 
-def setup_logger(name: str = __name__) -> logging.Logger:
-    """Set up application logger with rotation policy.
+from hello_world.exceptions import LoggingSetupError
+
+class LogLevel(Enum):
+    """Enumeration of available log levels."""
+    DEBUG = logging.DEBUG
+    INFO = logging.INFO
+    WARNING = logging.WARNING
+    ERROR = logging.ERROR
+    CRITICAL = logging.CRITICAL
+
+def setup_logging(log_dir: str = 'logs',
+                 log_level: LogLevel = LogLevel.INFO) -> None:
+    """Configure logging for the application.
 
     Args:
-        name: Logger name (defaults to module name).
-
-    Returns:
-        logging.Logger: Configured logger instance.
-    """
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
-
-    # Console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    console_formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-    console_handler.setFormatter(console_formatter)
-    logger.addHandler(console_handler)
-
-    # File handler with rotation
-    file_handler = RotatingFileHandler(
-        filename='app.log',
-        maxBytes=5*1024*1024,  # 5MB
-        backupCount=5,
-        encoding='utf-8'
-    )
-    file_handler.setLevel(logging.DEBUG)
-    file_formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-    file_handler.setFormatter(file_formatter)
-    logger.addHandler(file_handler)
-
-    return logger
-
-def set_log_level(logger: logging.Logger, level: str) -> None:
-    """Set the logger's level.
-
-    Args:
-        logger: Logger instance to configure.
-        level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+        log_dir: Directory where log files will be stored.
+        log_level: Minimum log level to record.
 
     Raises:
-        ValueError: If invalid log level provided.
+        LoggingSetupError: If there are permission issues creating the log directory
+                          or log file.
     """
-    level_map = {
-        'DEBUG': logging.DEBUG,
-        'INFO': logging.INFO,
-        'WARNING': logging.WARNING,
-        'ERROR': logging.ERROR,
-        'CRITICAL': logging.CRITICAL
-    }
+    try:
+        # Create logs directory if it doesn't exist
+        Path(log_dir).mkdir(parents=True, exist_ok=True)
 
-    if level.upper() not in level_map:
-        raise ValueError(f"Invalid log level: {level}. Must be one of {list(level_map.keys())}")
+        # Configure logging format and handlers
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-    logger.setLevel(level_map[level.upper()])
+        # File handler
+        log_file = Path(log_dir) / 'hello_world.log'
+        file_handler = logging.FileHandler(
+            str(log_file), encoding='utf-8')
+        file_handler.setFormatter(formatter)
+
+        # Console handler
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+
+        # Root logger configuration
+        root_logger = logging.getLogger()
+        root_logger.setLevel(log_level.value)
+        root_logger.addHandler(file_handler)
+        root_logger.addHandler(console_handler)
+
+    except PermissionError as e:
+        raise LoggingSetupError(
+            f"Permission denied when setting up logging: {e}") from e
+    except Exception as e:
+        raise LoggingSetupError(f"Failed to setup logging: {e}") from e

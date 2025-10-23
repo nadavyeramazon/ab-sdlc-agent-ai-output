@@ -1,97 +1,74 @@
-#!/usr/bin/env python3
+"""Main module for the hello_world application.
 
-from typing import Optional, NoReturn, Dict, Any
-import sys
+This module provides the core functionality for the hello_world application,
+including command-line interface and greeting generation.
+"""
+
 import argparse
-from .logger import setup_logger
-from .config import Config, load_config, validate_config
+import logging
+from typing import Optional, Tuple
 
-MAX_MESSAGE_LENGTH = 1000
-
-def validate_input(message: str) -> None:
-    """Validate the input message.
-
-    Args:
-        message: The message to validate.
-
-    Raises:
-        ValueError: If message exceeds max length or contains invalid characters.
-    """
-    if len(message) > MAX_MESSAGE_LENGTH:
-        raise ValueError(f"Message length exceeds maximum of {MAX_MESSAGE_LENGTH} characters")
-    if not message.isprintable():
-        raise ValueError("Message contains invalid characters")
+from hello_world.config import Config
+from hello_world.logger import LogLevel, setup_logging
 
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments.
 
     Returns:
-        argparse.Namespace: Parsed command line arguments.
+        argparse.Namespace: Parsed command-line arguments.
     """
-    parser = argparse.ArgumentParser(description="Simple Hello World application")
-    parser.add_argument(
-        "--config", 
-        type=str,
-        default="config.yaml",
-        help="Path to configuration file"
-    )
-    parser.add_argument(
-        "--message",
-        type=str,
-        default="Hello, World!",
-        help="Custom message to display"
-    )
-    parser.add_argument(
-        "--version",
-        action="version",
-        version="%(prog)s 1.0.0"
-    )
+    parser = argparse.ArgumentParser(
+        description='A friendly Hello World application')
+    parser.add_argument('--name',
+                       type=str,
+                       help='Name to greet',
+                       default='World')
+    parser.add_argument('--config',
+                       type=str,
+                       help='Path to config file',
+                       default=None)
     return parser.parse_args()
 
-def process_message(message: str, config: Dict[str, Any]) -> str:
-    """Process the input message according to configuration.
+def generate_greeting(name: str = 'World') -> str:
+    """Generate a greeting message.
 
     Args:
-        message: The input message to process.
-        config: Configuration dictionary.
+        name: Name to include in the greeting.
 
     Returns:
-        str: The processed message.
-
-    Raises:
-        ValueError: If message validation fails.
+        str: A formatted greeting message.
     """
-    validate_input(message)
-    prefix = config.get('message_prefix', '')
-    suffix = config.get('message_suffix', '')
-    return f"{prefix}{message}{suffix}"
+    logging.debug('Generating greeting for name: %s', name)
+    greeting = f"Hello, {name}!"
+    logging.debug('Generated greeting: %s', greeting)
+    return greeting
 
-def main() -> Optional[NoReturn]:
-    """Main entry point for the application.
+def main() -> int:
+    """Main entry point for the hello_world application.
+
+    This function sets up logging, processes command-line arguments,
+    generates a greeting, and handles any errors that occur.
 
     Returns:
-        Optional[NoReturn]: Exits with status code 0 on success, 1 on error.
+        int: Exit code (0 for success, non-zero for failure)
     """
-    logger = setup_logger()
     try:
         args = parse_args()
-        config = load_config(args.config)
-        validate_config(config)
+        config = Config.from_file(args.config) if args.config else Config()
         
-        logger.info("Processing message with configuration")
-        result = process_message(args.message, config)
-        print(result)
+        # Setup logging with configured level
+        setup_logging(log_level=LogLevel[config.log_level.upper()])
+        
+        # Generate and display greeting
+        greeting = generate_greeting(args.name)
+        print(greeting)
+        
+        logging.debug('Application completed successfully')
         return 0
-
-    except FileNotFoundError as e:
-        logger.error(f"Configuration file not found: {e}")
-        return 1
-    except ValueError as e:
-        logger.error(f"Validation error: {e}")
-        return 1
+        
     except Exception as e:
-        logger.error(f"Unexpected error: {e}")
+        logging.error('Application error: %s', str(e))
         return 1
 
-if __name__ == "__main__":
-    sys.exit(main())
+if __name__ == '__main__':
+    exit(main())
