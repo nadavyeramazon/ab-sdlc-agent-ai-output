@@ -1,19 +1,26 @@
-# AB SDLC Agent AI Backend
+# ab-sdlc-agent-ai-backend
 
-A simple FastAPI application that provides a Hello World endpoint and health check functionality.
+A simple FastAPI "Hello World" service that serves as the backend for the AB SDLC Agent AI system.
 
-## Project Overview
+## Features
 
-This is a FastAPI-based backend service that demonstrates a basic REST API implementation with two endpoints:
-- A root endpoint that returns a "Hello World" message
-- A health check endpoint for monitoring service status
+- **FastAPI Framework**: Modern, fast (high-performance) web framework for building APIs
+- **Health Check Endpoint**: Monitor service health
+- **Hello World Endpoint**: Simple greeting endpoint
+- **Service Info Endpoint**: Get service metadata and version
+- **Docker Support**: Containerized deployment with multi-stage builds
+- **Auto-generated API Documentation**: Interactive Swagger UI and ReDoc
+- **CORS Enabled**: Cross-Origin Resource Sharing configured
+- **Comprehensive Tests**: Full test coverage with pytest
 
 ## Prerequisites
 
-- Python 3.13 or higher
-- pip (Python package installer)
+- Python 3.13+
+- Docker (optional, for containerized deployment)
 
 ## Installation
+
+### Local Development
 
 1. Clone the repository:
 ```bash
@@ -21,9 +28,9 @@ git clone https://github.com/nadavyeramazon/ab-sdlc-agent-ai-backend.git
 cd ab-sdlc-agent-ai-backend
 ```
 
-2. Create a virtual environment (recommended):
+2. Create a virtual environment:
 ```bash
-python -m venv venv
+python3.13 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
@@ -32,51 +39,47 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-## How to Run
+## Running the Application
 
-### Option 1: Run directly with Python
+### Local Development
+
+Run the application using uvicorn:
 ```bash
-python main.py
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### Option 2: Run with uvicorn (with auto-reload for development)
-```bash
-uvicorn main:app --reload
-```
+The service will be available at `http://localhost:8000`
 
-### Option 3: Run with Docker
+### Using Docker
+
+1. Build the Docker image:
 ```bash
 docker build -t ab-sdlc-agent-ai-backend .
+```
+
+2. Run the container:
+```bash
 docker run -p 8000:8000 ab-sdlc-agent-ai-backend
 ```
 
-The application will start on `http://localhost:8000`
+The service will be available at `http://localhost:8000`
 
 ## API Endpoints
 
-### 1. Hello World Endpoint
-
-**GET** `/`
-
-Returns a simple Hello World message.
+### GET /
+Returns service information including name, version, and status.
 
 **Response:**
 ```json
 {
-  "message": "Hello World"
+  "service": "ab-sdlc-agent-ai-backend",
+  "version": "1.0.0",
+  "status": "running"
 }
 ```
 
-**Example:**
-```bash
-curl http://localhost:8000/
-```
-
-### 2. Health Check Endpoint
-
-**GET** `/health`
-
-Returns the health status of the service.
+### GET /health
+Health check endpoint for monitoring service availability.
 
 **Response:**
 ```json
@@ -85,65 +88,127 @@ Returns the health status of the service.
 }
 ```
 
-**Example:**
-```bash
-curl http://localhost:8000/health
+### GET /hello
+Simple greeting endpoint that returns "Hello, World!".
+
+**Response:**
+```json
+{
+  "message": "Hello, World!"
+}
 ```
 
 ## API Documentation
 
-FastAPI provides automatic interactive API documentation:
+Once the application is running, you can access:
 
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+- **Swagger UI**: `http://localhost:8000/docs`
+- **ReDoc**: `http://localhost:8000/redoc`
+- **OpenAPI Schema**: `http://localhost:8000/openapi.json`
 
 ## Testing
 
-### Manual Testing
+This project includes comprehensive unit tests covering all endpoints, error cases, and edge cases.
 
-1. Start the application (see "How to Run" section)
-2. Test the Hello World endpoint:
-   ```bash
-   curl http://localhost:8000/
-   ```
-   Expected output: `{"message":"Hello World"}`
+### Running Tests
 
-3. Test the Health Check endpoint:
-   ```bash
-   curl http://localhost:8000/health
-   ```
-   Expected output: `{"status":"healthy"}`
+1. Install testing dependencies (if not already installed):
+```bash
+pip install -r requirements.txt
+```
 
-## Project Structure
+2. Run all tests:
+```bash
+pytest
+```
+
+3. Run tests with verbose output:
+```bash
+pytest -v
+```
+
+4. Run tests with coverage report:
+```bash
+pytest --cov=main --cov-report=html
+```
+
+5. Run specific test classes:
+```bash
+pytest test_main.py::TestHealthEndpoint -v
+pytest test_main.py::TestHelloEndpoint -v
+pytest test_main.py::TestErrorHandling -v
+```
+
+### Test Coverage
+
+The test suite includes:
+
+- **Endpoint Tests**: All API endpoints (/health, /hello, /)
+- **Response Structure Tests**: Validates JSON response format
+- **Error Handling Tests**: 404, 405 status codes
+- **CORS Tests**: Cross-origin request handling
+- **API Documentation Tests**: OpenAPI, Swagger UI, ReDoc
+- **Concurrent Request Tests**: Async behavior validation
+- **HTTP Method Tests**: GET, POST, PUT, DELETE behavior
+
+### Continuous Integration
+
+Tests should be run automatically in CI/CD pipelines before deployment:
+```bash
+# Example CI command
+pytest --cov=main --cov-report=term-missing --cov-fail-under=80
+```
+
+## Development
+
+### Project Structure
 
 ```
 ab-sdlc-agent-ai-backend/
-├── main.py              # Main application entry point
-├── requirements.txt     # Python dependencies
-├── README.md           # Project documentation
-├── .gitignore          # Git ignore rules
-├── Dockerfile          # Docker container configuration
-├── .dockerignore       # Docker ignore rules
-└── pyproject.toml      # Project metadata and configuration
+├── main.py              # FastAPI application entry point
+├── test_main.py         # Comprehensive unit tests
+├── requirements.txt     # Python dependencies (including test deps)
+├── Dockerfile          # Docker image definition
+├── .dockerignore       # Docker build exclusions
+├── .gitignore          # Git exclusions
+├── pyproject.toml      # Python project configuration
+└── README.md           # This file
 ```
 
-## Technology Stack
+### Adding New Features
 
-- **Framework**: FastAPI 0.115.0
-- **ASGI Server**: Uvicorn 0.30.0
-- **Python Version**: 3.13+
+1. Add your endpoint in `main.py`
+2. Write corresponding tests in `test_main.py`
+3. Run tests to ensure everything works: `pytest -v`
+4. Update this README with new endpoint documentation
 
-## Deployment
+## Environment Variables
 
-This application is deployment-ready and can be deployed to:
-- Cloud platforms (AWS, GCP, Azure)
-- Container orchestration platforms (Kubernetes, Docker Swarm)
-- Platform-as-a-Service providers (Heroku, Render, Railway)
+Currently, the application doesn't require any environment variables. Future versions may include:
+
+- `PORT`: Server port (default: 8000)
+- `HOST`: Server host (default: 0.0.0.0)
+- `LOG_LEVEL`: Logging level (default: info)
+
+## Performance
+
+- **Async Support**: All endpoints use async handlers for optimal performance
+- **Lightweight**: Minimal dependencies for fast startup
+- **Production Ready**: Uses uvicorn with uvloop for high performance
 
 ## License
 
-MIT License
+This project is part of the AB SDLC Agent AI system.
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass: `pytest`
+6. Submit a pull request
+
+## Support
+
+For issues and questions, please open an issue in the GitHub repository.

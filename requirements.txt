@@ -1,2 +1,8 @@
+# Core dependencies
 fastapi==0.115.0
-uvicorn[standard]==0.30.0
+uvicorn[standard]==0.32.0
+
+# Testing dependencies
+pytest==8.0.0
+pytest-asyncio==0.23.0
+httpx==0.26.0
