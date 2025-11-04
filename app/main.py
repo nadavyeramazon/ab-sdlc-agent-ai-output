@@ -1,0 +1,52 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+app = FastAPI(
+    title=os.getenv("APP_NAME", "AB SDLC Agent AI Backend"),
+    version=os.getenv("VERSION", "1.0.0"),
+    description="Minimal FastAPI backend for AB SDLC Agent AI frontend client"
+)
+
+# CORS Configuration
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/")
+async def root():
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "service": "ab-sdlc-agent-ai-backend",
+        "version": os.getenv("VERSION", "1.0.0")
+    }
+
+
+@app.get("/api/health")
+async def health():
+    """Detailed health check"""
+    return {
+        "status": "ok",
+        "service": "ab-sdlc-agent-ai-backend",
+        "version": os.getenv("VERSION", "1.0.0"),
+        "environment": "development" if os.getenv("DEBUG") == "true" else "production"
+    }
+
+
+@app.get("/api/status")
+async def status():
+    """Service status endpoint"""
+    return {
+        "online": True,
+        "message": "Backend service is running"
+    }
