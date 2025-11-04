@@ -1,42 +1,21 @@
+import pytest
 from fastapi.testclient import TestClient
-from app import app
+from main import app
 
 client = TestClient(app)
 
-def test_root():
-    response = client.get("/")
+
+def test_hello_endpoint():
+    response = client.get("/api/hello")
     assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "ok"
-    assert "service" in data
+    assert response.json() == {"message": "Hello World"}
 
-def test_health():
-    response = client.get("/health")
+
+def test_hello_endpoint_content_type():
+    response = client.get("/api/hello")
+    assert response.headers["content-type"] == "application/json"
+
+
+def test_cors_headers():
+    response = client.options("/api/hello")
     assert response.status_code == 200
-    assert response.json()["status"] == "healthy"
-
-def test_generate_success():
-    response = client.post("/api/generate", json={"prompt": "test prompt"})
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "success"
-    assert "result" in data
-    assert "test prompt" in data["result"]
-
-def test_generate_with_context():
-    response = client.post("/api/generate", json={
-        "prompt": "test prompt",
-        "context": "some context"
-    })
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "success"
-    assert "result" in data
-
-def test_generate_empty_prompt():
-    response = client.post("/api/generate", json={"prompt": ""})
-    assert response.status_code == 400
-
-def test_generate_missing_prompt():
-    response = client.post("/api/generate", json={})
-    assert response.status_code == 422
