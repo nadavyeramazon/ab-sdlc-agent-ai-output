@@ -42,8 +42,6 @@ jobs:
     
     - name: Upload coverage reports
       if: success()
-    - name: Upload coverage reports
-      if: success()
       uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
