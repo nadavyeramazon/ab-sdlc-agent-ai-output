@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Agent AI Backend")
 
-# CORS configuration for frontend integration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8080").split(","),
@@ -24,6 +23,10 @@ def health_check():
 @app.get("/api/status")
 def api_status():
     return {"api": "v1", "ready": True}
+
+@app.get("/api/hello")
+def hello():
+    return {"message": "Hello from Agent AI Backend!"}
 
 if __name__ == "__main__":
     import uvicorn
