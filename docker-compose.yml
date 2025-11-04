@@ -15,7 +15,7 @@ services:
       - ./app:/app/app
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('')"]
       interval: 30s
       timeout: 3s
       retries: 3
