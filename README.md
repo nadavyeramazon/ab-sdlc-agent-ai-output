@@ -1,5 +1,5 @@
 # Agent AI Backend
 
-Minimal FastAPI backend for Agent AI SDLC system.
+Minimal FastAPI backend service.
 
 ## Setup
