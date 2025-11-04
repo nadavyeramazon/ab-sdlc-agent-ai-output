@@ -39,7 +39,7 @@ async def health():
         "status": "ok",
         "service": "ab-sdlc-agent-ai-backend",
         "version": os.getenv("VERSION", "1.0.0"),
-        "environment": "development" if os.getenv("DEBUG") == "true" else "production"
+        "environment": "development" if settings.DEBUG else "production"
     }
 
 
