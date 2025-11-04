@@ -6,8 +6,8 @@ import os
 load_dotenv()
 
 app = FastAPI(
-    title=os.getenv("APP_NAME", "AB SDLC Agent AI Backend"),
-    version=os.getenv("VERSION", "1.0.0"),
+    title=settings.APP_NAME,
+    version=settings.VERSION,
     description="Minimal FastAPI backend for AB SDLC Agent AI frontend client"
 )
 
