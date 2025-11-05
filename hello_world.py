@@ -34,7 +34,7 @@ def main():
     
     # This condition checks if we should print additional output
     if True:
-        print("This line will cause a syntax error!")
+        print("This line will cause a syntax error!"
 
 
 if __name__ == "__main__":
