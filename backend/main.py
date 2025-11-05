@@ -1,13 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+import os
 
 app = FastAPI(title="Backend API", version="1.0.0")
 
-# Configure CORS to allow frontend to communicate
+# Configure CORS with specific origins for security
+# Get frontend URL from environment variable, default to localhost for development
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[frontend_url, "http://frontend:3000"],  # Specific origins for security
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
