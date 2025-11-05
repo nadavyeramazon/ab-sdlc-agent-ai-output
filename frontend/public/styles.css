@@ -6,7 +6,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #1e4620 0%, #2d5a2d 50%, #3a7a3a 100%);
+    background: linear-gradient(135deg, #4a148c 0%, #6a1b9a 50%, #8e24aa 100%);
     min-height: 100vh;
     color: #ffffff;
     padding: 20px;
@@ -35,7 +35,7 @@ header h1 {
 
 .subtitle {
     font-size: 1.2em;
-    color: #a8e6a1;
+    color: #e1bee7;
     font-weight: 300;
 }
 
@@ -61,7 +61,7 @@ main {
 }
 
 .card h2 {
-    color: #a8e6a1;
+    color: #e1bee7;
     margin-bottom: 20px;
     font-size: 1.5em;
 }
@@ -75,12 +75,12 @@ main {
 }
 
 .status-badge.success {
-    background: #4caf50;
+    background: #9c27b0;
     color: white;
 }
 
 .btn {
-    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    background: linear-gradient(135deg, #9c27b0 0%, #8e24aa 100%);
     color: white;
     border: none;
     padding: 15px 30px;
@@ -89,13 +89,13 @@ main {
     cursor: pointer;
     transition: all 0.3s ease;
     font-weight: bold;
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 4px 12px rgba(156, 39, 176, 0.4);
 }
 
 .btn:hover {
-    background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+    background: linear-gradient(135deg, #8e24aa 0%, #7b1fa2 100%);
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(76, 175, 80, 0.6);
+    box-shadow: 0 6px 16px rgba(156, 39, 176, 0.6);
 }
 
 .btn:active {
@@ -113,7 +113,7 @@ main {
     line-height: 1.6;
     white-space: pre-wrap;
     word-wrap: break-word;
-    border-left: 4px solid #4caf50;
+    border-left: 4px solid #9c27b0;
 }
 
 .architecture-list {
@@ -126,11 +126,11 @@ main {
     margin: 10px 0;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 6px;
-    border-left: 4px solid #4caf50;
+    border-left: 4px solid #9c27b0;
 }
 
 .architecture-list strong {
-    color: #a8e6a1;
+    color: #e1bee7;
 }
 
 footer {
@@ -142,7 +142,7 @@ footer {
 }
 
 footer p {
-    color: #a8e6a1;
+    color: #e1bee7;
     font-size: 1.1em;
 }
 
@@ -151,7 +151,7 @@ footer p {
 }
 
 .success {
-    color: #51cf66;
+    color: #ce93d8;
 }
 
 @media (max-width: 768px) {

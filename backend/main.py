@@ -55,7 +55,7 @@ async def root():
         dict: Welcome message from the backend
     """
     logger.info("Root endpoint accessed")
-    return {"message": "Hello World from FastAPI Backend!"}
+    return {"message": "How is the weather from FastAPI Backend!"}
 
 
 @app.get("/health")
@@ -78,7 +78,7 @@ async def hello():
     """
     logger.info("API hello endpoint accessed")
     return {
-        "message": "Hello from the backend!",
+        "message": "How is the weather from the backend!",
         "status": "success",
         "service": "FastAPI Backend"
     }

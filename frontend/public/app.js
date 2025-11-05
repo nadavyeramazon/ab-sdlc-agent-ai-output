@@ -37,5 +37,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Display initial message
-    responseBox.innerHTML = '<div style="color: #a8e6a1;">👆 Click the button above to fetch data from the backend service!</div>';
+    responseBox.innerHTML = '<div style="color: #e1bee7;">👆 Click the button above to fetch data from the backend service!</div>';
 });
