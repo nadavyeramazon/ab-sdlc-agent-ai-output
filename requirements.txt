@@ -1,0 +1,2 @@
+# No external dependencies required for this simple Hello World application
+# Python standard library is sufficient
