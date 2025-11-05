@@ -1,78 +1,49 @@
-import os
-import httpx
-from fastapi import FastAPI, HTTPException
+# main.py
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from dotenv import load_dotenv
+import uvicorn
 
-load_dotenv()
 
-app = FastAPI(title="AB SDLC Agent AI Backend")
+def create_app() -> FastAPI:
+    """Create and configure FastAPI application."""
+    app = FastAPI(
+        title="Backend API",
+        description="Backend API Service",
+        version="1.0.0",
+    )
 
-# CORS
-origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    # Configure CORS
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
-class GenerateRequest(BaseModel):
-    repo: str
-    branch: str
-    requirements: str
+    return app
 
-class GenerateResponse(BaseModel):
-    status: str
-    message: str
-    files_changed: list[str] = []
 
-@app.get("/")
-def root():
-    return {"status": "ok", "message": "AB SDLC Agent AI Backend"}
+app = create_app()
 
-@app.get("/health")
-def health():
+
+@app.get("/", tags=["General"])
+async def root() -> dict[str, str]:
+    """Root endpoint returning a welcome message."""
+    return {"message": "Hello World from Backend"}
+
+
+@app.get("/health", tags=["Health"])
+async def health() -> dict[str, str]:
+    """Health check endpoint."""
     return {"status": "healthy"}
 
-@app.post("/generate", response_model=GenerateResponse)
-async def generate(request: GenerateRequest):
-    """Generate code based on requirements"""
-    
-    # Validate inputs
-    if not request.repo or not request.branch or not request.requirements:
-        raise HTTPException(status_code=400, detail="repo, branch, and requirements are required")
-    
-    # Call LLM service (Claude via Bedrock or OpenAI)
-    llm_url = os.getenv("LLM_SERVICE_URL", "http://localhost:8001/generate")
-    
-    try:
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            response = await client.post(
-                llm_url,
-                json={
-                    "repo": request.repo,
-                    "branch": request.branch,
-                    "requirements": request.requirements
-                }
-            )
-            response.raise_for_status()
-            data = response.json()
-            
-            return GenerateResponse(
-                status="success",
-                message=data.get("message", "Code generated successfully"),
-                files_changed=data.get("files_changed", [])
-            )
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=500, detail=f"LLM service error: {str(e)}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
 
 if __name__ == "__main__":
-    import uvicorn
-    port = int(os.getenv("PORT", "8000"))
-    host = os.getenv("HOST", "0.0.0.0")
-    uvicorn.run(app, host=host, port=port)
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        log_level="info",
+    )
