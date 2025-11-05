@@ -8,10 +8,14 @@ services:
     container_name: fastapi-backend
     ports:
       - "8000:8000"
+    environment:
+      - ALLOWED_ORIGINS=http://localhost:3000,http://frontend:3000
+      - LOG_LEVEL=INFO
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      # Using python to check health since curl is not available in python:3.11-slim
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -27,12 +31,14 @@ services:
       - "3000:3000"
     environment:
       - BACKEND_URL=http://backend:8000
+      - NODE_ENV=production
     depends_on:
       - backend
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      # Using node to check health since wget is not available in node:18-alpine
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => { process.exit(1); });"]
       interval: 30s
       timeout: 10s
       retries: 3
