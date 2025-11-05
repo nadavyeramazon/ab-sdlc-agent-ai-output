@@ -19,7 +19,7 @@ class TestRootEndpoint:
         response = client.get("/")
         assert response.status_code == 200
         data = response.json()
-        assert data["message"] == "Hello World from Backend!"
+        assert data["message"] == "Howdy! from Backend!"
         assert data["service"] == "backend"
         assert data["status"] == "running"
 

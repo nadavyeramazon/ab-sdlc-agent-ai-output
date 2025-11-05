@@ -88,7 +88,7 @@ describe('Frontend Server Tests', () => {
 
         test('GET /api/backend-data should return success when backend is available', async () => {
             const mockBackendResponse = {
-                message: 'Hello World from Backend!',
+                message: 'Howdy! from Backend!',
                 service: 'backend',
                 status: 'running'
             };
