@@ -32,8 +32,8 @@ def main():
     for name in names:
         print(greet(name))
     
-    # Fixed: Changed semicolon to colon
-    if True:
+    # This condition checks if we should print additional output
+    if True;
         print("This line will cause a syntax error!")
 
 
