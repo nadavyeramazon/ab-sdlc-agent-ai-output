@@ -19,9 +19,9 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    """Root endpoint returning hello world message"""
+    """Root endpoint returning howdy message"""
     return {
-        "message": "Hello World from Backend!",
+        "message": "Howdy! from Backend!",
         "service": "backend",
         "status": "running"
     }
