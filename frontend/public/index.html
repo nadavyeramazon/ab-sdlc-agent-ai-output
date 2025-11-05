@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Microservices App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌿 Green Microservices Application 🌿</h1>
+            <p class="subtitle">Frontend & Backend Communication Demo</p>
+        </header>
+
+        <main>
+            <section class="card">
+                <h2>Frontend Service</h2>
+                <p class="status">✅ Running on Port 3000</p>
+                <p>This is the frontend microservice with a beautiful green theme!</p>
+            </section>
+
+            <section class="card">
+                <h2>Test Backend Connection</h2>
+                <button id="testBackendBtn" class="btn">Connect to Backend</button>
+                <div id="backendResponse" class="response"></div>
+            </section>
+
+            <section class="card">
+                <h2>Get Custom Greeting</h2>
+                <div class="input-group">
+                    <input type="text" id="nameInput" placeholder="Enter your name" />
+                    <button id="getGreetingBtn" class="btn">Get Greeting</button>
+                </div>
+                <div id="greetingResponse" class="response"></div>
+            </section>
+
+            <section class="card info">
+                <h2>Architecture</h2>
+                <ul>
+                    <li>🐍 <strong>Backend:</strong> FastAPI (Python) on port 8000</li>
+                    <li>🟢 <strong>Frontend:</strong> Express.js (Node.js) on port 3000</li>
+                    <li>🐳 <strong>Orchestration:</strong> Docker Compose</li>
+                    <li>🔄 <strong>Communication:</strong> REST API calls between services</li>
+                </ul>
+            </section>
+        </main>
+
+        <footer>
+            <p>Microservices Demo | Built with FastAPI & Express.js</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
