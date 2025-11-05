@@ -32,8 +32,8 @@ def main():
     for name in names:
         print(greet(name))
     
-    # A subtle hidden syntax error - using a semicolon instead of colon
-    if True;
+    # Fixed: Changed semicolon to colon
+    if True:
         print("This line will cause a syntax error!")
 
 
