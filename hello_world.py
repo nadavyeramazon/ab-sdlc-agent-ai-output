@@ -33,7 +33,7 @@ def main():
         print(greet(name))
     
     # This condition checks if we should print additional output
-    if True;
+    if True:
         print("This line will cause a syntax error!")
 
 
