@@ -10,12 +10,16 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=info
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 40s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    volumes:
+      - backend_logs:/app/logs
     networks:
       - greeting-network
 
@@ -29,6 +33,13 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - greeting-network
 
@@ -36,7 +47,11 @@ networks:
   greeting-network:
     driver: bridge
 
-# Optional: Add volumes for development
-# volumes:
-#   backend_data:
-#   frontend_data:
+volumes:
+  backend_logs:
+    driver: local
+
+# Environment variables for development
+# Create a .env file in the root directory with:
+# LOG_LEVEL=debug
+# API_BASE_URL=http://localhost:8000
