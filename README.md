@@ -1,169 +1,299 @@
-# Microservices Application - FastAPI + JavaScript
+# Green-Themed Greeting Application
 
-A simple microservices application demonstrating communication between a FastAPI backend and a JavaScript frontend using Docker Compose.
+A full-stack web application featuring a beautiful green-themed frontend and a FastAPI Python backend that greets users based on their input.
 
-## Architecture
+## 🌿 Project Overview
 
-This project consists of two microservices:
+This project consists of two main components:
 
-1. **Backend** - FastAPI Python application
-   - Provides REST API endpoints
-   - Runs on port 8000
-   - Location: `./backend`
+1. **Backend**: FastAPI-based REST API that provides personalized greeting functionality
+2. **Frontend**: Green-themed web interface with smooth animations and responsive design
 
-2. **Frontend** - JavaScript application with green theme
-   - Static web application served by Nginx
-   - Communicates with backend via REST API
-   - Runs on port 3000 (mapped to port 80 in container)
-   - Location: `./frontend`
+## ✨ Features
 
-## Prerequisites
+### Frontend
+- 🌱 Beautiful green color scheme throughout the UI
+- 👋 Interactive greeting interface
+- 📱 Fully responsive design (mobile, tablet, desktop)
+- ✨ Smooth animations and transitions
+- ⚡ Real-time input validation
+- 🔄 Comprehensive error handling
 
-- Docker
-- Docker Compose
+### Backend
+- 🚀 Fast and modern FastAPI framework
+- 🔒 Type-safe with Pydantic validation
+- 📝 Auto-generated API documentation
+- ✅ Health check endpoints
+- 🔄 CORS support for frontend integration
 
-## Quick Start
+## 🛠️ Tech Stack
 
-### Using Docker Compose (Recommended)
+**Backend:**
+- Python 3.8+
+- FastAPI
+- Uvicorn
+- Pydantic
 
-1. Clone the repository:
+**Frontend:**
+- HTML5
+- CSS3 (with CSS Variables and Animations)
+- Vanilla JavaScript
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Python 3.8 or higher
+- pip (Python package manager)
+- A modern web browser
+
+### 1. Clone the Repository
+
 ```bash
-git clone <repository-url>
+git clone https://github.com/nadavyeramazon/ab-sdlc-agent-ai-backend.git
 cd ab-sdlc-agent-ai-backend
 ```
 
-2. Start all services:
+### 2. Set Up the Backend
+
 ```bash
-docker-compose up --build
+cd backend
+
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# On Windows:
+venv\Scripts\activate
+# On macOS/Linux:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the backend
+python main.py
 ```
 
-3. Access the applications:
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000
-   - API Documentation: http://localhost:8000/docs
+The backend will start at `http://localhost:8000`
 
-4. Stop all services:
+### 3. Set Up the Frontend
+
+```bash
+# In a new terminal, navigate to frontend folder
+cd frontend
+
+# Option 1: Open directly in browser
+# Simply open index.html in your web browser
+
+# Option 2: Use a local server (recommended)
+python -m http.server 3000
+# Then open http://localhost:3000 in your browser
+```
+
+### 4. Use the Application
+
+1. Open the frontend in your browser (http://localhost:3000 or open index.html)
+2. Enter your name in the input field
+3. Click "Greet Me!" or press Enter
+4. Enjoy your personalized green-themed greeting!
+
+## 📚 API Documentation
+
+Once the backend is running, you can access:
+
+- Interactive API docs (Swagger): `http://localhost:8000/docs`
+- Alternative API docs (ReDoc): `http://localhost:8000/redoc`
+
+### Available Endpoints
+
+#### GET `/`
+Welcome message
+
+#### GET `/health`
+Health check endpoint
+
+#### POST `/greet`
+Greet a user based on their name
+
+**Request:**
+```json
+{
+  "name": "John"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Hello, John! Welcome to our green-themed greeting service. Have a wonderful day!"
+}
+```
+
+## 📁 Project Structure
+
+```
+ab-sdlc-agent-ai-backend/
+├── backend/
+│   ├── main.py              # FastAPI application
+│   ├── requirements.txt     # Python dependencies
+│   ├── Dockerfile           # Docker configuration
+│   └── README.md            # Backend documentation
+│
+├── frontend/
+│   ├── index.html           # Main HTML file
+│   ├── styles.css           # Green-themed styling
+│   ├── app.js               # JavaScript functionality
+│   ├── Dockerfile           # Docker configuration
+│   ├── nginx.conf           # Nginx configuration
+│   └── README.md            # Frontend documentation
+│
+├── docker-compose.yml    # Docker Compose configuration
+├── .env.example          # Environment variables example
+├── .gitignore            # Git ignore file
+├── LICENSE               # License file
+└── README.md             # This file
+```
+
+## 🐳 Docker Support
+
+You can run the entire application using Docker Compose:
+
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Access the application:
+# Frontend: http://localhost:3000
+# Backend: http://localhost:8000
+# API Docs: http://localhost:8000/docs
+```
+
+To stop the services:
+
 ```bash
 docker-compose down
 ```
 
-### Running Services Individually
+## 🎨 Color Palette
 
-#### Backend
+The green theme uses the following colors:
+
+- **Primary Green**: `#2d5f2e` - Main brand color
+- **Secondary Green**: `#4a7c4e` - Accent color
+- **Light Green**: `#7cb87f` - Borders and highlights
+- **Very Light Green**: `#a8d5aa` - Backgrounds
+- **Pale Green**: `#e8f5e9` - Light backgrounds
+- **Dark Green**: `#1b3a1c` - Text on light backgrounds
+- **Accent Green**: `#76c776` - Interactive elements
+
+## ⚙️ Configuration
+
+### Backend Configuration
+
+Set environment variables:
+
 ```bash
-cd backend
-pip install -r requirements.txt
+# Port configuration
+export PORT=8000
+
+# Then run
 python main.py
 ```
 
-#### Frontend
-```bash
-cd frontend
-# Open index.html in a browser or use a simple HTTP server
-python -m http.server 3000
+### Frontend Configuration
+
+Update the API URL in `frontend/app.js` if your backend runs on a different address:
+
+```javascript
+const API_URL = 'http://your-backend-url:port';
 ```
 
-## API Endpoints
+## 🧪 Testing
 
-### Backend Endpoints
-
-- `GET /` - Root endpoint with hello world message
-- `GET /api/hello` - API endpoint that returns a JSON response for the frontend
-- `GET /health` - Health check endpoint
-- `GET /docs` - Interactive API documentation (Swagger UI)
-
-## Features
-
-### Backend
-- FastAPI framework for high performance
-- CORS enabled for frontend communication
-- RESTful API design
-- Health check endpoint
-- Auto-generated API documentation
-
-### Frontend
-- Modern, responsive design
-- Green-themed UI
-- Async/await for API calls
-- Error handling and loading states
-- Containerized with Nginx
-
-### Docker & Orchestration
-- Multi-container setup with Docker Compose
-- Isolated network for service communication
-- Health checks for backend service
-- Volume mounting for development
-- Easy one-command deployment
-
-## Project Structure
-
-```
-.
-├── backend/
-│   ├── main.py              # FastAPI application
-│   ├── requirements.txt     # Python dependencies
-│   ├── Dockerfile          # Backend container configuration
-│   ├── .dockerignore       # Docker ignore file
-│   └── README.md           # Backend documentation
-├── frontend/
-│   ├── index.html          # Main HTML file
-│   ├── styles.css          # Styling (green theme)
-│   ├── app.js              # JavaScript application logic
-│   ├── nginx.conf          # Nginx configuration
-│   ├── Dockerfile          # Frontend container configuration
-│   └── README.md           # Frontend documentation
-├── docker-compose.yml      # Docker Compose configuration
-├── README.md              # This file
-└── LICENSE                # License file
-```
-
-## Development
-
-### Making Changes
-
-1. Make your changes to the backend or frontend code
-2. Rebuild and restart the services:
-```bash
-docker-compose up --build
-```
-
-### Viewing Logs
+### Test the Backend
 
 ```bash
-# All services
-docker-compose logs -f
+# Health check
+curl http://localhost:8000/health
 
-# Specific service
-docker-compose logs -f backend
-docker-compose logs -f frontend
+# Test greeting endpoint
+curl -X POST http://localhost:8000/greet \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Alice"}'
 ```
 
-### Debugging
+### Test the Frontend
 
-#### Check service status
+1. Open the application in your browser
+2. Try entering different names
+3. Test with an empty name
+4. Try stopping the backend to see error handling
+
+## 🛠️ Development
+
+### Backend Development
+
 ```bash
-docker-compose ps
+cd backend
+
+# Run with auto-reload
+uvicorn main:app --reload
 ```
 
-#### Execute commands in containers
+### Frontend Development
+
+Simply edit the HTML, CSS, or JavaScript files and refresh your browser.
+
+## 🐛 Troubleshooting
+
+### Backend Issues
+
+**Port already in use:**
 ```bash
-# Backend
-docker-compose exec backend bash
-
-# Frontend
-docker-compose exec frontend sh
+# Use a different port
+PORT=8001 python main.py
 ```
 
-## Technology Stack
+**Module not found:**
+```bash
+# Reinstall dependencies
+pip install -r requirements.txt
+```
 
-- **Backend**: Python 3.11, FastAPI, Uvicorn
-- **Frontend**: HTML5, CSS3, JavaScript (ES6+), Nginx
-- **Containerization**: Docker, Docker Compose
+### Frontend Issues
 
-## License
+**Can't connect to backend:**
+1. Ensure backend is running on http://localhost:8000
+2. Check the browser console for errors
+3. Verify the API_URL in app.js is correct
 
-See LICENSE file for details.
+**CORS errors:**
+1. Make sure backend CORS middleware is configured
+2. Use a local server instead of opening HTML directly
 
-## Contributing
+## 🤝 Contributing
 
-Feel free to submit issues and pull requests.
+Contributions are welcome! Feel free to:
+
+- Report bugs
+- Suggest new features
+- Submit pull requests
+- Improve documentation
+
+## 📝 License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+## 👥 Authors
+
+- Initial work - [nadavyeramazon](https://github.com/nadavyeramazon)
+
+## 🙏 Acknowledgments
+
+- FastAPI for the excellent Python web framework
+- The open-source community for inspiration
+
+---
+
+**Enjoy your green-themed greeting experience! 🌿👋**
