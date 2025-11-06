@@ -8,40 +8,46 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🌿 Green Greeting App 🌿</h1>
-            <p class="subtitle">Welcome to our eco-friendly greeting service</p>
-        </div>
+        <header>
+            <h1>🌿 Welcome to Green Greetings 🌿</h1>
+            <p class="subtitle">Enter your name to receive a personalized greeting!</p>
+        </header>
         
-        <div class="card">
-            <form id="greetingForm">
-                <div class="form-group">
-                    <label for="nameInput">Enter Your Name:</label>
+        <main>
+            <form id="greetingForm" class="greeting-form">
+                <div class="input-group">
                     <input 
                         type="text" 
                         id="nameInput" 
-                        placeholder="Type your name here..."
+                        placeholder="Enter your name" 
+                        maxlength="100"
                         required
+                        autocomplete="off"
                     >
+                    <button type="submit" class="submit-btn">Greet Me!</button>
                 </div>
-                <button type="submit" class="btn-primary">
-                    Get Greeting
-                </button>
             </form>
-        </div>
-
-        <div id="responseArea" class="response-area" style="display: none;">
-            <div class="response-card">
-                <h2>Greeting:</h2>
-                <p id="greetingMessage" class="greeting-message"></p>
+            
+            <div id="responseArea" class="response-area" style="display: none;">
+                <div class="greeting-card">
+                    <p id="greetingMessage" class="greeting-text"></p>
+                </div>
             </div>
-        </div>
-
-        <div id="errorArea" class="error-area" style="display: none;">
-            <p id="errorMessage" class="error-message"></p>
-        </div>
+            
+            <div id="errorArea" class="error-area" style="display: none;">
+                <div class="error-card">
+                    <p id="errorMessage" class="error-text"></p>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Built with 💚 using FastAPI and vanilla JavaScript</p>
+        </footer>
     </div>
-
+    
+    <!-- Load configuration first -->
+    <script src="config.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

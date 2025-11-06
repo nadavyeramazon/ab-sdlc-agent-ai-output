@@ -1,5 +1,5 @@
-// Configuration
-const API_URL = 'http://localhost:8000';
+// Configuration - Use environment variable or fallback to relative API path
+const API_URL = window.API_URL || '/api';
 
 // Get DOM elements
 const greetingForm = document.getElementById('greetingForm');
@@ -34,7 +34,9 @@ greetingForm.addEventListener('submit', async (e) => {
         });
         
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorData = await response.json().catch(() => ({}));
+            const errorMsg = errorData.detail || `HTTP error! status: ${response.status}`;
+            throw new Error(errorMsg);
         }
         
         const data = await response.json();
@@ -42,7 +44,17 @@ greetingForm.addEventListener('submit', async (e) => {
         
     } catch (error) {
         console.error('Error:', error);
-        showError('Failed to connect to the server. Please make sure the backend is running.');
+        let errorMsg = 'Failed to connect to the server. Please make sure the backend is running.';
+        
+        if (error.message.includes('422')) {
+            errorMsg = 'Invalid input. Please check your name and try again.';
+        } else if (error.message.includes('500')) {
+            errorMsg = 'Server error. Please try again later.';
+        } else if (error.message && !error.message.includes('Failed to fetch')) {
+            errorMsg = error.message;
+        }
+        
+        showError(errorMsg);
     }
 });
 
@@ -64,11 +76,6 @@ function showError(message) {
 function hideMessages() {
     responseArea.style.display = 'none';
     errorArea.style.display = 'none';
-}
-
-// Clear input on successful greeting
-function clearInput() {
-    nameInput.value = '';
 }
 
 // Add some visual feedback on input

@@ -1,40 +1,33 @@
 # Green Greeting Application
 
-A full-stack application with a green-themed frontend and a FastAPI backend that greets users.
+A full-stack web application with a beautiful green-themed UI that greets users by name. Built with FastAPI backend and vanilla JavaScript frontend, containerized with Docker.
 
 ## Features
 
-- **Frontend**: Green-themed JavaScript UI with smooth animations
-- **Backend**: FastAPI application that greets users by name
-- **Containerized**: Both services run in Docker containers
-- **Docker Compose**: Easy orchestration of frontend and backend services
+- 🌿 Beautiful green-themed user interface
+- ✅ Comprehensive input validation and sanitization
+- 🔒 Secure CORS configuration
+- 🧪 Full test coverage for backend and frontend
+- 🐳 Docker containerization with health checks
+- 📊 API proxy configuration for production deployments
+- 🎨 Responsive design with smooth animations
 
-## Project Structure
+## Architecture
 
-```
-.
-├── backend/
-│   ├── main.py           # FastAPI application
-│   ├── requirements.txt  # Python dependencies
-│   └── Dockerfile        # Backend Docker configuration
-├── frontend/
-│   ├── index.html        # Main HTML file
-│   ├── styles.css        # Green-themed CSS styles
-│   ├── app.js           # JavaScript application logic
-│   ├── nginx.conf       # Nginx configuration
-│   └── Dockerfile       # Frontend Docker configuration
-├── docker-compose.yml    # Docker Compose configuration
-└── README.md            # This file
-```
-
-## Prerequisites
-
-- Docker
-- Docker Compose
+- **Backend**: FastAPI (Python) - RESTful API with validation
+- **Frontend**: Vanilla JavaScript with HTML/CSS
+- **Reverse Proxy**: Nginx for serving static files and API proxying
+- **Containerization**: Docker and Docker Compose
 
 ## Getting Started
 
-### Using Docker Compose (Recommended)
+### Prerequisites
+
+- Docker and Docker Compose installed
+- Python 3.11+ (for local development)
+- Node.js (optional, for frontend testing)
+
+### Running with Docker Compose
 
 1. Clone the repository:
 ```bash
@@ -48,126 +41,177 @@ docker-compose up --build
 ```
 
 3. Access the application:
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000
-   - API Documentation: http://localhost:8000/docs
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
 
-4. Stop the application:
-```bash
-docker-compose down
-```
+### Running Tests
 
-### Running Locally (Without Docker)
+#### Backend Tests
 
-#### Backend
-
-1. Navigate to the backend directory:
 ```bash
 cd backend
-```
-
-2. Install dependencies:
-```bash
 pip install -r requirements.txt
+pytest
+
+# With coverage report
+pytest --cov=. --cov-report=html
 ```
 
-3. Run the FastAPI server:
-```bash
-uvicorn main:app --reload
-```
+#### Frontend Tests
 
-The backend will be available at http://localhost:8000
-
-#### Frontend
-
-1. Navigate to the frontend directory:
 ```bash
 cd frontend
-```
+npm install
+npm test
 
-2. Serve the files using any static file server. For example, with Python:
-```bash
-python -m http.server 3000
+# With coverage
+npm run test:coverage
 ```
-
-The frontend will be available at http://localhost:3000
 
 ## API Endpoints
 
-### POST /greet
-Greets a user by name.
+### GET /
+Returns welcome message and API version.
 
-**Request Body:**
+**Response:**
 ```json
 {
-  "name": "John"
+  "message": "Welcome to the Greeting API",
+  "version": "1.0.0"
+}
+```
+
+### POST /greet
+Greets a user by name with validation.
+
+**Request:**
+```json
+{
+  "name": "Alice"
 }
 ```
 
 **Response:**
 ```json
 {
-  "message": "Hello, John! Welcome to our green-themed application! 🌿"
+  "message": "Hello, Alice! Welcome to our green-themed application! 🌿"
 }
 ```
+
+**Validation Rules:**
+- Name must be 1-100 characters
+- Only alphanumeric characters, spaces, hyphens, and apostrophes allowed
+- Leading/trailing whitespace is trimmed
+- Empty or whitespace-only names are rejected
 
 ### GET /health
-Health check endpoint.
+Health check endpoint for container orchestration.
 
 **Response:**
 ```json
 {
-  "status": "healthy"
+  "status": "healthy",
+  "service": "greeting-api"
 }
 ```
 
-## Features
+## Configuration
 
-### Frontend
-- Beautiful green gradient background
-- Smooth animations and transitions
-- Responsive design for mobile and desktop
-- Form validation
-- Error handling with user-friendly messages
-- Clean and modern UI
+### Backend Environment Variables
 
-### Backend
-- RESTful API with FastAPI
-- CORS enabled for frontend communication
-- Input validation with Pydantic
-- Health check endpoint
-- Automatic API documentation (Swagger UI)
+- `ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins (default: `http://localhost:3000,http://localhost:8080`)
+- `PYTHONUNBUFFERED`: Set to 1 for real-time logging
 
-## Technology Stack
+### Frontend Configuration
 
-- **Frontend**: HTML5, CSS3, Vanilla JavaScript, Nginx
-- **Backend**: Python, FastAPI, Uvicorn
-- **Containerization**: Docker, Docker Compose
+The frontend automatically detects the environment:
+- **Local development**: Uses `http://localhost:8000` for API calls
+- **Production/Docker**: Uses `/api` proxy path configured in nginx
+
+## Security Features
+
+1. **Input Validation**: Comprehensive validation with Pydantic models
+2. **CORS Configuration**: Restricted to specific allowed origins
+3. **Input Sanitization**: Prevents XSS and injection attacks
+4. **Length Limits**: Prevents buffer overflow attacks
+5. **Error Logging**: Detailed logging without exposing sensitive information
+
+## Test Coverage
+
+### Backend Tests
+- ✅ Root endpoint functionality
+- ✅ Greeting endpoint with valid inputs
+- ✅ Input validation (empty, whitespace, length, special characters)
+- ✅ Health check endpoint
+- ✅ CORS configuration
+- ✅ Error handling
+
+### Frontend Tests
+- ✅ API configuration for different environments
+- ✅ Input validation logic
+- ✅ Message display functions
+- ✅ API call construction
+- ✅ Error handling scenarios
+- ✅ Form submission flow
+- ✅ Response parsing
 
 ## Development
 
-### Backend Development
-
-The FastAPI backend includes automatic reload during development. Any changes to `main.py` will automatically restart the server.
-
-### Frontend Development
-
-For frontend changes, simply modify the HTML, CSS, or JavaScript files. If using Docker, rebuild the frontend container:
+### Local Backend Development
 
 ```bash
-docker-compose up --build frontend
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload
 ```
+
+### Local Frontend Development
+
+Open `frontend/index.html` in a browser, or use a local server:
+
+```bash
+cd frontend
+python -m http.server 8080
+```
+
+## Docker Health Checks
+
+The backend container includes a Python-based health check that doesn't require curl:
+- Checks every 30 seconds
+- 10-second timeout
+- 3 retries before marking unhealthy
+- 40-second startup grace period
 
 ## Troubleshooting
 
-### Backend not accessible from frontend
+### Backend not responding
+- Check if the container is running: `docker ps`
+- View logs: `docker-compose logs backend`
+- Ensure port 8000 is not in use
 
-Make sure both services are running and connected to the same Docker network. The docker-compose.yml file handles this automatically.
+### Frontend can't connect to backend
+- Verify both containers are on the same network
+- Check nginx configuration for API proxy
+- Ensure CORS origins are properly configured
 
-### CORS errors
-
-The backend is configured to allow all origins in development. For production, update the `allow_origins` in `backend/main.py` to specific domains.
+### Tests failing
+- Ensure all dependencies are installed
+- Check Python/Node.js versions
+- Review test output for specific failures
 
 ## License
 
-See LICENSE file for details.
+MIT License - see LICENSE file for details
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new functionality
+4. Ensure all tests pass
+5. Submit a pull request
+
+## Support
+
+For issues and questions, please open an issue on GitHub.
