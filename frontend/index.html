@@ -3,82 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Frontend - Item Manager</title>
+    <title>Item Management System</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="error-styles.css">
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>📋 Simple Item Manager</h1>
-            <p>Manage your items with this simple green-themed interface</p>
+        <header class="header">
+            <h1 class="title">🌿 Item Management System</h1>
+            <p class="subtitle">Manage your items with our green-themed interface</p>
         </header>
 
-        <div class="status-bar">
-            <div id="status" class="status-indicator offline">
-                <span class="status-dot"></span>
-                <span class="status-text">Checking connection...</span>
-            </div>
-        </div>
+        <main class="main-content">
+            <!-- Add/Edit Item Form -->
+            <section class="form-section">
+                <h2 class="section-title">Add New Item</h2>
+                <form id="item-form" class="item-form" data-mode="add">
+                    <div class="form-group">
+                        <label for="name">Item Name *</label>
+                        <input type="text" id="name" name="name" required maxlength="100" placeholder="Enter item name">
+                        <div class="char-counter" data-target="name">0 / 100</div>
+                    </div>
 
-        <div class="main-content">
-            <!-- Add Item Form -->
-            <section class="add-item-section">
-                <h2>➕ Add New Item</h2>
-                <form id="addItemForm" class="form-container">
                     <div class="form-group">
-                        <label for="itemName">Item Name:</label>
-                        <input type="text" id="itemName" name="name" placeholder="Enter item name" required>
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" rows="3" maxlength="500" placeholder="Enter item description (optional)"></textarea>
+                        <div class="char-counter" data-target="description">0 / 500</div>
                     </div>
-                    <div class="form-group">
-                        <label for="itemDescription">Description:</label>
-                        <textarea id="itemDescription" name="description" placeholder="Enter item description" required rows="3"></textarea>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="price">Price ($) *</label>
+                            <input type="number" id="price" name="price" step="0.01" min="0" max="999999.99" required placeholder="0.00">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="category">Category *</label>
+                            <select id="category" name="category" required>
+                                <option value="">Select a category</option>
+                                <option value="electronics">Electronics</option>
+                                <option value="clothing">Clothing</option>
+                                <option value="food">Food</option>
+                                <option value="books">Books</option>
+                                <option value="home">Home</option>
+                                <option value="sports">Sports</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Add Item</button>
+
+                    <div class="form-actions">
+                        <button type="submit" id="submit-btn" class="btn btn-primary">Add Item</button>
+                        <button type="button" id="cancel-btn" class="btn btn-secondary" onclick="cancelEdit()" style="display: none;">Cancel</button>
+                    </div>
                 </form>
             </section>
 
-            <!-- Items List -->
+            <!-- Items Display Section -->
             <section class="items-section">
-                <h2>📝 Items List</h2>
-                <div class="items-controls">
-                    <button id="refreshBtn" class="btn btn-secondary">🔄 Refresh</button>
-                    <span id="itemCount" class="item-count">0 items</span>
+                <div class="section-header">
+                    <h2 class="section-title">Your Items</h2>
+                    <button onclick="loadItems()" class="btn btn-refresh" title="Refresh items">
+                        <span class="refresh-icon">🔄</span> Refresh
+                    </button>
                 </div>
-                <div id="itemsList" class="items-list">
-                    <div class="loading">Loading items...</div>
+                <div id="items-container" class="items-container">
+                    <!-- Items will be loaded here -->
+                    <div class="loading-placeholder">
+                        <div class="loading-spinner"></div>
+                        <p>Loading items...</p>
+                    </div>
                 </div>
             </section>
-        </div>
+        </main>
 
-        <!-- Edit Item Modal -->
-        <div id="editModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>✏️ Edit Item</h3>
-                    <span class="close">&times;</span>
-                </div>
-                <form id="editItemForm">
-                    <div class="form-group">
-                        <label for="editItemName">Item Name:</label>
-                        <input type="text" id="editItemName" name="name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="editItemDescription">Description:</label>
-                        <textarea id="editItemDescription" name="description" required rows="3"></textarea>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" id="cancelEdit">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Update Item</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <footer>
-            <p>Simple Frontend with Green UI | Connected to FastAPI Backend</p>
+        <footer class="footer">
+            <p>&copy; 2024 Item Management System. Built with FastAPI and vanilla JavaScript.</p>
         </footer>
     </div>
 
     <script src="script.js"></script>
+    <script>
+        // Character counter functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('input[maxlength], textarea[maxlength]');
+            
+            inputs.forEach(input => {
+                const counter = document.querySelector(`.char-counter[data-target="${input.id}"]`);
+                if (counter) {
+                    const maxLength = parseInt(input.getAttribute('maxlength'));
+                    
+                    function updateCounter() {
+                        const currentLength = input.value.length;
+                        counter.textContent = `${currentLength} / ${maxLength}`;
+                        
+                        // Color coding
+                        counter.classList.remove('warning', 'error');
+                        if (currentLength > maxLength * 0.8) {
+                            counter.classList.add('warning');
+                        }
+                        if (currentLength > maxLength * 0.95) {
+                            counter.classList.add('error');
+                        }
+                    }
+                    
+                    input.addEventListener('input', updateCounter);
+                    updateCounter(); // Initial call
+                }
+            });
+        });
+    </script>
 </body>
 </html>
