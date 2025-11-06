@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Frontend Application</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Green Frontend Application</h1>
+        <div class="card">
+            <h2>Hello World Microservices Demo</h2>
+            <p>This frontend communicates with the FastAPI backend via REST API.</p>
+            
+            <div class="button-container">
+                <button id="fetchBtn" class="btn">Fetch Message from Backend</button>
+            </div>
+            
+            <div id="response" class="response-box" style="display: none;">
+                <h3>Backend Response:</h3>
+                <pre id="responseContent"></pre>
+            </div>
+            
+            <div id="error" class="error-box" style="display: none;">
+                <h3>Error:</h3>
+                <p id="errorContent"></p>
+            </div>
+        </div>
+        
+        <div class="info-card">
+            <h3>About This Application</h3>
+            <ul>
+                <li>Frontend: JavaScript + HTML + CSS</li>
+                <li>Backend: FastAPI (Python)</li>
+                <li>Communication: REST API</li>
+                <li>Container: Docker Compose</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
