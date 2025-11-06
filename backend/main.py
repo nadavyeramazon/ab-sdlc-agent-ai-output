@@ -1,20 +1,20 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional
-import os
+from pydantic import BaseModel, validator
+from datetime import datetime
+import re
+import html
 
 app = FastAPI(
     title="Greeting API",
-    description="A simple API that greets users by name",
+    description="A simple greeting API with green-themed UI",
     version="1.0.0"
 )
 
-# Configure CORS
-cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+# CORS middleware for frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=["*"],  # In production, specify exact origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -22,64 +22,94 @@ app.add_middleware(
 
 class GreetingRequest(BaseModel):
     name: str
-    message: Optional[str] = None
+    
+    @validator('name')
+    def validate_name(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Name cannot be empty')
+        
+        # Remove extra whitespace
+        v = v.strip()
+        
+        # Check length (reasonable limits)
+        if len(v) < 1:
+            raise ValueError('Name must be at least 1 character long')
+        if len(v) > 100:
+            raise ValueError('Name must be less than 100 characters long')
+        
+        # Basic sanitization - allow only letters, spaces, hyphens, apostrophes
+        if not re.match(r"^[a-zA-Z\s\-\']+$", v):
+            raise ValueError('Name can only contain letters, spaces, hyphens, and apostrophes')
+        
+        # HTML escape for additional security
+        v = html.escape(v)
+        
+        return v
 
 class GreetingResponse(BaseModel):
-    greeting: str
-    name: str
+    message: str
     timestamp: str
+    name: str
 
 @app.get("/")
 async def root():
-    """Welcome endpoint"""
+    """Root endpoint providing API information"""
     return {
-        "message": "Welcome to the Greeting API!",
-        "version": "1.0.0",
+        "message": "Welcome to the Greeting API",
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
         "endpoints": {
-            "greet": "/greet (POST)",
-            "health": "/health (GET)",
-            "docs": "/docs (GET)"
+            "/greet": "POST - Send a greeting request",
+            "/health": "GET - Check API health",
+            "/docs": "GET - API documentation"
         }
     }
-
-@app.post("/greet", response_model=GreetingResponse)
-async def greet_user(request: GreetingRequest):
-    """Greet a user by name"""
-    if not request.name or request.name.strip() == "":
-        raise HTTPException(status_code=400, detail="Name cannot be empty")
-    
-    # Clean the name
-    clean_name = request.name.strip().title()
-    
-    # Create personalized greeting
-    if request.message:
-        greeting = f"Hello {clean_name}! {request.message}"
-    else:
-        greeting = f"Hello {clean_name}! Welcome to our green-themed application!"
-    
-    from datetime import datetime
-    timestamp = datetime.now().isoformat()
-    
-    return GreetingResponse(
-        greeting=greeting,
-        name=clean_name,
-        timestamp=timestamp
-    )
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "service": "greeting-api",
-        "version": "1.0.0"
+        "timestamp": datetime.now().isoformat(),
+        "service": "greeting-api"
     }
 
-@app.get("/greet/{name}")
-async def greet_user_get(name: str, message: Optional[str] = None):
-    """Alternative GET endpoint for greeting"""
-    request = GreetingRequest(name=name, message=message)
-    return await greet_user(request)
+@app.post("/greet", response_model=GreetingResponse)
+async def greet_user(request: GreetingRequest):
+    """
+    Greet a user by name with enhanced security and validation
+    """
+    try:
+        # Additional server-side validation
+        if len(request.name.strip()) == 0:
+            raise HTTPException(status_code=400, detail="Name cannot be empty")
+        
+        # Create personalized greeting
+        current_time = datetime.now()
+        hour = current_time.hour
+        
+        # Time-based greeting
+        if 5 <= hour < 12:
+            time_greeting = "Good morning"
+        elif 12 <= hour < 17:
+            time_greeting = "Good afternoon"
+        elif 17 <= hour < 22:
+            time_greeting = "Good evening"
+        else:
+            time_greeting = "Good night"
+        
+        greeting_message = f"{time_greeting}, {request.name}! Welcome to our green-themed greeting service! 🌿"
+        
+        return GreetingResponse(
+            message=greeting_message,
+            timestamp=current_time.isoformat(),
+            name=request.name
+        )
+    
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Internal server error occurred")
 
 if __name__ == "__main__":
     import uvicorn
