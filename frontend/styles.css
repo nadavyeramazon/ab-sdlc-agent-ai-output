@@ -1,0 +1,174 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1e3c2f 0%, #2d5f4a 50%, #3d8264 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 600px;
+}
+
+.card {
+    background: linear-gradient(145deg, #ffffff, #f0f7f4);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border: 3px solid #4CAF50;
+}
+
+.title {
+    color: #2d5f4a;
+    font-size: 2.5em;
+    text-align: center;
+    margin-bottom: 15px;
+    text-shadow: 2px 2px 4px rgba(76, 175, 80, 0.2);
+}
+
+.subtitle {
+    color: #3d8264;
+    text-align: center;
+    font-size: 1.1em;
+    margin-bottom: 30px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.name-input {
+    padding: 15px 20px;
+    font-size: 1.1em;
+    border: 3px solid #4CAF50;
+    border-radius: 10px;
+    background-color: #f0f7f4;
+    color: #1e3c2f;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.name-input:focus {
+    border-color: #2d5f4a;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+    background-color: white;
+}
+
+.name-input::placeholder {
+    color: #7cb992;
+}
+
+.greet-button {
+    padding: 15px 30px;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: white;
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+}
+
+.greet-button:hover {
+    background: linear-gradient(135deg, #45a049 0%, #3d8e41 100%);
+    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.6);
+    transform: translateY(-2px);
+}
+
+.greet-button:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba(76, 175, 80, 0.4);
+}
+
+.greeting-output {
+    margin-top: 30px;
+    animation: fadeIn 0.5s ease-in;
+}
+
+.greeting-card {
+    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(76, 175, 80, 0.4);
+    border: 2px solid #2d5f4a;
+}
+
+.greeting-message {
+    color: white;
+    font-size: 1.5em;
+    text-align: center;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.error-output {
+    margin-top: 20px;
+    animation: fadeIn 0.5s ease-in;
+}
+
+.error-message {
+    color: #c62828;
+    background-color: #ffebee;
+    padding: 15px;
+    border-radius: 10px;
+    border: 2px solid #ef5350;
+    text-align: center;
+}
+
+.hidden {
+    display: none;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 30px;
+    color: #e0f2e9;
+    font-size: 0.9em;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .card {
+        padding: 25px;
+    }
+    
+    .title {
+        font-size: 2em;
+    }
+    
+    .subtitle {
+        font-size: 1em;
+    }
+    
+    .name-input, .greet-button {
+        font-size: 1em;
+    }
+    
+    .greeting-message {
+        font-size: 1.2em;
+    }
+}

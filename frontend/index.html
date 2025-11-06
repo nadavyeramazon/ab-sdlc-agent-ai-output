@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greeting Application</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1 class="title">Welcome to the Greeting App</h1>
+            <p class="subtitle">Enter your name to receive a personalized greeting!</p>
+            
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="nameInput" 
+                    placeholder="Enter your name" 
+                    class="name-input"
+                />
+                <button onclick="greetUser()" class="greet-button">
+                    Greet Me!
+                </button>
+            </div>
+            
+            <div id="greetingOutput" class="greeting-output hidden">
+                <div class="greeting-card">
+                    <h2 id="greetingMessage" class="greeting-message"></h2>
+                </div>
+            </div>
+            
+            <div id="errorOutput" class="error-output hidden">
+                <p id="errorMessage" class="error-message"></p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Powered by FastAPI Backend & JavaScript Frontend</p>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
