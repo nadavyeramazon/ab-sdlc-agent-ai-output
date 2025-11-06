@@ -11,12 +11,12 @@ COPY . /usr/share/nginx/html/
 RUN chown -R nginx:nginx /usr/share/nginx/html && \
     chmod -R 755 /usr/share/nginx/html
 
-# Expose port
-EXPOSE 80
+# Expose port 3000 to match docker-compose
+EXPOSE 3000
 
-# Health check
+# Health check - use root endpoint
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost/ || exit 1
+    CMD curl -f http://localhost:3000/ || exit 1
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
