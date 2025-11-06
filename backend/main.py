@@ -4,17 +4,17 @@ from pydantic import BaseModel
 from typing import Optional
 import uvicorn
 
-# Create FastAPI instance
+# Initialize FastAPI app
 app = FastAPI(
-    title="User Greeting API",
-    description="A FastAPI application that greets users with personalized messages",
+    title="Greeting API",
+    description="A simple FastAPI application that greets users by input",
     version="1.0.0"
 )
 
-# Add CORS middleware to allow frontend to communicate with backend
+# Configure CORS to allow frontend to communicate with backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify actual origins
+    allow_origins=["*"],  # In production, replace with specific origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -23,68 +23,70 @@ app.add_middleware(
 # Pydantic models for request/response
 class GreetingRequest(BaseModel):
     name: str
-    greeting_type: Optional[str] = "Hello"
+    greeting_type: Optional[str] = "hello"
 
 class GreetingResponse(BaseModel):
     message: str
-    name: str
-    timestamp: str
+    user_name: str
+    greeting_type: str
 
+# Root endpoint
 @app.get("/")
 async def root():
-    """Root endpoint"""
-    return {"message": "Welcome to the User Greeting API! Visit /docs for API documentation."}
+    return {
+        "message": "Welcome to the Greeting API!",
+        "status": "running",
+        "version": "1.0.0"
+    }
 
+# Health check endpoint
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy", "message": "Backend service is running"}
+    return {"status": "healthy"}
 
+# Main greeting endpoint
 @app.post("/greet", response_model=GreetingResponse)
 async def greet_user(request: GreetingRequest):
-    """Greet a user with a personalized message"""
-    try:
-        if not request.name or len(request.name.strip()) == 0:
-            raise HTTPException(status_code=400, detail="Name cannot be empty")
-        
-        name = request.name.strip().title()
-        greeting_type = request.greeting_type or "Hello"
-        
-        # Create personalized greeting message
-        message = f"{greeting_type}, {name}! Welcome to our green-themed application. We're delighted to have you here!"
-        
-        # Get current timestamp
-        from datetime import datetime
-        timestamp = datetime.now().isoformat()
-        
-        return GreetingResponse(
-            message=message,
-            name=name,
-            timestamp=timestamp
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+    """
+    Greet a user by their input name with different greeting types
+    """
+    if not request.name.strip():
+        raise HTTPException(status_code=400, detail="Name cannot be empty")
+    
+    # Different greeting types
+    greetings = {
+        "hello": f"Hello, {request.name}! Welcome to our green-themed application!",
+        "hi": f"Hi there, {request.name}! Great to see you!",
+        "welcome": f"Welcome, {request.name}! We're excited to have you here!",
+        "good_morning": f"Good morning, {request.name}! Hope you have a wonderful day!",
+        "good_afternoon": f"Good afternoon, {request.name}! Hope your day is going well!",
+        "good_evening": f"Good evening, {request.name}! Hope you had a great day!"
+    }
+    
+    greeting_message = greetings.get(
+        request.greeting_type, 
+        f"Hello, {request.name}! Welcome to our application!"
+    )
+    
+    return GreetingResponse(
+        message=greeting_message,
+        user_name=request.name,
+        greeting_type=request.greeting_type
+    )
 
-@app.get("/greet/{name}")
-async def greet_user_get(name: str, greeting_type: Optional[str] = "Hello"):
-    """Greet a user via GET request (alternative endpoint)"""
-    try:
-        if not name or len(name.strip()) == 0:
-            raise HTTPException(status_code=400, detail="Name cannot be empty")
-        
-        name = name.strip().title()
-        message = f"{greeting_type}, {name}! Nice to meet you through our API!"
-        
-        from datetime import datetime
-        timestamp = datetime.now().isoformat()
-        
-        return {
-            "message": message,
-            "name": name,
-            "timestamp": timestamp
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+# Get available greeting types
+@app.get("/greeting-types")
+async def get_greeting_types():
+    return {
+        "greeting_types": [
+            {"key": "hello", "label": "Hello"},
+            {"key": "hi", "label": "Hi"},
+            {"key": "welcome", "label": "Welcome"},
+            {"key": "good_morning", "label": "Good Morning"},
+            {"key": "good_afternoon", "label": "Good Afternoon"},
+            {"key": "good_evening", "label": "Good Evening"}
+        ]
+    }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
