@@ -1,12 +1,16 @@
 version: '3.8'
 
+# Development version of docker-compose with more permissive settings
 services:
   backend:
     build: ./backend
     ports:
       - "8000:8000"
     environment:
-      - ENVIRONMENT=production
+      - ENVIRONMENT=development
+    volumes:
+      - ./backend:/app
+    command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -25,6 +29,8 @@ services:
         condition: service_healthy
     environment:
       - API_BASE_URL=http://backend:8000
+    volumes:
+      - ./frontend:/usr/share/nginx/html
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080"]
       interval: 30s
