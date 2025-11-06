@@ -1,5 +1,7 @@
-// API Configuration
-const API_BASE_URL = 'http://localhost:8000';
+// API Configuration - Updated for Docker environment
+const API_BASE_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:8000' 
+    : `http://${window.location.hostname}:8000`;
 
 // DOM Elements
 const elements = {
@@ -78,12 +80,18 @@ function resetForm() {
 // API Functions
 async function checkApiHealth() {
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+        
         const response = await fetch(`${API_BASE_URL}/health`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
         
         if (response.ok) {
             appState.apiHealthy = true;
@@ -104,7 +112,15 @@ async function checkApiHealth() {
 
 async function loadGreetingTypes() {
     try {
-        const response = await fetch(`${API_BASE_URL}/greeting-types`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch(`${API_BASE_URL}/greeting-types`, {
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
         if (response.ok) {
             const data = await response.json();
             appState.greetingTypes = data.greeting_types;
@@ -144,19 +160,25 @@ async function submitGreeting(name, greetingType) {
             greeting_type: greetingType
         };
         
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
         const response = await fetch(`${API_BASE_URL}/greet`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(requestData)
+            body: JSON.stringify(requestData),
+            signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
         
         if (response.ok) {
             const data = await response.json();
             return { success: true, data };
         } else {
-            const errorData = await response.json();
+            const errorData = await response.json().catch(() => ({}));
             return { 
                 success: false, 
                 error: errorData.detail || `Server error: ${response.status}` 
@@ -164,9 +186,17 @@ async function submitGreeting(name, greetingType) {
         }
     } catch (error) {
         console.error('Submit Greeting Error:', error);
+        
+        if (error.name === 'AbortError') {
+            return { 
+                success: false, 
+                error: 'Request timeout. Please check your connection and try again.' 
+            };
+        }
+        
         return { 
             success: false, 
-            error: 'Network error. Please check if the backend is running.' 
+            error: 'Network error. Please check if the backend is running on port 8000.' 
         };
     }
 }
@@ -261,6 +291,7 @@ function enhanceInputs() {
 // Initialization
 async function initializeApp() {
     console.log('🌱 Initializing Green Greeting App...');
+    console.log('API Base URL:', API_BASE_URL);
     
     // Set up event listeners
     elements.greetingForm.addEventListener('submit', handleFormSubmit);
@@ -288,7 +319,7 @@ async function initializeApp() {
 // Error Handling
 window.addEventListener('error', function(event) {
     console.error('Global Error:', event.error);
-    if (!elements.errorMessage.classList.contains('hidden')) {
+    if (elements.errorMessage && elements.errorMessage.classList.contains('hidden')) {
         showError('An unexpected error occurred. Please refresh the page.');
     }
 });
@@ -307,6 +338,7 @@ if (typeof window !== 'undefined') {
         appState,
         checkApiHealth,
         loadGreetingTypes,
-        submitGreeting
+        submitGreeting,
+        API_BASE_URL
     };
 }
