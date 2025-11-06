@@ -8,41 +8,86 @@
 </head>
 <body>
     <div class="container">
-        <div class="card">
-            <h1 class="title">Welcome to the Greeting App</h1>
-            <p class="subtitle">Enter your name and receive a warm greeting!</p>
-            
-            <div class="form-group">
-                <label for="nameInput">Your Name:</label>
-                <input 
-                    type="text" 
-                    id="nameInput" 
-                    placeholder="Enter your name..."
-                    autocomplete="off"
-                />
+        <header class="header">
+            <h1 class="main-title">🌿 Green Greeting App 🌿</h1>
+            <p class="subtitle">Get a personalized greeting with our beautiful green-themed interface!</p>
+        </header>
+        
+        <main class="main-content">
+            <!-- Greeting Form -->
+            <div class="greeting-form-container">
+                <form id="greetingForm" class="greeting-form">
+                    <div class="form-group">
+                        <label for="userName" class="form-label">Enter your name:</label>
+                        <input 
+                            type="text" 
+                            id="userName" 
+                            name="userName" 
+                            class="form-input" 
+                            placeholder="Type your name here..."
+                            required
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="greetingType" class="form-label">Choose a greeting style:</label>
+                        <select id="greetingType" name="greetingType" class="form-select">
+                            <option value="hello">Hello</option>
+                            <option value="hi">Hi</option>
+                            <option value="welcome">Welcome</option>
+                            <option value="good_morning">Good Morning</option>
+                            <option value="good_afternoon">Good Afternoon</option>
+                            <option value="good_evening">Good Evening</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">
+                        <span class="btn-icon">🌱</span>
+                        Get My Greeting
+                    </button>
+                </form>
             </div>
             
-            <button id="greetButton" class="btn-primary">
-                <span class="btn-text">Greet Me!</span>
-            </button>
-            
-            <div id="responseContainer" class="response-container hidden">
-                <div class="response-icon">✓</div>
-                <p id="greetingMessage" class="greeting-message"></p>
-            </div>
-            
-            <div id="errorContainer" class="error-container hidden">
-                <div class="error-icon">✗</div>
-                <p id="errorMessage" class="error-message"></p>
-            </div>
-            
-            <div class="loader hidden" id="loader">
+            <!-- Loading Spinner -->
+            <div id="loadingSpinner" class="loading-spinner hidden">
                 <div class="spinner"></div>
+                <p>Generating your greeting...</p>
             </div>
-        </div>
+            
+            <!-- Greeting Result -->
+            <div id="greetingResult" class="greeting-result hidden">
+                <div class="result-card">
+                    <div class="result-icon">✨</div>
+                    <h2 class="result-title">Your Personal Greeting</h2>
+                    <div id="greetingMessage" class="greeting-message"></div>
+                    <div class="result-details">
+                        <span id="userName"></span> • <span id="greetingType"></span>
+                    </div>
+                    <button id="newGreetingBtn" class="new-greeting-btn">
+                        Get Another Greeting
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Error Message -->
+            <div id="errorMessage" class="error-message hidden">
+                <div class="error-card">
+                    <div class="error-icon">⚠️</div>
+                    <h3>Oops! Something went wrong</h3>
+                    <p id="errorText"></p>
+                    <button id="tryAgainBtn" class="try-again-btn">
+                        Try Again
+                    </button>
+                </div>
+            </div>
+        </main>
         
         <footer class="footer">
-            <p>Powered by FastAPI & Vanilla JavaScript</p>
+            <p>🍃 Built with love and lots of green! 🍃</p>
+            <div class="api-status">
+                <span class="status-indicator" id="apiStatus"></span>
+                <span id="apiStatusText">Checking API...</span>
+            </div>
         </footer>
     </div>
     
