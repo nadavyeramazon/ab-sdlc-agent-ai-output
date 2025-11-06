@@ -1,9 +1,8 @@
 version: '3.8'
 
 services:
-  # Backend FastAPI Application
   backend:
-    build:
+    build: 
       context: ./backend
       dockerfile: Dockerfile
     container_name: greeting-backend
@@ -11,48 +10,71 @@ services:
       - "8000:8000"
     environment:
       - PYTHONPATH=/app
-      - ENVIRONMENT=development
-    volumes:
-      - ./backend:/app
-      - backend_cache:/root/.cache
-    networks:
-      - greeting-network
-    restart: unless-stopped
+      - ADDITIONAL_CORS_ORIGINS=http://localhost:8080,http://frontend:8080
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    depends_on: []
+    networks:
+      - app-network
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: false  # Set to true if app doesn't need write access
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev
 
-  # Frontend Static Web Application
   frontend:
-    build:
+    build: 
       context: ./frontend
       dockerfile: Dockerfile
     container_name: greeting-frontend
     ports:
-      - "3000:80"
-    volumes:
-      - ./frontend:/usr/share/nginx/html:ro
-    networks:
-      - greeting-network
-    restart: unless-stopped
+      - "8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health", "||", "exit", "1"]
       interval: 30s
-      timeout: 3s
+      timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 30s
+    networks:
+      - app-network
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:rw,noexec,nosuid,nodev
+      - /var/run:rw,noexec,nosuid,nodev
+
+  # Optional: Testing service
+  backend-tests:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: greeting-backend-tests
+    command: ["python", "-m", "pytest", "test_main.py", "-v", "--tb=short"]
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - app-network
+    profiles:
+      - testing
     depends_on:
       - backend
 
-volumes:
-  backend_cache:
-    driver: local
-
 networks:
-  greeting-network:
+  app-network:
     driver: bridge
-    name: greeting-network
+    driver_opts:
+      com.docker.network.bridge.name: greeting-net
+
+volumes:
+  # Define any volumes if needed for persistent data
+  app-data:
+    driver: local
