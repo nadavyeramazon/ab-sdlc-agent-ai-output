@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Greeting App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌿 Welcome to Green Greeting 🌿</h1>
+            <p class="subtitle">Enter your name to receive a personalized greeting!</p>
+        </header>
+        
+        <main>
+            <div class="greeting-card">
+                <div class="input-section">
+                    <label for="nameInput">Your Name:</label>
+                    <input 
+                        type="text" 
+                        id="nameInput" 
+                        placeholder="Enter your name..." 
+                        autocomplete="off"
+                    />
+                    <button id="greetButton" onclick="getGreeting()">
+                        Get Greeting
+                    </button>
+                </div>
+                
+                <div id="resultSection" class="result-section hidden">
+                    <div class="greeting-message" id="greetingMessage"></div>
+                </div>
+                
+                <div id="errorSection" class="error-section hidden">
+                    <p id="errorMessage"></p>
+                </div>
+            </div>
+            
+            <div class="info-card">
+                <h3>About This App</h3>
+                <p>This application demonstrates a simple frontend-backend integration:</p>
+                <ul>
+                    <li>Frontend: HTML, CSS, JavaScript (Green Theme)</li>
+                    <li>Backend: FastAPI (Python)</li>
+                    <li>Container: Docker & Docker Compose</li>
+                </ul>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Powered by FastAPI & Docker 🚀</p>
+        </footer>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
