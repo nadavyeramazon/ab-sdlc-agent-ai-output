@@ -7,6 +7,7 @@ import logging
 import asyncio
 from typing import Optional
 import sys
+import os
 
 # Configure logging
 logging.basicConfig(
@@ -25,13 +26,25 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Add CORS middleware to allow frontend requests
+# Configure CORS origins based on environment
+allowed_origins = [
+    "http://localhost:3000",  # Local development frontend
+    "http://frontend:80",     # Docker container frontend
+    "http://127.0.0.1:3000",  # Alternative localhost
+]
+
+# Add environment-specific origins if specified
+if os.getenv("CORS_ORIGINS"):
+    additional_origins = os.getenv("CORS_ORIGINS").split(",")
+    allowed_origins.extend([origin.strip() for origin in additional_origins])
+
+# Add CORS middleware with restricted origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify actual origins
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Accept", "Authorization"],
 )
 
 class GreetingRequest(BaseModel):
