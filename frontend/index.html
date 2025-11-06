@@ -3,36 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Green Greeter - A friendly greeting application with a beautiful green theme">
     <title>Green Greeter</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <div class="greeting-card">
-            <h1 class="title">Green Greeter</h1>
-            <p class="subtitle">Enter your name to receive a personalized greeting!</p>
-            
+        <header class="header">
+            <h1 class="title">🌿 Green Greeter</h1>
+            <p class="subtitle">Welcome to our eco-friendly greeting application!</p>
+        </header>
+        
+        <main class="main-content">
             <div class="input-section">
-                <input 
-                    type="text" 
-                    id="nameInput" 
-                    placeholder="Enter your name here..." 
-                    maxlength="100"
-                >
-                <button 
-                    id="greetButton" 
-                    onclick="getGreeting()"
-                    class="greet-btn"
-                >
-                    Get Greeting
-                </button>
+                <div class="input-group">
+                    <label for="nameInput" class="input-label">Enter your name:</label>
+                    <input 
+                        type="text" 
+                        id="nameInput" 
+                        class="name-input" 
+                        placeholder="Your name here..."
+                        maxlength="100"
+                        autocomplete="given-name"
+                        aria-describedby="nameHelp"
+                    >
+                    <small id="nameHelp" class="input-help">Maximum 100 characters</small>
+                </div>
+                
+                <div class="button-group">
+                    <button id="greetButton" class="btn btn-primary disabled" disabled>
+                        <span class="btn-text">Greet Me! 🌱</span>
+                    </button>
+                    <button id="clearButton" class="btn btn-secondary">
+                        <span class="btn-text">Clear 🧹</span>
+                    </button>
+                </div>
             </div>
             
-            <div id="greetingResult" class="greeting-result"></div>
-            <div id="errorMessage" class="error-message"></div>
-        </div>
+            <div class="result-section">
+                <div id="loading" class="message loading-message" style="display: none;">
+                    <div class="spinner"></div>
+                    <span>Generating your greeting...</span>
+                </div>
+                
+                <div id="result" class="message success-message" style="display: none;">
+                    <!-- Greeting message will be displayed here -->
+                </div>
+                
+                <div id="error" class="message error-message" style="display: none;">
+                    <!-- Error message will be displayed here -->
+                </div>
+            </div>
+        </main>
+        
+        <footer class="footer">
+            <p>&copy; 2024 Green Greeter. Made with 💚 for the environment.</p>
+        </footer>
     </div>
-
+    
     <script src="script.js"></script>
 </body>
 </html>
