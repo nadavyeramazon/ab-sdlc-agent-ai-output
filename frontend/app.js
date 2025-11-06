@@ -1,4 +1,4 @@
-// API Configuration - Updated for Docker environment
+// API Configuration - Fixed for proper port configuration
 const API_BASE_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:8000' 
     : `http://${window.location.hostname}:8000`;
@@ -57,8 +57,8 @@ function showError(message) {
 
 function showGreeting(data) {
     elements.greetingMessage.textContent = data.message;
-    document.getElementById('userName').textContent = data.user_name;
-    document.getElementById('greetingType').textContent = formatGreetingType(data.greeting_type);
+    document.getElementById('displayUserName').textContent = data.user_name;
+    document.getElementById('displayGreetingType').textContent = formatGreetingType(data.greeting_type);
     
     hideElement(elements.loadingSpinner);
     hideElement(elements.errorMessage);
@@ -125,6 +125,8 @@ async function loadGreetingTypes() {
             const data = await response.json();
             appState.greetingTypes = data.greeting_types;
             populateGreetingSelect();
+        } else {
+            throw new Error(`Failed to load greeting types: ${response.status}`);
         }
     } catch (error) {
         console.error('Failed to load greeting types:', error);
@@ -222,6 +224,12 @@ function handleFormSubmit(event) {
         return;
     }
     
+    // Basic client-side validation for invalid characters
+    if (/[<>"']/.test(name)) {
+        showError('Name contains invalid characters. Please use only letters, numbers, and basic punctuation.');
+        return;
+    }
+    
     // Submit the greeting
     processGreeting(name, greetingType);
 }
@@ -267,6 +275,11 @@ function enhanceInputs() {
             this.style.borderColor = 'var(--primary-green)';
         } else {
             this.style.borderColor = 'var(--mint-green)';
+        }
+        
+        // Check for invalid characters
+        if (/[<>"']/.test(value)) {
+            this.style.borderColor = '#f56565';
         }
     });
     
