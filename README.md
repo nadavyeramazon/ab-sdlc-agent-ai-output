@@ -1,181 +1,191 @@
-# Greeting Application
+# Green Greeting Application 🌿
 
-A full-stack web application with a green-themed UI that greets users by their name. Built with FastAPI backend and vanilla JavaScript frontend.
+A beautiful full-stack web application with a green-themed UI that provides personalized greetings. Built with FastAPI backend and vanilla JavaScript frontend, containerized with Docker.
 
-## Features
+## ✨ Features
 
-- **Backend**: FastAPI REST API that accepts user names and returns personalized greetings
-- **Frontend**: Green-themed responsive UI built with HTML, CSS, and vanilla JavaScript
-- **Docker Compose**: Easy deployment with containerization
-- **CORS Support**: Frontend and backend communicate seamlessly
-- **Health Checks**: Built-in health monitoring for the backend
+- **Green-themed UI**: Beautiful, responsive interface with various shades of green
+- **Personalized Greetings**: Multiple greeting types (Hello, Hi, Welcome, Good Morning, etc.)
+- **Real-time API Status**: Live connection status indicator
+- **Responsive Design**: Works perfectly on desktop and mobile devices
+- **Docker Containerized**: Easy deployment with Docker Compose
+- **Health Checks**: Built-in health monitoring for both services
+- **Error Handling**: Graceful error handling with user-friendly messages
 
-## Technology Stack
-
-### Backend
-- Python 3.11
-- FastAPI
-- Uvicorn (ASGI server)
-- Pydantic (data validation)
-
-### Frontend
-- HTML5
-- CSS3 (Green theme with animations)
-- Vanilla JavaScript (ES6+)
-- Nginx (web server)
-
-### DevOps
-- Docker
-- Docker Compose
-
-## Project Structure
-
-```
-.
-├── backend/
-│   ├── main.py              # FastAPI application
-│   ├── requirements.txt     # Python dependencies
-│   ├── Dockerfile           # Backend container configuration
-│   └── .dockerignore        # Docker ignore file
-├── frontend/
-│   ├── index.html           # Main HTML file
-│   ├── styles.css           # Green-themed CSS
-│   ├── app.js               # JavaScript application logic
-│   ├── nginx.conf           # Nginx configuration
-│   └── Dockerfile           # Frontend container configuration
-├── docker-compose.yml   # Docker Compose configuration
-└── README.md            # This file
-```
-
-## Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
+- Docker and Docker Compose installed
+- Ports 3000 and 8000 available
 
-- Docker (version 20.10 or higher)
-- Docker Compose (version 1.29 or higher)
+### Running the Application
 
-### Installation & Running
-
-1. **Clone the repository**:
+1. **Clone the repository:**
    ```bash
    git clone <repository-url>
    cd ab-sdlc-agent-ai-backend
    ```
 
-2. **Start the application with Docker Compose**:
+2. **Start the application:**
    ```bash
    docker-compose up --build
    ```
 
-3. **Access the application**:
+3. **Access the application:**
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:8000
    - API Documentation: http://localhost:8000/docs
 
-### Usage
-
-1. Open your web browser and navigate to http://localhost:3000
-2. Enter your name in the input field
-3. Click the "Greet Me!" button
-4. Receive a personalized greeting message
-
-## API Endpoints
-
-### Backend API
-
-- **GET /** - Root endpoint
-  - Returns: Welcome message
-
-- **POST /greet** - Greet a user
-  - Request Body: `{"name": "string"}`
-  - Response: `{"message": "string"}`
-  - Example:
-    ```bash
-    curl -X POST http://localhost:8000/greet \
-      -H "Content-Type: application/json" \
-      -d '{"name": "John"}'
-    ```
-
-- **GET /health** - Health check
-  - Returns: `{"status": "healthy"}`
-
-## Development
-
-### Running Backend Locally (without Docker)
-
-```bash
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### Running Frontend Locally (without Docker)
-
-```bash
-cd frontend
-python -m http.server 3000
-# or use any other static file server
-```
-
-## Stopping the Application
-
-To stop the application:
-
+### Stopping the Application
 ```bash
 docker-compose down
 ```
 
-To stop and remove volumes:
+## 🏗️ Architecture
 
-```bash
-docker-compose down -v
+### Backend (FastAPI)
+- **Framework**: FastAPI with Python 3.11
+- **Port**: 8000
+- **Features**:
+  - RESTful API endpoints
+  - CORS enabled for frontend communication
+  - Input validation with Pydantic
+  - Health check endpoint
+  - Multiple greeting types
+
+### Frontend (Vanilla JavaScript)
+- **Technology**: HTML5, CSS3, JavaScript (ES6+)
+- **Server**: Nginx
+- **Port**: 3000
+- **Features**:
+  - Responsive green-themed design
+  - Interactive form with validation
+  - Real-time API status monitoring
+  - Smooth animations and transitions
+  - Error handling and loading states
+
+## 📡 API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Root endpoint with API info |
+| GET | `/health` | Health check |
+| POST | `/greet` | Generate personalized greeting |
+| GET | `/greeting-types` | Get available greeting types |
+| GET | `/docs` | Interactive API documentation |
+
+### Example API Usage
+
+**POST /greet**
+```json
+{
+  "name": "John",
+  "greeting_type": "hello"
+}
 ```
 
-## Troubleshooting
+**Response:**
+```json
+{
+  "message": "Hello, John! Welcome to our green-themed application!",
+  "user_name": "John",
+  "greeting_type": "hello"
+}
+```
 
-### Backend Not Responding
+## 🎨 Greeting Types
 
-- Ensure port 8000 is not in use by another application
-- Check backend logs: `docker-compose logs backend`
-- Verify backend health: `curl http://localhost:8000/health`
+- **hello**: Standard friendly greeting
+- **hi**: Casual greeting
+- **welcome**: Welcoming message
+- **good_morning**: Morning greeting
+- **good_afternoon**: Afternoon greeting
+- **good_evening**: Evening greeting
 
-### Frontend Connection Issues
+## 🛠️ Development
 
-- Verify the backend is running and healthy
-- Check browser console for JavaScript errors
-- Ensure CORS is properly configured in the backend
+### Backend Development
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
 
-### Docker Issues
+### Frontend Development
+Serve the frontend directory with any static file server, or use the nginx container.
 
-- Rebuild containers: `docker-compose up --build --force-recreate`
-- Check running containers: `docker ps`
-- View logs: `docker-compose logs`
+### Running Tests
+```bash
+cd backend
+python -m pytest test_main.py -v
+```
 
-## Features to Note
+## 🔧 Configuration
 
-### Green Theme
-- Primary Green: #2e7d32
-- Secondary Green: #4caf50
-- Light Green: #81c784
-- Background gradient with green shades
-- Smooth animations and transitions
+### Environment Variables
+- `PYTHONPATH`: Python path for backend
+- `ENVIRONMENT`: Development/production environment
 
-### Responsive Design
-- Mobile-friendly interface
-- Adaptive layout for different screen sizes
-- Touch-optimized controls
+### Ports
+- Frontend: 3000 (configurable in docker-compose.yml)
+- Backend: 8000 (configurable in docker-compose.yml)
 
-### User Experience
-- Input validation
-- Loading states with spinner
-- Success and error feedback
-- Keyboard support (Enter key to submit)
-- Smooth animations
+## 🐳 Docker Configuration
 
-## License
+### Services
+- **backend**: FastAPI application with Python 3.11
+- **frontend**: Nginx serving static files
 
-See LICENSE file for details.
+### Volumes
+- Backend source code mounted for development
+- Frontend files mounted read-only
+- Cache volume for Python packages
 
-## Contributing
+### Network
+- Custom bridge network for service communication
+- Health checks for both services
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+## 🎯 Usage Examples
+
+1. **Enter your name** in the input field
+2. **Select a greeting type** from the dropdown
+3. **Click "Get My Greeting"** to receive your personalized message
+4. **Try different combinations** for various greeting styles
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+**Port already in use:**
+```bash
+# Check what's using the port
+lsof -i :3000
+lsof -i :8000
+
+# Stop conflicting services or change ports in docker-compose.yml
+```
+
+**API connection issues:**
+- Check if backend container is running: `docker-compose logs backend`
+- Verify API health: `curl http://localhost:8000/health`
+- Check network connectivity between containers
+
+**Frontend not loading:**
+- Check nginx logs: `docker-compose logs frontend`
+- Verify frontend container status: `docker-compose ps`
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## 📝 License
+
+MIT License - see LICENSE file for details.
+
+---
+
+**Enjoy your green greeting experience! 🌱✨**

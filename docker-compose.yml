@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # Backend FastAPI Application
   backend:
     build:
       context: ./backend
@@ -9,18 +10,23 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+      - ENVIRONMENT=development
     volumes:
       - ./backend:/app
+      - backend_cache:/root/.cache
     networks:
-      - app-network
+      - greeting-network
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    depends_on: []
 
+  # Frontend Static Web Application
   frontend:
     build:
       context: ./frontend
@@ -28,11 +34,25 @@ services:
     container_name: greeting-frontend
     ports:
       - "3000:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    networks:
+      - greeting-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
     depends_on:
       - backend
-    networks:
-      - app-network
+
+volumes:
+  backend_cache:
+    driver: local
 
 networks:
-  app-network:
+  greeting-network:
     driver: bridge
+    name: greeting-network
