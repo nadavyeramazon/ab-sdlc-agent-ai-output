@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Greeting App</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">
+                <span class="emoji">🌱</span>
+                Green Greeting App
+            </h1>
+            <p class="subtitle">Enter your name to receive a personalized greeting!</p>
+        </header>
+
+        <main class="main-content">
+            <form id="greetingForm" class="greeting-form">
+                <div class="input-group">
+                    <label for="nameInput" class="input-label">Your Name</label>
+                    <input 
+                        type="text" 
+                        id="nameInput" 
+                        class="name-input" 
+                        placeholder="Enter your name here..."
+                        required
+                        autocomplete="name"
+                    >
+                </div>
+                
+                <div class="input-group">
+                    <label for="messageInput" class="input-label">Custom Message (Optional)</label>
+                    <input 
+                        type="text" 
+                        id="messageInput" 
+                        class="message-input" 
+                        placeholder="Add a custom message..."
+                        autocomplete="off"
+                    >
+                </div>
+                
+                <button type="submit" class="greet-button" id="greetButton">
+                    <span class="button-text">Get Greeting</span>
+                    <span class="button-icon">✨</span>
+                </button>
+            </form>
+
+            <div id="responseSection" class="response-section hidden">
+                <div class="response-card">
+                    <h2 class="response-title">Your Greeting</h2>
+                    <div id="greetingMessage" class="greeting-message"></div>
+                    <div id="greetingDetails" class="greeting-details"></div>
+                    <button id="clearButton" class="clear-button">Clear & Try Again</button>
+                </div>
+            </div>
+
+            <div id="errorSection" class="error-section hidden">
+                <div class="error-card">
+                    <h2 class="error-title">⚠️ Error</h2>
+                    <div id="errorMessage" class="error-message"></div>
+                    <button id="retryButton" class="retry-button">Try Again</button>
+                </div>
+            </div>
+
+            <div id="loadingSection" class="loading-section hidden">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">Preparing your greeting...</p>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p class="footer-text">
+                Powered by <strong>FastAPI</strong> & <strong>JavaScript</strong> 
+                <span class="heart">💚</span>
+            </p>
+            <div class="api-status">
+                <span id="apiStatus" class="status-indicator">🔄</span>
+                <span id="apiStatusText" class="status-text">Checking API...</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
