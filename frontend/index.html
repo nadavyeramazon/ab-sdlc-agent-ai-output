@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Greeting App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌿 Green Greeting App 🌿</h1>
+            <p class="subtitle">Welcome to our eco-friendly greeting service</p>
+        </div>
+        
+        <div class="card">
+            <form id="greetingForm">
+                <div class="form-group">
+                    <label for="nameInput">Enter Your Name:</label>
+                    <input 
+                        type="text" 
+                        id="nameInput" 
+                        placeholder="Type your name here..."
+                        required
+                    >
+                </div>
+                <button type="submit" class="btn-primary">
+                    Get Greeting
+                </button>
+            </form>
+        </div>
+
+        <div id="responseArea" class="response-area" style="display: none;">
+            <div class="response-card">
+                <h2>Greeting:</h2>
+                <p id="greetingMessage" class="greeting-message"></p>
+            </div>
+        </div>
+
+        <div id="errorArea" class="error-area" style="display: none;">
+            <p id="errorMessage" class="error-message"></p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
