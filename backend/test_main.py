@@ -1,167 +1,186 @@
-"""Test suite for the greeting application backend."""
 import pytest
 from fastapi.testclient import TestClient
 from main import app
 
-
-# Create a test client for the FastAPI application
 client = TestClient(app)
 
-
-class TestRootEndpoint:
-    """Tests for the root endpoint."""
-
-    def test_root_returns_welcome_message(self):
-        """Test that the root endpoint returns a welcome message."""
+class TestGreetingAPI:
+    """Test suite for the Greeting API"""
+    
+    def test_root_endpoint(self):
+        """Test the root endpoint returns welcome message"""
         response = client.get("/")
         assert response.status_code == 200
-        assert response.json() == {
-            "message": "Welcome to the Greeting API! Use POST /greet to get a personalized greeting."
-        }
-
-    def test_root_response_structure(self):
-        """Test that the root endpoint returns the correct JSON structure."""
-        response = client.get("/")
         data = response.json()
         assert "message" in data
-        assert isinstance(data["message"], str)
-
-
-class TestHealthEndpoint:
-    """Tests for the health check endpoint."""
-
-    def test_health_returns_healthy_status(self):
-        """Test that the health endpoint returns a healthy status."""
+        assert "Welcome to the Greeting API" in data["message"]
+    
+    def test_health_check(self):
+        """Test the health check endpoint"""
         response = client.get("/health")
         assert response.status_code == 200
-        assert response.json() == {"status": "healthy"}
-
-    def test_health_response_structure(self):
-        """Test that the health endpoint returns the correct JSON structure."""
-        response = client.get("/health")
         data = response.json()
-        assert "status" in data
-        assert isinstance(data["status"], str)
-
-
-class TestGreetEndpoint:
-    """Tests for the greeting endpoint."""
-
-    def test_greet_with_valid_name(self):
-        """Test greeting with a valid name."""
-        response = client.post("/greet", json={"name": "Alice"})
+        assert data["status"] == "healthy"
+        assert data["service"] == "greeting-api"
+    
+    def test_greet_post_basic(self):
+        """Test basic POST greeting functionality"""
+        response = client.post("/greet", json={"name": "John"})
         assert response.status_code == 200
         data = response.json()
-        assert "greeting" in data
-        assert data["greeting"] == "Hello, Alice! Welcome to our green-themed greeting app!"
-
-    def test_greet_with_different_names(self):
-        """Test greeting with various different names."""
-        test_names = ["Bob", "Charlie", "David", "Eve"]
-        for name in test_names:
-            response = client.post("/greet", json={"name": name})
+        assert data["message"] == "Hello, John! Nice to meet you!"
+        assert data["name"] == "John"
+        assert data["greeting_type"] == "hello"
+    
+    def test_greet_post_with_greeting_type(self):
+        """Test POST greeting with custom greeting type"""
+        response = client.post("/greet", json={"name": "Alice", "greeting_type": "hi"})
+        assert response.status_code == 200
+        data = response.json()
+        assert data["message"] == "Hi there, Alice! How are you doing?"
+        assert data["name"] == "Alice"
+        assert data["greeting_type"] == "hi"
+    
+    def test_greet_get_basic(self):
+        """Test basic GET greeting functionality"""
+        response = client.get("/greet/John")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["message"] == "Hello, John! Nice to meet you!"
+        assert data["name"] == "John"
+        assert data["greeting_type"] == "hello"
+    
+    def test_greet_get_with_greeting_type(self):
+        """Test GET greeting with custom greeting type"""
+        response = client.get("/greet/Alice?greeting_type=welcome")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["message"] == "Welcome, Alice! We're glad you're here!"
+        assert data["name"] == "Alice"
+        assert data["greeting_type"] == "welcome"
+    
+    def test_all_greeting_types(self):
+        """Test all available greeting types"""
+        greeting_types = ["hello", "hi", "hey", "greetings", "welcome"]
+        expected_messages = {
+            "hello": "Hello, Test! Nice to meet you!",
+            "hi": "Hi there, Test! How are you doing?",
+            "hey": "Hey Test! What's up?",
+            "greetings": "Greetings, Test! Hope you're having a great day!",
+            "welcome": "Welcome, Test! We're glad you're here!"
+        }
+        
+        for greeting_type in greeting_types:
+            response = client.post("/greet", json={"name": "Test", "greeting_type": greeting_type})
             assert response.status_code == 200
             data = response.json()
-            assert data["greeting"] == f"Hello, {name}! Welcome to our green-themed greeting app!"
-
-    def test_greet_with_special_characters_in_name(self):
-        """Test greeting with special characters in the name."""
-        special_names = ["Mary-Jane", "O'Brien", "José", "François"]
-        for name in special_names:
-            response = client.post("/greet", json={"name": name})
-            assert response.status_code == 200
-            data = response.json()
-            assert name in data["greeting"]
-
-    def test_greet_with_empty_name(self):
-        """Test greeting with an empty name."""
+            assert data["message"] == expected_messages[greeting_type]
+            assert data["greeting_type"] == greeting_type
+    
+    def test_invalid_greeting_type(self):
+        """Test invalid greeting type returns error"""
+        response = client.post("/greet", json={"name": "John", "greeting_type": "invalid"})
+        assert response.status_code == 422  # Validation error
+    
+    def test_empty_name(self):
+        """Test empty name returns error"""
         response = client.post("/greet", json={"name": ""})
-        # The API should still return 200 even with empty name
-        assert response.status_code == 200
-        data = response.json()
-        assert "greeting" in data
-
-    def test_greet_with_whitespace_name(self):
-        """Test greeting with a whitespace-only name."""
+        assert response.status_code == 422  # Validation error
+        
         response = client.post("/greet", json={"name": "   "})
-        assert response.status_code == 200
-        data = response.json()
-        assert "greeting" in data
-
-    def test_greet_with_long_name(self):
-        """Test greeting with a very long name."""
-        long_name = "A" * 1000
-        response = client.post("/greet", json={"name": long_name})
-        assert response.status_code == 200
-        data = response.json()
-        assert long_name in data["greeting"]
-
-    def test_greet_missing_name_field(self):
-        """Test greeting endpoint without the name field."""
+        assert response.status_code == 422  # Validation error
+    
+    def test_missing_name(self):
+        """Test missing name returns error"""
         response = client.post("/greet", json={})
-        # FastAPI should return 422 for validation error
-        assert response.status_code == 422
-
-    def test_greet_with_null_name(self):
-        """Test greeting endpoint with null name."""
-        response = client.post("/greet", json={"name": None})
-        # FastAPI should return 422 for validation error
-        assert response.status_code == 422
-
-    def test_greet_with_invalid_json(self):
-        """Test greeting endpoint with invalid JSON."""
-        response = client.post(
-            "/greet",
-            data="invalid json",
-            headers={"Content-Type": "application/json"}
-        )
-        assert response.status_code == 422
-
-    def test_greet_response_structure(self):
-        """Test that the greet endpoint returns the correct JSON structure."""
+        assert response.status_code == 422  # Validation error
+    
+    def test_name_too_long(self):
+        """Test name longer than 100 characters returns error"""
+        long_name = "a" * 101
+        response = client.post("/greet", json={"name": long_name})
+        assert response.status_code == 422  # Validation error
+    
+    def test_name_with_invalid_characters(self):
+        """Test name with invalid characters returns error"""
+        invalid_names = ["<script>", "John'", 'John"', "John<test>"]
+        for invalid_name in invalid_names:
+            response = client.post("/greet", json={"name": invalid_name})
+            assert response.status_code == 422  # Validation error
+    
+    def test_name_whitespace_trimming(self):
+        """Test that names are properly trimmed"""
+        response = client.post("/greet", json={"name": "  John  "})
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == "John"
+        assert "John" in data["message"]
+    
+    def test_case_sensitivity(self):
+        """Test that names preserve case"""
+        response = client.post("/greet", json={"name": "JoHn"})
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == "JoHn"
+        assert "JoHn" in data["message"]
+    
+    def test_special_characters_allowed(self):
+        """Test that allowed special characters work"""
+        valid_names = ["José", "O'Connor", "Anne-Marie", "李小明"]
+        for name in valid_names:
+            response = client.post("/greet", json={"name": name})
+            assert response.status_code == 200
+            data = response.json()
+            assert data["name"] == name
+    
+    def test_get_endpoint_validation(self):
+        """Test GET endpoint validation"""
+        # Test empty name
+        response = client.get("/greet/")
+        assert response.status_code == 404  # Not found due to empty path
+        
+        # Test invalid greeting type
+        response = client.get("/greet/John?greeting_type=invalid")
+        assert response.status_code == 400  # Bad request
+    
+    def test_response_structure(self):
+        """Test that response has correct structure"""
         response = client.post("/greet", json={"name": "Test"})
-        data = response.json()
-        assert "greeting" in data
-        assert isinstance(data["greeting"], str)
-
-    def test_greet_with_numeric_string_name(self):
-        """Test greeting with numeric string as name."""
-        response = client.post("/greet", json={"name": "12345"})
         assert response.status_code == 200
         data = response.json()
-        assert "12345" in data["greeting"]
-
-
-class TestCORSConfiguration:
-    """Tests for CORS configuration."""
-
-    def test_cors_headers_present(self):
-        """Test that CORS headers are present in responses."""
-        response = client.get("/health")
-        # Check if CORS middleware is active (headers should be present)
-        assert response.status_code == 200
-
-    def test_options_request(self):
-        """Test OPTIONS request for CORS preflight."""
+        
+        # Check all required fields are present
+        required_fields = ["message", "name", "greeting_type"]
+        for field in required_fields:
+            assert field in data
+        
+        # Check field types
+        assert isinstance(data["message"], str)
+        assert isinstance(data["name"], str)
+        assert isinstance(data["greeting_type"], str)
+    
+    def test_cors_headers(self):
+        """Test CORS headers are present"""
         response = client.options("/greet")
-        # OPTIONS should be allowed
-        assert response.status_code in [200, 405]  # 405 if OPTIONS not explicitly defined
+        # Note: TestClient doesn't fully simulate CORS, but we can verify the middleware is loaded
+        assert response.status_code in [200, 405]  # OPTIONS might not be explicitly allowed
+    
+    def test_multiple_concurrent_requests(self):
+        """Test handling multiple requests"""
+        import concurrent.futures
+        
+        def make_request(name):
+            return client.post("/greet", json={"name": f"User{name}"})
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            futures = [executor.submit(make_request, i) for i in range(10)]
+            results = [future.result() for future in concurrent.futures.as_completed(futures)]
+        
+        for result in results:
+            assert result.status_code == 200
+            data = result.json()
+            assert "User" in data["name"]
+            assert "message" in data
 
-
-class TestAPIErrorHandling:
-    """Tests for API error handling."""
-
-    def test_invalid_endpoint(self):
-        """Test accessing an endpoint that doesn't exist."""
-        response = client.get("/invalid-endpoint")
-        assert response.status_code == 404
-
-    def test_wrong_http_method_on_greet(self):
-        """Test using wrong HTTP method on greet endpoint."""
-        response = client.get("/greet")
-        assert response.status_code == 405  # Method Not Allowed
-
-    def test_wrong_http_method_on_root(self):
-        """Test using POST on root endpoint which expects GET."""
-        response = client.post("/")
-        assert response.status_code == 405  # Method Not Allowed
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])
