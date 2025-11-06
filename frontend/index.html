@@ -3,40 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Green Greeter App</title>
+    <title>Green Greeter</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>🌿 Green Greeter 🌿</h1>
-            <p>Welcome to our eco-friendly greeting application!</p>
-        </header>
-        
-        <main class="greeter-section">
-            <div class="input-container">
-                <label for="nameInput">Enter your name:</label>
-                <input type="text" id="nameInput" placeholder="Your name here..." maxlength="50">
-                <button id="greetButton" onclick="greetUser()">Greet Me!</button>
+        <div class="greeting-card">
+            <h1 class="title">Green Greeter</h1>
+            <p class="subtitle">Enter your name to receive a personalized greeting!</p>
+            
+            <div class="input-section">
+                <input 
+                    type="text" 
+                    id="nameInput" 
+                    placeholder="Enter your name here..." 
+                    maxlength="100"
+                >
+                <button 
+                    id="greetButton" 
+                    onclick="getGreeting()"
+                    class="greet-btn"
+                >
+                    Get Greeting
+                </button>
             </div>
             
-            <div id="greetingResult" class="greeting-result hidden">
-                <div class="greeting-message" id="greetingMessage"></div>
-            </div>
-            
-            <div id="errorMessage" class="error-message hidden"></div>
-            
-            <div class="loading" id="loadingSpinner" style="display: none;">
-                <div class="spinner"></div>
-                <p>Greeting you...</p>
-            </div>
-        </main>
-        
-        <footer>
-            <p>🍃 Powered by FastAPI & JavaScript 🍃</p>
-        </footer>
+            <div id="greetingResult" class="greeting-result"></div>
+            <div id="errorMessage" class="error-message"></div>
+        </div>
     </div>
-    
+
     <script src="script.js"></script>
 </body>
 </html>
