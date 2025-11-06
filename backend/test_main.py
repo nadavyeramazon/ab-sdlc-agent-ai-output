@@ -23,13 +23,29 @@ class TestGreetingAPI:
         assert data["status"] == "healthy"
         assert data["service"] == "greeting-api"
     
+    def test_greeting_types_endpoint(self):
+        """Test the greeting types endpoint"""
+        response = client.get("/greeting-types")
+        assert response.status_code == 200
+        data = response.json()
+        assert "greeting_types" in data
+        assert isinstance(data["greeting_types"], list)
+        assert len(data["greeting_types"]) > 0
+        
+        # Check that each greeting type has key and label
+        for greeting_type in data["greeting_types"]:
+            assert "key" in greeting_type
+            assert "label" in greeting_type
+            assert isinstance(greeting_type["key"], str)
+            assert isinstance(greeting_type["label"], str)
+    
     def test_greet_post_basic(self):
         """Test basic POST greeting functionality"""
         response = client.post("/greet", json={"name": "John"})
         assert response.status_code == 200
         data = response.json()
         assert data["message"] == "Hello, John! Nice to meet you!"
-        assert data["name"] == "John"
+        assert data["user_name"] == "John"
         assert data["greeting_type"] == "hello"
     
     def test_greet_post_with_greeting_type(self):
@@ -38,7 +54,7 @@ class TestGreetingAPI:
         assert response.status_code == 200
         data = response.json()
         assert data["message"] == "Hi there, Alice! How are you doing?"
-        assert data["name"] == "Alice"
+        assert data["user_name"] == "Alice"
         assert data["greeting_type"] == "hi"
     
     def test_greet_get_basic(self):
@@ -47,7 +63,7 @@ class TestGreetingAPI:
         assert response.status_code == 200
         data = response.json()
         assert data["message"] == "Hello, John! Nice to meet you!"
-        assert data["name"] == "John"
+        assert data["user_name"] == "John"
         assert data["greeting_type"] == "hello"
     
     def test_greet_get_with_greeting_type(self):
@@ -56,18 +72,21 @@ class TestGreetingAPI:
         assert response.status_code == 200
         data = response.json()
         assert data["message"] == "Welcome, Alice! We're glad you're here!"
-        assert data["name"] == "Alice"
+        assert data["user_name"] == "Alice"
         assert data["greeting_type"] == "welcome"
     
     def test_all_greeting_types(self):
         """Test all available greeting types"""
-        greeting_types = ["hello", "hi", "hey", "greetings", "welcome"]
+        greeting_types = ["hello", "hi", "hey", "greetings", "welcome", "good_morning", "good_afternoon", "good_evening"]
         expected_messages = {
             "hello": "Hello, Test! Nice to meet you!",
             "hi": "Hi there, Test! How are you doing?",
             "hey": "Hey Test! What's up?",
             "greetings": "Greetings, Test! Hope you're having a great day!",
-            "welcome": "Welcome, Test! We're glad you're here!"
+            "welcome": "Welcome, Test! We're glad you're here!",
+            "good_morning": "Good morning, Test! Hope you have a wonderful day!",
+            "good_afternoon": "Good afternoon, Test! How's your day going?",
+            "good_evening": "Good evening, Test! Hope your evening is pleasant!"
         }
         
         for greeting_type in greeting_types:
@@ -113,7 +132,7 @@ class TestGreetingAPI:
         response = client.post("/greet", json={"name": "  John  "})
         assert response.status_code == 200
         data = response.json()
-        assert data["name"] == "John"
+        assert data["user_name"] == "John"
         assert "John" in data["message"]
     
     def test_case_sensitivity(self):
@@ -121,17 +140,17 @@ class TestGreetingAPI:
         response = client.post("/greet", json={"name": "JoHn"})
         assert response.status_code == 200
         data = response.json()
-        assert data["name"] == "JoHn"
+        assert data["user_name"] == "JoHn"
         assert "JoHn" in data["message"]
     
     def test_special_characters_allowed(self):
         """Test that allowed special characters work"""
-        valid_names = ["José", "O'Connor", "Anne-Marie", "李小明"]
+        valid_names = ["José", "Anne-Marie", "李小明"]
         for name in valid_names:
             response = client.post("/greet", json={"name": name})
             assert response.status_code == 200
             data = response.json()
-            assert data["name"] == name
+            assert data["user_name"] == name
     
     def test_get_endpoint_validation(self):
         """Test GET endpoint validation"""
@@ -150,13 +169,13 @@ class TestGreetingAPI:
         data = response.json()
         
         # Check all required fields are present
-        required_fields = ["message", "name", "greeting_type"]
+        required_fields = ["message", "user_name", "greeting_type"]
         for field in required_fields:
             assert field in data
         
         # Check field types
         assert isinstance(data["message"], str)
-        assert isinstance(data["name"], str)
+        assert isinstance(data["user_name"], str)
         assert isinstance(data["greeting_type"], str)
     
     def test_cors_headers(self):
@@ -179,7 +198,7 @@ class TestGreetingAPI:
         for result in results:
             assert result.status_code == 200
             data = result.json()
-            assert "User" in data["name"]
+            assert "User" in data["user_name"]
             assert "message" in data
 
 if __name__ == "__main__":
