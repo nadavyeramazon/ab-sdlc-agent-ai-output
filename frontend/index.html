@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greeting App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌿 Welcome to the Greeting App</h1>
+            <p class="subtitle">Enter your name to receive a personalized greeting!</p>
+        </header>
+        
+        <main class="greeting-form-container">
+            <div class="form-card">
+                <div class="input-group">
+                    <label for="nameInput">Your Name:</label>
+                    <input type="text" id="nameInput" placeholder="Enter your name here..." maxlength="50">
+                </div>
+                
+                <div class="button-group">
+                    <button id="greetButton" class="primary-btn">Get Greeting</button>
+                    <button id="clearButton" class="secondary-btn">Clear</button>
+                </div>
+            </div>
+            
+            <div id="greetingResult" class="result-card hidden">
+                <div class="result-content">
+                    <h3>Greeting:</h3>
+                    <p id="greetingMessage"></p>
+                    <div class="result-meta">
+                        <span id="greetingName"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="loadingSpinner" class="loading hidden">
+                <div class="spinner"></div>
+                <p>Getting your greeting...</p>
+            </div>
+            
+            <div id="errorMessage" class="error-card hidden">
+                <h3>⚠️ Error</h3>
+                <p id="errorText"></p>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Powered by FastAPI Backend 🚀</p>
+        </footer>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
