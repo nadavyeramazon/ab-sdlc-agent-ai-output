@@ -1,0 +1,8 @@
+# Simple Python Application - Task Manager
+# No external dependencies required
+# This application uses only Python standard library
+
+# For development/testing (optional):
+# pytest>=7.0.0
+# pylint>=2.15.0
+# black>=22.0.0
