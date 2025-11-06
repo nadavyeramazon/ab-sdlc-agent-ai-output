@@ -1,126 +1,191 @@
-// Simple Frontend JavaScript - Item Manager
-// This script handles interaction with the FastAPI backend
+const API_BASE_URL = 'http://localhost:8000';
 
-class ItemManager {
-    constructor() {
-        this.baseURL = 'http://localhost:8000/api';
-        this.items = [];
-        this.currentEditId = null;
-        
-        this.initializeElements();
-        this.bindEvents();
-        this.checkBackendConnection();
-        this.loadItems();
-    }
-
-    initializeElements() {
-        // Form elements
-        this.addItemForm = document.getElementById('addItemForm');
-        this.editItemForm = document.getElementById('editItemForm');
-        
-        // Input elements
-        this.itemNameInput = document.getElementById('itemName');
-        this.itemDescriptionInput = document.getElementById('itemDescription');
-        this.editItemNameInput = document.getElementById('editItemName');
-        this.editItemDescriptionInput = document.getElementById('editItemDescription');
-        
-        // Display elements
-        this.itemsList = document.getElementById('itemsList');
-        this.statusElement = document.getElementById('status');
-        this.itemCountElement = document.getElementById('itemCount');
-        
-        // Buttons and controls
-        this.refreshBtn = document.getElementById('refreshBtn');
-        this.editModal = document.getElementById('editModal');
-        this.closeModalBtn = document.querySelector('.close');
-        this.cancelEditBtn = document.getElementById('cancelEdit');
-    }
-
-    bindEvents() {
-        // Form submissions
-        this.addItemForm.addEventListener('submit', (e) => this.handleAddItem(e));
-        this.editItemForm.addEventListener('submit', (e) => this.handleEditItem(e));
-        
-        // Button clicks
-        this.refreshBtn.addEventListener('click', () => this.loadItems());
-        this.closeModalBtn.addEventListener('click', () => this.closeEditModal());
-        this.cancelEditBtn.addEventListener('click', () => this.closeEditModal());
-        
-        // Modal outside click
-        this.editModal.addEventListener('click', (e) => {
-            if (e.target === this.editModal) {
-                this.closeEditModal();
-            }
-        });
-        
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.editModal.style.display === 'block') {
-                this.closeEditModal();
-            }
-        });
-    }
-
-    async checkBackendConnection() {
-        try {
-            const response = await fetch(`${this.baseURL.replace('/api', '')}/health`);
-            if (response.ok) {
-                this.updateStatus(true, 'Connected to backend');
-            } else {
-                throw new Error('Backend not responding');
-            }
-        } catch (error) {
-            this.updateStatus(false, 'Backend offline');
-            console.error('Backend connection failed:', error);
+// Utility functions for input validation
+const validation = {
+    validateName: (name) => {
+        const errors = [];
+        if (!name || name.trim().length === 0) {
+            errors.push('Name is required');
         }
+        if (name && name.length > 100) {
+            errors.push('Name cannot exceed 100 characters');
+        }
+        if (name && /[<>"'\/]/.test(name)) {
+            errors.push('Name contains invalid characters');
+        }
+        return errors;
+    },
+    
+    validateDescription: (description) => {
+        const errors = [];
+        if (description && description.length > 500) {
+            errors.push('Description cannot exceed 500 characters');
+        }
+        return errors;
+    },
+    
+    validatePrice: (price) => {
+        const errors = [];
+        const numPrice = parseFloat(price);
+        if (isNaN(numPrice)) {
+            errors.push('Price must be a valid number');
+        }
+        if (numPrice < 0) {
+            errors.push('Price cannot be negative');
+        }
+        if (numPrice > 999999.99) {
+            errors.push('Price cannot exceed 999,999.99');
+        }
+        return errors;
+    },
+    
+    validateCategory: (category) => {
+        const errors = [];
+        const allowedCategories = ['electronics', 'clothing', 'food', 'books', 'home', 'sports', 'other'];
+        if (!category || !allowedCategories.includes(category.toLowerCase())) {
+            errors.push('Please select a valid category');
+        }
+        return errors;
     }
+};
 
-    updateStatus(isOnline, message) {
-        const statusText = this.statusElement.querySelector('.status-text');
-        statusText.textContent = message;
+// Error handling utility
+class ErrorHandler {
+    static showError(message, container = null) {
+        console.error('Error:', message);
         
-        if (isOnline) {
-            this.statusElement.className = 'status-indicator online';
+        // Remove existing error messages
+        const existingErrors = document.querySelectorAll('.error-message');
+        existingErrors.forEach(error => error.remove());
+        
+        // Create and show error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.innerHTML = `
+            <div class="alert alert-error">
+                <span class="error-icon">⚠️</span>
+                <span class="error-text">${message}</span>
+                <button class="close-error" onclick="this.parentElement.parentElement.remove()">&times;</button>
+            </div>
+        `;
+        
+        if (container) {
+            container.insertBefore(errorDiv, container.firstChild);
         } else {
-            this.statusElement.className = 'status-indicator offline';
+            document.querySelector('.container').insertBefore(errorDiv, document.querySelector('.container').firstChild);
         }
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            if (errorDiv.parentNode) {
+                errorDiv.remove();
+            }
+        }, 5000);
     }
-
-    async loadItems() {
-        try {
-            this.showLoading();
-            const response = await fetch(`${this.baseURL}/items`);
+    
+    static showSuccess(message, container = null) {
+        console.log('Success:', message);
+        
+        // Remove existing success messages
+        const existingSuccess = document.querySelectorAll('.success-message');
+        existingSuccess.forEach(success => success.remove());
+        
+        // Create and show success message
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message';
+        successDiv.innerHTML = `
+            <div class="alert alert-success">
+                <span class="success-icon">✅</span>
+                <span class="success-text">${message}</span>
+                <button class="close-success" onclick="this.parentElement.parentElement.remove()">&times;</button>
+            </div>
+        `;
+        
+        if (container) {
+            container.insertBefore(successDiv, container.firstChild);
+        } else {
+            document.querySelector('.container').insertBefore(successDiv, document.querySelector('.container').firstChild);
+        }
+        
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+            if (successDiv.parentNode) {
+                successDiv.remove();
+            }
+        }, 3000);
+    }
+    
+    static handleApiError(error, operation) {
+        let message = `Failed to ${operation}`;
+        
+        if (error.response) {
+            // Server responded with error status
+            const status = error.response.status;
+            const data = error.response.data;
             
+            if (status === 422 && data.detail) {
+                // Validation error
+                if (Array.isArray(data.detail)) {
+                    const errors = data.detail.map(err => err.msg || err.message || 'Validation error').join(', ');
+                    message = `Validation error: ${errors}`;
+                } else {
+                    message = `Validation error: ${data.detail}`;
+                }
+            } else if (status === 404) {
+                message = data.detail || 'Item not found';
+            } else if (status === 400) {
+                message = data.detail || 'Bad request';
+            } else if (status >= 500) {
+                message = 'Server error. Please try again later.';
+            } else {
+                message = data.detail || `Failed to ${operation}`;
+            }
+        } else if (error.request) {
+            // Network error
+            message = 'Network error. Please check your connection and try again.';
+        } else {
+            // Other error
+            message = error.message || `Failed to ${operation}`;
+        }
+        
+        this.showError(message);
+    }
+}
+
+// API functions with improved error handling
+const api = {
+    async fetchItems() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/items`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
-            this.items = await response.json();
-            this.renderItems();
-            this.updateItemCount();
-            
+            return await response.json();
         } catch (error) {
-            console.error('Error loading items:', error);
-            this.showError('Failed to load items. Please check if the backend is running.');
+            ErrorHandler.handleApiError(error, 'load items');
+            throw error;
         }
-    }
-
-    async handleAddItem(event) {
-        event.preventDefault();
-        
-        const formData = new FormData(this.addItemForm);
-        const itemData = {
-            name: formData.get('name').trim(),
-            description: formData.get('description').trim()
-        };
-        
-        if (!itemData.name || !itemData.description) {
-            this.showNotification('Please fill in all fields', 'error');
-            return;
-        }
-        
+    },
+    
+    async fetchItem(id) {
         try {
-            const response = await fetch(`${this.baseURL}/items`, {
+            const response = await fetch(`${API_BASE_URL}/items/${id}`);
+            if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error('Item not found');
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            ErrorHandler.handleApiError(error, 'load item');
+            throw error;
+        }
+    },
+    
+    async createItem(itemData) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/items`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -128,41 +193,24 @@ class ItemManager {
                 body: JSON.stringify(itemData)
             });
             
+            const responseData = await response.json();
+            
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const error = new Error('Create failed');
+                error.response = { status: response.status, data: responseData };
+                throw error;
             }
             
-            const newItem = await response.json();
-            this.items.push(newItem);
-            this.renderItems();
-            this.updateItemCount();
-            this.addItemForm.reset();
-            this.showNotification('Item added successfully!', 'success');
-            
+            return responseData;
         } catch (error) {
-            console.error('Error adding item:', error);
-            this.showNotification('Failed to add item', 'error');
+            ErrorHandler.handleApiError(error, 'create item');
+            throw error;
         }
-    }
-
-    async handleEditItem(event) {
-        event.preventDefault();
-        
-        if (!this.currentEditId) return;
-        
-        const formData = new FormData(this.editItemForm);
-        const itemData = {
-            name: formData.get('name').trim(),
-            description: formData.get('description').trim()
-        };
-        
-        if (!itemData.name || !itemData.description) {
-            this.showNotification('Please fill in all fields', 'error');
-            return;
-        }
-        
+    },
+    
+    async updateItem(id, itemData) {
         try {
-            const response = await fetch(`${this.baseURL}/items/${this.currentEditId}`, {
+            const response = await fetch(`${API_BASE_URL}/items/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -170,203 +218,336 @@ class ItemManager {
                 body: JSON.stringify(itemData)
             });
             
+            const responseData = await response.json();
+            
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const error = new Error('Update failed');
+                error.response = { status: response.status, data: responseData };
+                throw error;
             }
             
-            const updatedItem = await response.json();
-            const index = this.items.findIndex(item => item.id === this.currentEditId);
-            if (index !== -1) {
-                this.items[index] = updatedItem;
-                this.renderItems();
-            }
-            
-            this.closeEditModal();
-            this.showNotification('Item updated successfully!', 'success');
-            
+            return responseData;
         } catch (error) {
-            console.error('Error updating item:', error);
-            this.showNotification('Failed to update item', 'error');
+            ErrorHandler.handleApiError(error, 'update item');
+            throw error;
         }
-    }
-
-    async deleteItem(itemId) {
-        if (!confirm('Are you sure you want to delete this item?')) {
-            return;
-        }
-        
+    },
+    
+    async deleteItem(id) {
         try {
-            const response = await fetch(`${this.baseURL}/items/${itemId}`, {
+            const response = await fetch(`${API_BASE_URL}/items/${id}`, {
                 method: 'DELETE'
             });
             
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                if (response.status === 404) {
+                    throw new Error('Item not found');
+                }
+                const responseData = await response.json();
+                const error = new Error('Delete failed');
+                error.response = { status: response.status, data: responseData };
+                throw error;
             }
             
-            this.items = this.items.filter(item => item.id !== itemId);
-            this.renderItems();
-            this.updateItemCount();
-            this.showNotification('Item deleted successfully!', 'success');
-            
+            return true;
         } catch (error) {
-            console.error('Error deleting item:', error);
-            this.showNotification('Failed to delete item', 'error');
+            ErrorHandler.handleApiError(error, 'delete item');
+            throw error;
         }
     }
+};
 
-    openEditModal(itemId) {
-        const item = this.items.find(item => item.id === itemId);
-        if (!item) return;
-        
-        this.currentEditId = itemId;
-        this.editItemNameInput.value = item.name;
-        this.editItemDescriptionInput.value = item.description;
-        this.editModal.style.display = 'block';
-        this.editItemNameInput.focus();
-    }
+// Form validation
+function validateForm(formData) {
+    const errors = [];
+    
+    errors.push(...validation.validateName(formData.name));
+    errors.push(...validation.validateDescription(formData.description));
+    errors.push(...validation.validatePrice(formData.price));
+    errors.push(...validation.validateCategory(formData.category));
+    
+    return errors;
+}
 
-    closeEditModal() {
-        this.editModal.style.display = 'none';
-        this.currentEditId = null;
-        this.editItemForm.reset();
-    }
-
-    renderItems() {
-        if (this.items.length === 0) {
-            this.itemsList.innerHTML = `
-                <div class="empty-state">
-                    <h3>📋 No items found</h3>
-                    <p>Add your first item using the form on the left!</p>
-                </div>
-            `;
-            return;
-        }
-        
-        const itemsHTML = this.items.map(item => `
-            <div class="item-card">
-                <div class="item-header">
-                    <span class="item-title">${this.escapeHtml(item.name)}</span>
-                    <span class="item-id">#${item.id}</span>
-                </div>
-                <div class="item-description">${this.escapeHtml(item.description)}</div>
-                <div class="item-actions">
-                    <button class="btn btn-edit" onclick="itemManager.openEditModal(${item.id})">
-                        ✏️ Edit
-                    </button>
-                    <button class="btn btn-danger" onclick="itemManager.deleteItem(${item.id})">
-                        🗑️ Delete
-                    </button>
-                </div>
-            </div>
-        `).join('');
-        
-        this.itemsList.innerHTML = itemsHTML;
-    }
-
-    updateItemCount() {
-        const count = this.items.length;
-        this.itemCountElement.textContent = `${count} item${count !== 1 ? 's' : ''}`;
-    }
-
-    showLoading() {
-        this.itemsList.innerHTML = '<div class="loading">🔄 Loading items...</div>';
-    }
-
-    showError(message) {
-        this.itemsList.innerHTML = `
-            <div class="empty-state" style="border-color: #f44336; background-color: #ffebee;">
-                <h3>❌ Error</h3>
-                <p>${message}</p>
-                <button class="btn btn-secondary" onclick="itemManager.loadItems()">🔄 Retry</button>
+// Display validation errors
+function showValidationErrors(errors, form) {
+    // Clear existing error displays
+    const errorDisplays = form.querySelectorAll('.field-error');
+    errorDisplays.forEach(error => error.remove());
+    
+    if (errors.length > 0) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'field-error';
+        errorDiv.innerHTML = `
+            <div class="validation-errors">
+                <h4>Please fix the following errors:</h4>
+                <ul>
+                    ${errors.map(error => `<li>${error}</li>`).join('')}
+                </ul>
             </div>
         `;
+        form.insertBefore(errorDiv, form.firstChild);
+        return false;
     }
+    return true;
+}
 
-    showNotification(message, type = 'info') {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.innerHTML = `
-            <span>${message}</span>
-            <button onclick="this.parentElement.remove()">&times;</button>
-        `;
+// UI functions
+function showLoading(element, text = 'Loading...') {
+    element.disabled = true;
+    element.innerHTML = `<span class="loading-spinner"></span> ${text}`;
+}
+
+function hideLoading(element, originalText) {
+    element.disabled = false;
+    element.innerHTML = originalText;
+}
+
+function createItemCard(item) {
+    return `
+        <div class="item-card" data-id="${item.id}">
+            <div class="item-header">
+                <h3 class="item-name">${escapeHtml(item.name)}</h3>
+                <span class="item-category">${escapeHtml(item.category)}</span>
+            </div>
+            <div class="item-body">
+                <p class="item-description">${escapeHtml(item.description)}</p>
+                <div class="item-price">$${parseFloat(item.price).toFixed(2)}</div>
+            </div>
+            <div class="item-actions">
+                <button onclick="editItem(${item.id})" class="btn btn-edit">Edit</button>
+                <button onclick="deleteItem(${item.id})" class="btn btn-delete">Delete</button>
+            </div>
+        </div>
+    `;
+}
+
+// Utility function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Load and display items
+async function loadItems() {
+    try {
+        const items = await api.fetchItems();
+        const itemsContainer = document.getElementById('items-container');
         
-        // Add styles if not already added
-        if (!document.querySelector('#notification-styles')) {
-            const style = document.createElement('style');
-            style.id = 'notification-styles';
-            style.textContent = `
-                .notification {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    padding: 15px 20px;
-                    border-radius: 8px;
-                    color: white;
-                    font-weight: 600;
-                    z-index: 1001;
-                    display: flex;
-                    align-items: center;
-                    gap: 15px;
-                    animation: slideInRight 0.3s ease-out;
-                    max-width: 400px;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-                }
-                .notification-success { background-color: #4caf50; }
-                .notification-error { background-color: #f44336; }
-                .notification-info { background-color: #2196f3; }
-                .notification button {
-                    background: none;
-                    border: none;
-                    color: white;
-                    font-size: 18px;
-                    cursor: pointer;
-                    padding: 0;
-                    width: 20px;
-                    height: 20px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-                @keyframes slideInRight {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
-            `;
-            document.head.appendChild(style);
+        if (items.length === 0) {
+            itemsContainer.innerHTML = '<p class="no-items">No items found. Create your first item!</p>';
+        } else {
+            itemsContainer.innerHTML = items.map(item => createItemCard(item)).join('');
         }
-        
-        document.body.appendChild(notification);
-        
-        // Auto remove after 3 seconds
-        setTimeout(() => {
-            if (notification.parentElement) {
-                notification.remove();
-            }
-        }, 3000);
-    }
-
-    escapeHtml(text) {
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return text.replace(/[&<>"']/g, (m) => map[m]);
+    } catch (error) {
+        // Error already handled in api function
+        const itemsContainer = document.getElementById('items-container');
+        itemsContainer.innerHTML = '<p class="error-text">Failed to load items. Please refresh the page.</p>';
     }
 }
 
-// Initialize the application when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    window.itemManager = new ItemManager();
-});
-
-// Handle page visibility changes to check connection
-document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && window.itemManager) {
-        window.itemManager.checkBackendConnection();
+// Add new item
+async function addItem() {
+    const form = document.getElementById('item-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const originalBtnText = submitBtn.innerHTML;
+    
+    const formData = {
+        name: document.getElementById('name').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        price: parseFloat(document.getElementById('price').value),
+        category: document.getElementById('category').value
+    };
+    
+    // Validate form data
+    const validationErrors = validateForm(formData);
+    if (!showValidationErrors(validationErrors, form)) {
+        return;
     }
-});
+    
+    showLoading(submitBtn, 'Creating...');
+    
+    try {
+        await api.createItem(formData);
+        ErrorHandler.showSuccess('Item created successfully!');
+        form.reset();
+        loadItems();
+    } catch (error) {
+        // Error already handled in api function
+    } finally {
+        hideLoading(submitBtn, originalBtnText);
+    }
+}
+
+// Edit item
+async function editItem(id) {
+    try {
+        const item = await api.fetchItem(id);
+        
+        // Populate form with item data
+        document.getElementById('name').value = item.name;
+        document.getElementById('description').value = item.description;
+        document.getElementById('price').value = item.price;
+        document.getElementById('category').value = item.category;
+        
+        // Change form mode to edit
+        const form = document.getElementById('item-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const cancelBtn = document.getElementById('cancel-btn');
+        
+        form.dataset.mode = 'edit';
+        form.dataset.editId = id;
+        submitBtn.innerHTML = 'Update Item';
+        cancelBtn.style.display = 'inline-block';
+        
+        // Scroll to form
+        form.scrollIntoView({ behavior: 'smooth' });
+    } catch (error) {
+        // Error already handled in api function
+    }
+}
+
+// Update item
+async function updateItem() {
+    const form = document.getElementById('item-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const originalBtnText = submitBtn.innerHTML;
+    const id = form.dataset.editId;
+    
+    const formData = {
+        name: document.getElementById('name').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        price: parseFloat(document.getElementById('price').value),
+        category: document.getElementById('category').value
+    };
+    
+    // Validate form data
+    const validationErrors = validateForm(formData);
+    if (!showValidationErrors(validationErrors, form)) {
+        return;
+    }
+    
+    showLoading(submitBtn, 'Updating...');
+    
+    try {
+        await api.updateItem(id, formData);
+        ErrorHandler.showSuccess('Item updated successfully!');
+        cancelEdit();
+        loadItems();
+    } catch (error) {
+        // Error already handled in api function
+    } finally {
+        hideLoading(submitBtn, originalBtnText);
+    }
+}
+
+// Cancel edit mode
+function cancelEdit() {
+    const form = document.getElementById('item-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+    
+    form.reset();
+    form.dataset.mode = 'add';
+    delete form.dataset.editId;
+    submitBtn.innerHTML = 'Add Item';
+    cancelBtn.style.display = 'none';
+    
+    // Clear validation errors
+    const errorDisplays = form.querySelectorAll('.field-error');
+    errorDisplays.forEach(error => error.remove());
+}
+
+// Delete item with confirmation
+async function deleteItem(id) {
+    if (!confirm('Are you sure you want to delete this item?')) {
+        return;
+    }
+    
+    try {
+        await api.deleteItem(id);
+        ErrorHandler.showSuccess('Item deleted successfully!');
+        loadItems();
+    } catch (error) {
+        // Error already handled in api function
+    }
+}
+
+// Form submission handler
+function handleFormSubmit() {
+    const form = document.getElementById('item-form');
+    const mode = form.dataset.mode || 'add';
+    
+    if (mode === 'edit') {
+        updateItem();
+    } else {
+        addItem();
+    }
+}
+
+// Initialize the app
+function init() {
+    // Load items on page load
+    loadItems();
+    
+    // Add form submit event listener
+    const form = document.getElementById('item-form');
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        handleFormSubmit();
+    });
+    
+    // Add real-time validation
+    const nameInput = document.getElementById('name');
+    const descriptionInput = document.getElementById('description');
+    const priceInput = document.getElementById('price');
+    const categorySelect = document.getElementById('category');
+    
+    nameInput.addEventListener('blur', () => {
+        const errors = validation.validateName(nameInput.value);
+        showFieldErrors(nameInput, errors);
+    });
+    
+    descriptionInput.addEventListener('blur', () => {
+        const errors = validation.validateDescription(descriptionInput.value);
+        showFieldErrors(descriptionInput, errors);
+    });
+    
+    priceInput.addEventListener('blur', () => {
+        const errors = validation.validatePrice(priceInput.value);
+        showFieldErrors(priceInput, errors);
+    });
+    
+    categorySelect.addEventListener('change', () => {
+        const errors = validation.validateCategory(categorySelect.value);
+        showFieldErrors(categorySelect, errors);
+    });
+}
+
+// Show field-specific errors
+function showFieldErrors(field, errors) {
+    // Remove existing field error
+    const existingError = field.parentNode.querySelector('.field-error-inline');
+    if (existingError) {
+        existingError.remove();
+    }
+    
+    // Add new error if there are any
+    if (errors.length > 0) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'field-error-inline';
+        errorDiv.innerHTML = errors.join(', ');
+        field.parentNode.insertBefore(errorDiv, field.nextSibling);
+        field.classList.add('error');
+    } else {
+        field.classList.remove('error');
+    }
+}
+
+// Initialize app when DOM is loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
