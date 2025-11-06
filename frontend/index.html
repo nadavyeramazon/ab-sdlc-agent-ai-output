@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Frontend - Item Manager</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 Simple Item Manager</h1>
+            <p>Manage your items with this simple green-themed interface</p>
+        </header>
+
+        <div class="status-bar">
+            <div id="status" class="status-indicator offline">
+                <span class="status-dot"></span>
+                <span class="status-text">Checking connection...</span>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Add Item Form -->
+            <section class="add-item-section">
+                <h2>➕ Add New Item</h2>
+                <form id="addItemForm" class="form-container">
+                    <div class="form-group">
+                        <label for="itemName">Item Name:</label>
+                        <input type="text" id="itemName" name="name" placeholder="Enter item name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemDescription">Description:</label>
+                        <textarea id="itemDescription" name="description" placeholder="Enter item description" required rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Item</button>
+                </form>
+            </section>
+
+            <!-- Items List -->
+            <section class="items-section">
+                <h2>📝 Items List</h2>
+                <div class="items-controls">
+                    <button id="refreshBtn" class="btn btn-secondary">🔄 Refresh</button>
+                    <span id="itemCount" class="item-count">0 items</span>
+                </div>
+                <div id="itemsList" class="items-list">
+                    <div class="loading">Loading items...</div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Edit Item Modal -->
+        <div id="editModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>✏️ Edit Item</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <form id="editItemForm">
+                    <div class="form-group">
+                        <label for="editItemName">Item Name:</label>
+                        <input type="text" id="editItemName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editItemDescription">Description:</label>
+                        <textarea id="editItemDescription" name="description" required rows="3"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancelEdit">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Item</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <footer>
+            <p>Simple Frontend with Green UI | Connected to FastAPI Backend</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
