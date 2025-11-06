@@ -1,44 +1,63 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional
-import uvicorn
+from datetime import datetime
+import os
 
-app = FastAPI(title="Greeter API", description="A simple API to greet users")
+app = FastAPI(
+    title="Green Greeter API",
+    description="A simple FastAPI application that greets users with a green theme",
+    version="1.0.0"
+)
 
-# Enable CORS to allow frontend communication
+# Configure CORS with more restrictive settings for production
+allowed_origins = [
+    "http://localhost:3000",  # Frontend development server
+    "http://localhost:8080",  # Frontend production server
+    "http://frontend:8080",   # Docker container communication
+]
+
+# Allow all origins only in development
+if os.getenv("ENVIRONMENT") == "development":
+    allowed_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify exact origins
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
-class GreetingRequest(BaseModel):
+class GreetRequest(BaseModel):
     name: str
 
-class GreetingResponse(BaseModel):
-    message: str
+class GreetResponse(BaseModel):
+    greeting: str
+    timestamp: str
 
 @app.get("/")
-async def root():
-    return {"message": "Greeter API is running!"}
+async def read_root():
+    """Root endpoint that provides a welcome message."""
+    return {"message": "Welcome to the Green Greeter API!"}
 
 @app.get("/health")
 async def health_check():
+    """Health check endpoint for Docker health checks."""
     return {"status": "healthy"}
 
-@app.post("/greet", response_model=GreetingResponse)
-async def greet_user(request: GreetingRequest):
-    """
-    Greet a user by their name
-    """
-    if not request.name or not request.name.strip():
-        raise HTTPException(status_code=400, detail="Name cannot be empty")
+@app.post("/greet", response_model=GreetResponse)
+async def greet_user(request: GreetRequest):
+    """Greet a user with their provided name."""
+    # Handle empty or whitespace-only names
+    name = request.name.strip() if request.name else ""
+    if not name:
+        name = "Anonymous"
     
-    greeting_message = f"Hello, {request.name.strip()}! Welcome to our green-themed application! 🌿"
-    return GreetingResponse(message=greeting_message)
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    greeting = f"🌿 Hello, {name}! Welcome to our green-themed greeter! 🌱"
+    timestamp = datetime.now().isoformat()
+    
+    return GreetResponse(
+        greeting=greeting,
+        timestamp=timestamp
+    )
