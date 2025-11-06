@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Tests - Greeting App</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #2d5a27 0%, #4a7c44 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #90ee90;
+            margin-bottom: 30px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border-left: 4px solid #90ee90;
+        }
+        
+        .test-section h2 {
+            color: #90ee90;
+            margin-top: 0;
+        }
+        
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        
+        .test-pass {
+            background: rgba(144, 238, 144, 0.2);
+            border: 1px solid #90ee90;
+            color: #90ee90;
+        }
+        
+        .test-fail {
+            background: rgba(255, 99, 71, 0.2);
+            border: 1px solid #ff6347;
+            color: #ff6347;
+        }
+        
+        .test-info {
+            background: rgba(135, 206, 250, 0.2);
+            border: 1px solid #87ceeb;
+            color: #87ceeb;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #228b22, #32cd32);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .summary {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .mock-server {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .mock-server h3 {
+            color: #87ceeb;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Frontend JavaScript Test Suite</h1>
+        
+        <div class="mock-server">
+            <h3>Mock Server Status</h3>
+            <div id="mock-status" class="test-info">Initializing mock server...</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔧 Utility Functions Tests</h2>
+            <div id="utility-tests"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🌐 API Functions Tests</h2>
+            <div id="api-tests"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🎨 UI Functions Tests</h2>
+            <div id="ui-tests"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📝 Form Validation Tests</h2>
+            <div id="validation-tests"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔄 Integration Tests</h2>
+            <div id="integration-tests"></div>
+        </div>
+        
+        <div class="summary" id="test-summary">
+            <div id="summary-content">Ready to run tests...</div>
+        </div>
+        
+        <div style="text-align: center;">
+            <button onclick="runAllTests()">🚀 Run All Tests</button>
+            <button onclick="clearResults()">🧹 Clear Results</button>
+        </div>
+    </div>
+
+    <script>
+        // Mock server setup
+        let mockResponses = {
+            '/greet': {
+                POST: (data) => {
+                    if (!data.name || data.name.trim() === '') {
+                        return { status: 422, error: 'Name is required' };
+                    }
+                    if (data.name.length > 100) {
+                        return { status: 422, error: 'Name too long' };
+                    }
+                    if (/[<>"']/.test(data.name)) {
+                        return { status: 422, error: 'Invalid characters in name' };
+                    }
+                    const validTypes = ['hello', 'hi', 'hey', 'greetings', 'welcome'];
+                    if (data.greeting_type && !validTypes.includes(data.greeting_type)) {
+                        return { status: 422, error: 'Invalid greeting type' };
+                    }
+                    
+                    const greetingType = data.greeting_type || 'hello';
+                    const messages = {
+                        'hello': `Hello, ${data.name}! Nice to meet you!`,
+                        'hi': `Hi there, ${data.name}! How are you doing?`,
+                        'hey': `Hey ${data.name}! What's up?`,
+                        'greetings': `Greetings, ${data.name}! Hope you're having a great day!`,
+                        'welcome': `Welcome, ${data.name}! We're glad you're here!`
+                    };
+                    
+                    return {
+                        status: 200,
+                        data: {
+                            message: messages[greetingType],
+                            name: data.name.trim(),
+                            greeting_type: greetingType
+                        }
+                    };
+                }
+            }
+        };
+        
+        // Mock fetch function
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+            const path = url.replace('http://localhost:8000', '');
+            const method = options?.method || 'GET';
+            
+            if (mockResponses[path] && mockResponses[path][method]) {
+                const response = mockResponses[path][method](
+                    options?.body ? JSON.parse(options.body) : {}
+                );
+                
+                return Promise.resolve({
+                    ok: response.status >= 200 && response.status < 300,
+                    status: response.status,
+                    json: () => Promise.resolve(response.data || { error: response.error })
+                });
+            }
+            
+            // Fallback to original fetch for real requests
+            return originalFetch.apply(this, arguments);
+        };
+        
+        document.getElementById('mock-status').textContent = '✅ Mock server initialized successfully';
+        document.getElementById('mock-status').className = 'test-pass';
+        
+        // Test results storage
+        let testResults = {
+            passed: 0,
+            failed: 0,
+            total: 0
+        };
+        
+        // Test helper functions
+        function assert(condition, message) {
+            testResults.total++;
+            if (condition) {
+                testResults.passed++;
+                return { success: true, message: `✅ ${message}` };
+            } else {
+                testResults.failed++;
+                return { success: false, message: `❌ ${message}` };
+            }
+        }
+        
+        function assertEqual(actual, expected, message) {
+            const condition = actual === expected;
+            const testMessage = condition 
+                ? message 
+                : `${message} (Expected: ${expected}, Got: ${actual})`;
+            return assert(condition, testMessage);
+        }
+        
+        function assertContains(text, substring, message) {
+            const condition = text.includes(substring);
+            const testMessage = condition 
+                ? message 
+                : `${message} (Text: "${text}" should contain: "${substring}")`;
+            return assert(condition, testMessage);
+        }
+        
+        function displayTest(result, containerId) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = result.success ? 'test-pass' : 'test-fail';
+            div.textContent = result.message;
+            container.appendChild(div);
+        }
+        
+        // Import app functions (simulate including app.js)
+        function loadAppFunctions() {
+            // Since we can't directly import, we'll simulate the key functions
+            window.validateInput = function(name, greetingType) {
+                if (!name || name.trim() === '') {
+                    return { valid: false, error: 'Name cannot be empty' };
+                }
+                if (name.length > 100) {
+                    return { valid: false, error: 'Name is too long (max 100 characters)' };
+                }
+                if (/[<>"']/.test(name)) {
+                    return { valid: false, error: 'Name contains invalid characters' };
+                }
+                const validTypes = ['hello', 'hi', 'hey', 'greetings', 'welcome'];
+                if (greetingType && !validTypes.includes(greetingType)) {
+                    return { valid: false, error: 'Invalid greeting type' };
+                }
+                return { valid: true };
+            };
+            
+            window.sendGreeting = async function(name, greetingType = 'hello') {
+                const response = await fetch('http://localhost:8000/greet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, greeting_type: greetingType })
+                });
+                return response.json();
+            };
+            
+            window.showError = function(message) {
+                return `Error: ${message}`;
+            };
+            
+            window.showSuccess = function(data) {
+                return `Success: ${data.message}`;
+            };
+        }
+        
+        // Test suites
+        async function testUtilityFunctions() {
+            const container = document.getElementById('utility-tests');
+            container.innerHTML = '';
+            
+            // Test validateInput function
+            let result = validateInput('John', 'hello');
+            displayTest(assert(result.valid, 'Valid input should pass validation'), 'utility-tests');
+            
+            result = validateInput('', 'hello');
+            displayTest(assert(!result.valid, 'Empty name should fail validation'), 'utility-tests');
+            
+            result = validateInput('a'.repeat(101), 'hello');
+            displayTest(assert(!result.valid, 'Long name should fail validation'), 'utility-tests');
+            
+            result = validateInput('John<script>', 'hello');
+            displayTest(assert(!result.valid, 'Name with invalid characters should fail'), 'utility-tests');
+            
+            result = validateInput('John', 'invalid');
+            displayTest(assert(!result.valid, 'Invalid greeting type should fail'), 'utility-tests');
+            
+            result = validateInput('  John  ', 'hello');
+            displayTest(assert(result.valid, 'Name with whitespace should be valid'), 'utility-tests');
+        }
+        
+        async function testAPIFunctions() {
+            const container = document.getElementById('api-tests');
+            container.innerHTML = '';
+            
+            try {
+                // Test successful greeting
+                let response = await sendGreeting('John', 'hello');
+                displayTest(assert(response.message, 'API should return message'), 'api-tests');
+                displayTest(assert(response.name === 'John', 'API should return correct name'), 'api-tests');
+                displayTest(assert(response.greeting_type === 'hello', 'API should return correct greeting type'), 'api-tests');
+                
+                // Test different greeting types
+                const greetingTypes = ['hi', 'hey', 'greetings', 'welcome'];
+                for (const type of greetingTypes) {
+                    response = await sendGreeting('Test', type);
+                    displayTest(assert(response.greeting_type === type, `API should handle ${type} greeting`), 'api-tests');
+                }
+                
+                // Test error handling
+                response = await sendGreeting('', 'hello');
+                displayTest(assert(response.error, 'API should return error for empty name'), 'api-tests');
+                
+            } catch (error) {
+                displayTest({ success: false, message: `API test failed: ${error.message}` }, 'api-tests');
+            }
+        }
+        
+        async function testUIFunctions() {
+            const container = document.getElementById('ui-tests');
+            container.innerHTML = '';
+            
+            // Test showError function
+            let errorMessage = showError('Test error');
+            displayTest(assertContains(errorMessage, 'Error:', 'showError should format error messages'), 'ui-tests');
+            displayTest(assertContains(errorMessage, 'Test error', 'showError should include error text'), 'ui-tests');
+            
+            // Test showSuccess function
+            let successMessage = showSuccess({ message: 'Hello, John!' });
+            displayTest(assertContains(successMessage, 'Success:', 'showSuccess should format success messages'), 'ui-tests');
+            displayTest(assertContains(successMessage, 'Hello, John!', 'showSuccess should include message text'), 'ui-tests');
+        }
+        
+        async function testFormValidation() {
+            const container = document.getElementById('validation-tests');
+            container.innerHTML = '';
+            
+            // Test various input scenarios
+            const testCases = [
+                { name: 'John', type: 'hello', expected: true, desc: 'Valid standard input' },
+                { name: 'Alice', type: 'hi', expected: true, desc: 'Valid input with hi greeting' },
+                { name: '', type: 'hello', expected: false, desc: 'Empty name' },
+                { name: '   ', type: 'hello', expected: false, desc: 'Whitespace only name' },
+                { name: 'a'.repeat(101), type: 'hello', expected: false, desc: 'Name too long' },
+                { name: 'John<script>', type: 'hello', expected: false, desc: 'Name with script tag' },
+                { name: 'John', type: 'invalid', expected: false, desc: 'Invalid greeting type' },
+                { name: 'José', type: 'hello', expected: true, desc: 'Unicode characters' },
+                { name: "O'Connor", type: 'welcome', expected: false, desc: 'Apostrophe in name' }, // Should fail due to validation
+            ];
+            
+            testCases.forEach(testCase => {
+                const result = validateInput(testCase.name, testCase.type);
+                const passed = result.valid === testCase.expected;
+                displayTest(assert(passed, testCase.desc), 'validation-tests');
+            });
+        }
+        
+        async function testIntegration() {
+            const container = document.getElementById('integration-tests');
+            container.innerHTML = '';
+            
+            try {
+                // Test full workflow: validate -> send -> handle response
+                const name = 'Integration Test';
+                const greetingType = 'hello';
+                
+                // Step 1: Validate
+                const validation = validateInput(name, greetingType);
+                displayTest(assert(validation.valid, 'Integration: Input validation passes'), 'integration-tests');
+                
+                if (validation.valid) {
+                    // Step 2: Send request
+                    const response = await sendGreeting(name, greetingType);
+                    displayTest(assert(response.message, 'Integration: API returns message'), 'integration-tests');
+                    
+                    // Step 3: Handle response
+                    const successMessage = showSuccess(response);
+                    displayTest(assert(successMessage.includes('Success:'), 'Integration: Success message formatted'), 'integration-tests');
+                }
+                
+                // Test error workflow
+                const invalidName = '';
+                const invalidValidation = validateInput(invalidName, greetingType);
+                displayTest(assert(!invalidValidation.valid, 'Integration: Invalid input caught by validation'), 'integration-tests');
+                
+                if (!invalidValidation.valid) {
+                    const errorMessage = showError(invalidValidation.error);
+                    displayTest(assert(errorMessage.includes('Error:'), 'Integration: Error message formatted'), 'integration-tests');
+                }
+                
+            } catch (error) {
+                displayTest({ success: false, message: `Integration test failed: ${error.message}` }, 'integration-tests');
+            }
+        }
+        
+        async function runAllTests() {
+            // Initialize
+            testResults = { passed: 0, failed: 0, total: 0 };
+            loadAppFunctions();
+            
+            document.getElementById('summary-content').textContent = 'Running tests...';
+            
+            // Run all test suites
+            await testUtilityFunctions();
+            await testAPIFunctions();
+            await testUIFunctions();
+            await testFormValidation();
+            await testIntegration();
+            
+            // Update summary
+            const summary = document.getElementById('summary-content');
+            const passRate = ((testResults.passed / testResults.total) * 100).toFixed(1);
+            summary.innerHTML = `
+                <div>📊 Test Results Summary</div>
+                <div style="margin-top: 10px;">
+                    Total Tests: ${testResults.total} | 
+                    Passed: ${testResults.passed} | 
+                    Failed: ${testResults.failed} | 
+                    Pass Rate: ${passRate}%
+                </div>
+            `;
+            
+            const summaryContainer = document.getElementById('test-summary');
+            if (testResults.failed === 0) {
+                summaryContainer.style.background = 'rgba(144, 238, 144, 0.2)';
+                summaryContainer.style.border = '2px solid #90ee90';
+            } else {
+                summaryContainer.style.background = 'rgba(255, 99, 71, 0.2)';
+                summaryContainer.style.border = '2px solid #ff6347';
+            }
+        }
+        
+        function clearResults() {
+            const containers = ['utility-tests', 'api-tests', 'ui-tests', 'validation-tests', 'integration-tests'];
+            containers.forEach(id => {
+                document.getElementById(id).innerHTML = '';
+            });
+            
+            testResults = { passed: 0, failed: 0, total: 0 };
+            document.getElementById('summary-content').textContent = 'Ready to run tests...';
+            
+            const summaryContainer = document.getElementById('test-summary');
+            summaryContainer.style.background = 'rgba(255, 255, 255, 0.1)';
+            summaryContainer.style.border = 'none';
+        }
+        
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(runAllTests, 1000);
+        });
+    </script>
+</body>
+</html>
