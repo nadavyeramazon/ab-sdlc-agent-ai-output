@@ -245,7 +245,7 @@ describe('Form Submission', () => {
 // Test Suite: Response Parsing
 describe('Response Parsing', () => {
     test('should extract message from successful response', () => {
-        const response = { message: 'Hello, Alice! Welcome to our green-themed application! 🌿' };
+        const response = { message: 'Hello, Alice! Welcome to our purple-themed application! 💜' };
         expect(response.message).toBeDefined();
         expect(response.message).toContain('Alice');
     });
