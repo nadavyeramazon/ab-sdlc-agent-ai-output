@@ -4,8 +4,4 @@ app = FastAPI()
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the FastAPI application!"}
-
-@app.get("/hello/{name}")
-def read_item(name: str):
-    return {"message": f"Hello {name}!"}
+    return {"Hello": "World"}
