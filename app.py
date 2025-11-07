@@ -1,193 +1,160 @@
 #!/usr/bin/env python3
-"""Simple Python Application - A basic task manager"""
+"""Simple Hello World API with FastAPI"""
 
-import json
-import os
-from datetime import datetime
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from typing import Optional
+import uvicorn
+
+# Initialize FastAPI application
+app = FastAPI(
+    title="Hello World API",
+    description="A simple Hello World API built with FastAPI",
+    version="1.0.0"
+)
 
 
-class TaskManager:
-    """A simple task manager to add, list, and complete tasks."""
+# Pydantic model for request body
+class GreetingRequest(BaseModel):
+    """Model for custom greeting requests"""
+    name: str
+    language: Optional[str] = "en"
+
+
+# Root endpoint - Basic Hello World
+@app.get("/")
+async def root():
+    """Root endpoint returning a simple Hello World message.
     
-    def __init__(self, filename='tasks.json'):
-        """Initialize the task manager.
-        
-        Args:
-            filename (str): The file to store tasks
-        """
-        self.filename = filename
-        self.tasks = self.load_tasks()
+    Returns:
+        dict: A welcome message
+    """
+    return {
+        "message": "Hello World!",
+        "status": "success",
+        "api": "FastAPI Hello World API"
+    }
+
+
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    """Health check endpoint to verify API is running.
     
-    def load_tasks(self):
-        """Load tasks from the JSON file.
-        
-        Returns:
-            list: List of tasks
-        """
-        if os.path.exists(self.filename):
-            try:
-                with open(self.filename, 'r') as f:
-                    return json.load(f)
-            except json.JSONDecodeError:
-                print(f"Warning: Could not parse {self.filename}. Starting fresh.")
-                return []
-        return []
+    Returns:
+        dict: Health status information
+    """
+    return {
+        "status": "healthy",
+        "message": "API is running smoothly"
+    }
+
+
+# Greeting endpoint with path parameter
+@app.get("/hello/{name}")
+async def greet_user(name: str):
+    """Greet a user by name.
     
-    def save_tasks(self):
-        """Save tasks to the JSON file."""
-        with open(self.filename, 'w') as f:
-            json.dump(self.tasks, f, indent=2)
+    Args:
+        name (str): The name of the user to greet
     
-    def add_task(self, description):
-        """Add a new task.
-        
-        Args:
-            description (str): Task description
-        """
-        task = {
-            'id': len(self.tasks) + 1,
-            'description': description,
-            'completed': False,
-            'created_at': datetime.now().isoformat()
+    Returns:
+        dict: Personalized greeting message
+    """
+    return {
+        "message": f"Hello, {name}!",
+        "name": name
+    }
+
+
+# Greeting endpoint with query parameters
+@app.get("/greet")
+async def greet_with_params(name: str = "World", greeting: str = "Hello"):
+    """Greet with customizable greeting and name using query parameters.
+    
+    Args:
+        name (str): The name to greet (default: "World")
+        greeting (str): The greeting to use (default: "Hello")
+    
+    Returns:
+        dict: Customized greeting message
+    """
+    return {
+        "message": f"{greeting}, {name}!",
+        "greeting": greeting,
+        "name": name
+    }
+
+
+# POST endpoint for custom greetings
+@app.post("/greet")
+async def create_greeting(request: GreetingRequest):
+    """Create a custom greeting in different languages.
+    
+    Args:
+        request (GreetingRequest): Request body with name and language
+    
+    Returns:
+        dict: Greeting message in specified language
+    """
+    # Dictionary of greetings in different languages
+    greetings = {
+        "en": "Hello",
+        "es": "Hola",
+        "fr": "Bonjour",
+        "de": "Hallo",
+        "it": "Ciao",
+        "pt": "Olá",
+        "ru": "Привет",
+        "ja": "こんにちは",
+        "zh": "你好"
+    }
+    
+    # Get greeting in specified language or default to English
+    greeting = greetings.get(request.language.lower(), greetings["en"])
+    
+    return {
+        "message": f"{greeting}, {request.name}!",
+        "name": request.name,
+        "language": request.language,
+        "greeting": greeting
+    }
+
+
+# Info endpoint
+@app.get("/info")
+async def get_api_info():
+    """Get information about the API.
+    
+    Returns:
+        dict: API information and available endpoints
+    """
+    return {
+        "name": "Hello World API",
+        "version": "1.0.0",
+        "framework": "FastAPI",
+        "description": "A simple Hello World API with multiple greeting endpoints",
+        "endpoints": {
+            "GET /": "Root endpoint - Basic Hello World",
+            "GET /health": "Health check endpoint",
+            "GET /hello/{name}": "Greet a specific user",
+            "GET /greet": "Customizable greeting with query parameters",
+            "POST /greet": "Create greeting in different languages",
+            "GET /info": "API information",
+            "GET /docs": "Interactive API documentation (Swagger UI)",
+            "GET /redoc": "Alternative API documentation (ReDoc)"
         }
-        self.tasks.append(task)
-        self.save_tasks()
-        print(f"✓ Task added: {description}")
-    
-    def list_tasks(self):
-        """List all tasks."""
-        if not self.tasks:
-            print("No tasks found. Add a task to get started!")
-            return
-        
-        print("\n" + "="*50)
-        print("TASKS")
-        print("="*50)
-        
-        for task in self.tasks:
-            status = "✓" if task['completed'] else "○"
-            task_id = task['id']
-            description = task['description']
-            print(f"{status} [{task_id}] {description}")
-        
-        print("="*50 + "\n")
-    
-    def complete_task(self, task_id):
-        """Mark a task as completed.
-        
-        Args:
-            task_id (int): The ID of the task to complete
-        """
-        for task in self.tasks:
-            if task['id'] == task_id:
-                task['completed'] = True
-                task['completed_at'] = datetime.now().isoformat()
-                self.save_tasks()
-                print(f"✓ Task {task_id} marked as completed")
-                return
-        print(f"✗ Task {task_id} not found")
-    
-    def delete_task(self, task_id):
-        """Delete a task.
-        
-        Args:
-            task_id (int): The ID of the task to delete
-        """
-        for i, task in enumerate(self.tasks):
-            if task['id'] == task_id:
-                deleted_task = self.tasks.pop(i)
-                self.save_tasks()
-                print(f"✓ Task deleted: {deleted_task['description']}")
-                return
-        print(f"✗ Task {task_id} not found")
+    }
 
 
-def print_help():
-    """Print help information."""
-    print("""
-╔═══════════════════════════════════════════════════════╗
-║         Simple Python Task Manager                    ║
-╚═══════════════════════════════════════════════════════╝
-
-Commands:
-  add <description>     Add a new task
-  list                  List all tasks
-  complete <id>         Mark a task as completed
-  delete <id>           Delete a task
-  help                  Show this help message
-  exit                  Exit the application
-
-Examples:
-  add Buy groceries
-  list
-  complete 1
-  delete 2
-    """)
-
-
-def main():
-    """Main application loop."""
-    print("\n🚀 Welcome to the Simple Python Task Manager!")
-    print("Type 'help' for available commands.\n")
-    
-    task_manager = TaskManager()
-    
-    while True:
-        try:
-            user_input = input("taskmanager> ").strip()
-            
-            if not user_input:
-                continue
-            
-            parts = user_input.split(maxsplit=1)
-            command = parts[0].lower()
-            
-            if command == 'exit' or command == 'quit':
-                print("👋 Goodbye!")
-                break
-            
-            elif command == 'help':
-                print_help()
-            
-            elif command == 'list':
-                task_manager.list_tasks()
-            
-            elif command == 'add':
-                if len(parts) < 2:
-                    print("✗ Usage: add <description>")
-                else:
-                    task_manager.add_task(parts[1])
-            
-            elif command == 'complete':
-                if len(parts) < 2:
-                    print("✗ Usage: complete <task_id>")
-                else:
-                    try:
-                        task_id = int(parts[1])
-                        task_manager.complete_task(task_id)
-                    except ValueError:
-                        print("✗ Task ID must be a number")
-            
-            elif command == 'delete':
-                if len(parts) < 2:
-                    print("✗ Usage: delete <task_id>")
-                else:
-                    try:
-                        task_id = int(parts[1])
-                        task_manager.delete_task(task_id)
-                    except ValueError:
-                        print("✗ Task ID must be a number")
-            
-            else:
-                print(f"✗ Unknown command: {command}")
-                print("Type 'help' for available commands.")
-        
-        except KeyboardInterrupt:
-            print("\n👋 Goodbye!")
-            break
-        except Exception as e:
-            print(f"✗ Error: {str(e)}")
-
-
-if __name__ == '__main__':
-    main()
+# Run the application
+if __name__ == "__main__":
+    # Run with uvicorn server
+    uvicorn.run(
+        "app:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,  # Enable auto-reload for development
+        log_level="info"
+    )
