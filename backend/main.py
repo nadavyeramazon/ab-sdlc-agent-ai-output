@@ -2,7 +2,6 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-
 @app.get("/")
-async def root():
-    return {"message": "Hello from the Green Themed API!"}
+def read_root():
+    return {"message": "Hello from the Green Themed Backend!"}
