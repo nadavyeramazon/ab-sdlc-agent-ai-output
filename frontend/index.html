@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Theme App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌿 Green Theme Application</h1>
+            <p class="subtitle">Simple & Clean Interface</p>
+        </header>
+
+        <main>
+            <section class="card">
+                <h2>Welcome</h2>
+                <p>This is a green-themed web application connected to a FastAPI backend.</p>
+                <button id="fetchBtn" class="btn">Fetch Data from Backend</button>
+                <div id="response" class="response-box"></div>
+            </section>
+
+            <section class="card">
+                <h2>Send Message</h2>
+                <form id="messageForm">
+                    <input type="text" id="messageInput" placeholder="Enter your message" required>
+                    <button type="submit" class="btn">Send Message</button>
+                </form>
+                <div id="messageResponse" class="response-box"></div>
+            </section>
+
+            <section class="card">
+                <h2>Features</h2>
+                <ul class="feature-list">
+                    <li>✓ Green themed design</li>
+                    <li>✓ FastAPI backend integration</li>
+                    <li>✓ Docker Compose deployment</li>
+                    <li>✓ RESTful API communication</li>
+                    <li>✓ Responsive layout</li>
+                </ul>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Green Theme App | Built with ❤️ and JavaScript</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
