@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hello-world-api"
+version = "0.1.0"
+description = "A simple Hello World API built with FastAPI"
+authors = [{name = "SDLC Agent", email = "sdlc@example.com"}]
+readme = "README.md"
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.7"
+dependencies = [
+    "fastapi==0.104.1",
+    "uvicorn==0.24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "httpx>=0.23",
+]
+
+[project.scripts]
+hello-world-api = "main:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v"
