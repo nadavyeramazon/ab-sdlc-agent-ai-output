@@ -1,0 +1,13 @@
+# FastAPI and Dependencies
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+python-multipart==0.0.6
+
+# Optional: Additional useful packages
+# python-dotenv==1.0.0  # For environment variables
+# sqlalchemy==2.0.25    # For database integration
+# alembic==1.13.1       # For database migrations
+# httpx==0.26.0         # For async HTTP requests
+# redis==5.0.1          # For caching
+# celery==5.3.6         # For background tasks
