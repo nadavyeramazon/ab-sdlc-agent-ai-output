@@ -1,0 +1,9 @@
+# FastAPI framework
+fastapi==0.109.0
+
+# ASGI server for production
+uvicorn[standard]==0.27.0
+
+# Additional dependencies
+pydantic==2.5.3
+pydantic-settings==2.1.0
