@@ -1,0 +1,5 @@
+pytest>=6.0
+pytest-cov>=2.10
+httpx>=0.23
+black>=21.0
+flake8>=3.9
