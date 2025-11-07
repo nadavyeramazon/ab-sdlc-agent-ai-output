@@ -1,26 +1,29 @@
-&lt;!DOCTYPE html&gt;
-&lt;html&gt;
-  &lt;head&gt;
-    &lt;title&gt;Green Themed UI&lt;/title&gt;
-    &lt;style&gt;
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Green Themed UI</title>
+    <style>
       body {
         font-family: Arial, sans-serif;
-        background-color: #d9ebd8;
-        color: #1e5e1e;
+        background-color: #e6f2e6;
+        color: #004d00;
       }
       h1 {
-        color: #0e3d0e;
+        text-align: center;
       }
-    &lt;/style&gt;
-  &lt;/head&gt;
-  &lt;body&gt;
-    &lt;h1&gt;Welcome to the Green UI&lt;/h1&gt;
-    &lt;p&gt;This is a simple user interface with a green theme.&lt;/p&gt;
-    &lt;button onclick=&quot;showMessage()&quot;&gt;Click me&lt;/button&gt;
-    &lt;script&gt;
-      function showMessage() {
-        alert('You clicked the button!');
+      button {
+        background-color: #008000;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
       }
-    &lt;/script&gt;
-  &lt;/body&gt;
-&lt;/html&gt;
+    </style>
+  </head>
+  <body>
+    <h1>Welcome to the Green Themed UI</h1>
+    <button onclick="alert('Hello from the Green UI!')">Click Me</button>
+    <script src="app.js"></script>
+  </body>
+</html>
