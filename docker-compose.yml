@@ -3,19 +3,11 @@ version: '3'
 services:
 
   frontend:
-    build: 
-      context: ./frontend
+    build: frontend/green-ui
     ports:
       - 3000:3000
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    stdin_open: true
 
   backend:
-    build:
-      context: ./backend
-    ports: 
-      - 8000:8000
-    volumes:
-      - ./backend:/app
+    build: backend/fastapi
+    ports:
+     - 8000:8000
