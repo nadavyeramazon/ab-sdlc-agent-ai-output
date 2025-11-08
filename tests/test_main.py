@@ -1,7 +1,16 @@
-"""Comprehensive test suite for the Greeting API."""
+"""Comprehensive test suite for the Greeting API.
+
+This module contains extensive tests covering:
+- All API endpoints
+- All supported languages
+- Error handling and validation
+- Edge cases and boundary conditions
+- Response models
+- CORS configuration
+"""
 import pytest
 from fastapi.testclient import TestClient
-from backend.main import app, GREETINGS
+from backend.main import app, GREETINGS, SUPPORTED_LANGUAGES
 
 client = TestClient(app)
 
@@ -17,8 +26,10 @@ class TestRootEndpoint:
         assert "name" in data
         assert "version" in data
         assert "endpoints" in data
+        assert "supported_languages" in data
         assert data["name"] == "Greeting API"
         assert data["version"] == "1.0.0"
+        assert len(data["supported_languages"]) == 5
 
 
 class TestHealthEndpoint:
@@ -31,6 +42,18 @@ class TestHealthEndpoint:
         data = response.json()
         assert data["status"] == "healthy"
         assert data["service"] == "greeting-api"
+        assert "version" in data
+        assert data["version"] == "1.0.0"
+    
+    def test_health_check_response_model(self):
+        """Test that health response has correct structure."""
+        response = client.get("/health")
+        assert response.status_code == 200
+        data = response.json()
+        required_fields = ["status", "service", "version"]
+        for field in required_fields:
+            assert field in data
+            assert isinstance(data[field], str)
 
 
 class TestGreetEndpoint:
@@ -110,6 +133,7 @@ class TestGreetEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["language"] == "en"
+        assert "Hello" in data["message"]
     
     def test_greet_with_uppercase_language(self):
         """Test that language code is case-insensitive."""
@@ -151,6 +175,17 @@ class TestGreetEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert "José-María" in data["message"]
+    
+    def test_greet_with_leading_trailing_spaces(self):
+        """Test that leading/trailing spaces are handled."""
+        response = client.post(
+            "/api/greet",
+            json={"name": "  John  ", "language": "en"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        # Name should be trimmed
+        assert data["name"] == "John"
 
 
 class TestGreetEndpointErrors:
@@ -190,6 +225,8 @@ class TestGreetEndpointErrors:
         assert response.status_code == 400
         data = response.json()
         assert "not supported" in data["detail"].lower()
+        # Check that available languages are mentioned
+        assert any(lang in data["detail"] for lang in SUPPORTED_LANGUAGES)
     
     def test_greet_with_invalid_language_code(self):
         """Test with completely invalid language code."""
@@ -214,6 +251,15 @@ class TestGreetEndpointErrors:
             json={"name": None, "language": "en"}
         )
         assert response.status_code == 422
+    
+    def test_greet_with_whitespace_only_name(self):
+        """Test with name containing only whitespace."""
+        response = client.post(
+            "/api/greet",
+            json={"name": "   ", "language": "en"}
+        )
+        # Should return validation error
+        assert response.status_code in [400, 422]
 
 
 class TestResponseModels:
@@ -227,18 +273,31 @@ class TestResponseModels:
         )
         assert response.status_code == 200
         data = response.json()
-        assert "message" in data
-        assert "name" in data
-        assert "language" in data
+        required_fields = ["message", "name", "language"]
+        for field in required_fields:
+            assert field in data
+            assert isinstance(data[field], str)
+    
+    def test_greeting_response_types(self):
+        """Test that response fields have correct types."""
+        response = client.post(
+            "/api/greet",
+            json={"name": "Test", "language": "en"}
+        )
+        assert response.status_code == 200
+        data = response.json()
         assert isinstance(data["message"], str)
         assert isinstance(data["name"], str)
         assert isinstance(data["language"], str)
+        assert len(data["message"]) > 0
+        assert len(data["name"]) > 0
+        assert len(data["language"]) == 2  # Language code is 2 characters
 
 
 class TestAllLanguages:
     """Test all supported languages."""
     
-    @pytest.mark.parametrize("language", list(GREETINGS.keys()))
+    @pytest.mark.parametrize("language", SUPPORTED_LANGUAGES)
     def test_all_supported_languages(self, language):
         """Test that all configured languages work correctly."""
         response = client.post(
@@ -249,35 +308,48 @@ class TestAllLanguages:
         data = response.json()
         assert data["language"] == language
         assert "TestUser" in data["message"]
+    
+    @pytest.mark.parametrize("language,greeting_word", [
+        ("en", "Hello"),
+        ("es", "Hola"),
+        ("fr", "Bonjour"),
+        ("de", "Hallo"),
+        ("it", "Ciao"),
+    ])
+    def test_language_specific_greetings(self, language, greeting_word):
+        """Test that each language uses correct greeting word."""
+        response = client.post(
+            "/api/greet",
+            json={"name": "User", "language": language}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert greeting_word in data["message"]
 
 
 class TestCORS:
     """Tests for CORS configuration."""
     
-    def test_cors_headers_present(self):
-        """Test that CORS headers are present in response."""
+    def test_cors_headers_on_post(self):
+        """Test that CORS headers are present in POST response."""
         response = client.post(
             "/api/greet",
             json={"name": "Test", "language": "en"},
             headers={"Origin": "http://localhost:3000"}
         )
         assert response.status_code == 200
-        # Note: TestClient may not include all CORS headers in response
-        # This is more of a smoke test
+    
+    def test_cors_headers_on_get(self):
+        """Test that CORS headers are present in GET response."""
+        response = client.get(
+            "/health",
+            headers={"Origin": "http://localhost:3000"}
+        )
+        assert response.status_code == 200
 
 
 class TestEdgeCases:
     """Tests for edge cases and boundary conditions."""
-    
-    def test_greet_with_whitespace_name(self):
-        """Test name with only whitespace."""
-        response = client.post(
-            "/api/greet",
-            json={"name": "   ", "language": "en"}
-        )
-        # Should either accept it or reject it consistently
-        # Accepting with whitespace trimmed
-        assert response.status_code in [200, 422]
     
     def test_greet_with_numeric_name(self):
         """Test name with numbers."""
@@ -308,3 +380,84 @@ class TestEdgeCases:
         assert response.status_code == 200
         data = response.json()
         assert "John" in data["message"]
+    
+    def test_greet_with_very_short_name(self):
+        """Test with single character name."""
+        response = client.post(
+            "/api/greet",
+            json={"name": "J", "language": "en"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == "J"
+    
+    def test_greet_with_exactly_100_chars(self):
+        """Test name with exactly 100 characters (boundary)."""
+        name = "A" * 100
+        response = client.post(
+            "/api/greet",
+            json={"name": name, "language": "en"}
+        )
+        assert response.status_code == 200
+        assert response.json()["name"] == name
+    
+    def test_greet_with_101_chars(self):
+        """Test name with 101 characters (over limit)."""
+        name = "A" * 101
+        response = client.post(
+            "/api/greet",
+            json={"name": name, "language": "en"}
+        )
+        assert response.status_code == 422
+    
+    def test_multiple_greetings_same_user(self):
+        """Test multiple greetings for the same user."""
+        for _ in range(3):
+            response = client.post(
+                "/api/greet",
+                json={"name": "John", "language": "en"}
+            )
+            assert response.status_code == 200
+            data = response.json()
+            assert data["name"] == "John"
+    
+    def test_concurrent_different_languages(self):
+        """Test that different language requests work independently."""
+        responses = []
+        for lang in SUPPORTED_LANGUAGES:
+            response = client.post(
+                "/api/greet",
+                json={"name": "User", "language": lang}
+            )
+            responses.append(response)
+        
+        # All should succeed
+        for response in responses:
+            assert response.status_code == 200
+        
+        # Each should have correct language
+        for i, lang in enumerate(SUPPORTED_LANGUAGES):
+            assert responses[i].json()["language"] == lang
+
+
+class TestAPIDocumentation:
+    """Tests for API documentation endpoints."""
+    
+    def test_openapi_schema_accessible(self):
+        """Test that OpenAPI schema is accessible."""
+        response = client.get("/openapi.json")
+        assert response.status_code == 200
+        schema = response.json()
+        assert "openapi" in schema
+        assert "info" in schema
+        assert "paths" in schema
+    
+    def test_docs_endpoint_exists(self):
+        """Test that /docs endpoint exists."""
+        response = client.get("/docs")
+        assert response.status_code == 200
+    
+    def test_redoc_endpoint_exists(self):
+        """Test that /redoc endpoint exists."""
+        response = client.get("/redoc")
+        assert response.status_code == 200

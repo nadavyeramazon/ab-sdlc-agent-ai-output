@@ -4,8 +4,15 @@
  */
 
 // Configuration
-const API_BASE_URL = 'http://localhost:8000';
+// Auto-detect API URL based on environment
+// In Docker: Use same origin (nginx proxy)
+// In Development: Use localhost:8000
+const API_BASE_URL = window.location.hostname === 'localhost' && window.location.port === '' 
+    ? 'http://localhost:8000' 
+    : `${window.location.protocol}//${window.location.hostname}:8000`;
+
 const GREET_ENDPOINT = '/api/greet';
+const HEALTH_ENDPOINT = '/health';
 
 // DOM Elements
 let form;
@@ -22,7 +29,9 @@ let greetingDetails;
 document.addEventListener('DOMContentLoaded', () => {
     initializeElements();
     attachEventListeners();
+    checkBackendHealth();
     console.log('Greeting App initialized successfully');
+    console.log('API Base URL:', API_BASE_URL);
 });
 
 /**
@@ -58,6 +67,23 @@ function attachEventListeners() {
 }
 
 /**
+ * Check backend health on initialization
+ */
+async function checkBackendHealth() {
+    try {
+        const response = await fetch(`${API_BASE_URL}${HEALTH_ENDPOINT}`);
+        if (response.ok) {
+            console.log('✅ Backend is healthy and reachable');
+        } else {
+            console.warn('⚠️ Backend responded but may have issues');
+        }
+    } catch (error) {
+        console.warn('⚠️ Backend health check failed:', error.message);
+        console.log('This is normal if backend is not running yet');
+    }
+}
+
+/**
  * Handle form submission
  * @param {Event} event - The submit event
  */
@@ -72,8 +98,8 @@ async function handleFormSubmit(event) {
         return;
     }
     
-    // Get form values
-    const userName = userNameInput.value.trim();
+    // Get form values and sanitize
+    const userName = sanitizeInput(userNameInput.value.trim());
     const language = languageSelect.value;
     
     // Show loading state
@@ -95,6 +121,17 @@ async function handleFormSubmit(event) {
 }
 
 /**
+ * Sanitize user input to prevent XSS
+ * @param {string} input - Raw user input
+ * @returns {string} - Sanitized input
+ */
+function sanitizeInput(input) {
+    const div = document.createElement('div');
+    div.textContent = input;
+    return div.innerHTML;
+}
+
+/**
  * Validate user input
  * @returns {boolean} - True if input is valid
  */
@@ -103,6 +140,11 @@ function validateInput() {
     
     if (!userName) {
         displayError('Please enter your name');
+        return false;
+    }
+    
+    if (userName.length < 1) {
+        displayError('Name must be at least 1 character');
         return false;
     }
     
@@ -128,7 +170,8 @@ async function fetchGreeting(name, language) {
         language: language
     };
     
-    console.log('Sending request to:', url, 'with data:', requestBody);
+    console.log('📤 Sending request to:', url);
+    console.log('📦 Request body:', requestBody);
     
     try {
         const response = await fetch(url, {
@@ -139,24 +182,28 @@ async function fetchGreeting(name, language) {
             body: JSON.stringify(requestBody)
         });
         
+        console.log('📥 Response status:', response.status);
+        
         // Handle non-OK responses
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            const errorMessage = errorData.detail || `Server error: ${response.status}`;
+            const errorMessage = errorData.detail || `Server error: ${response.status} ${response.statusText}`;
             throw new Error(errorMessage);
         }
         
         const data = await response.json();
-        console.log('Received response:', data);
+        console.log('✅ Received response:', data);
         
         return data;
         
     } catch (error) {
-        console.error('API Error:', error);
+        console.error('❌ API Error:', error);
         
         // Provide user-friendly error messages
-        if (error.message.includes('Failed to fetch')) {
-            throw new Error('Unable to connect to the server. Please make sure the backend is running.');
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            throw new Error(
+                'Unable to connect to the server. Please ensure the backend is running at ' + API_BASE_URL
+            );
         }
         
         throw error;
@@ -164,12 +211,16 @@ async function fetchGreeting(name, language) {
 }
 
 /**
- * Display greeting message
+ * Display greeting message with animation
  * @param {Object} data - API response data
  */
 function displayGreeting(data) {
-    greetingMessage.textContent = data.message;
-    greetingDetails.textContent = `Greeted ${data.name} in ${getLanguageName(data.language)}`;
+    // Sanitize the message before displaying
+    const safeMessage = sanitizeInput(data.message);
+    const safeName = sanitizeInput(data.name);
+    
+    greetingMessage.textContent = safeMessage;
+    greetingDetails.textContent = `✨ Greeted ${safeName} in ${getLanguageName(data.language)}`;
     
     resultDiv.classList.remove('hidden');
     
@@ -185,8 +236,15 @@ function displayGreeting(data) {
  * @param {string} message - Error message
  */
 function displayError(message) {
-    errorDiv.textContent = `❌ ${message}`;
+    const safeMessage = sanitizeInput(message);
+    errorDiv.textContent = `❌ ${safeMessage}`;
     errorDiv.classList.remove('hidden');
+    
+    // Add shake animation
+    errorDiv.style.animation = 'none';
+    setTimeout(() => {
+        errorDiv.style.animation = 'shake 0.5s ease';
+    }, 10);
 }
 
 /**
@@ -229,11 +287,11 @@ function hideLoading() {
  */
 function getLanguageName(code) {
     const languages = {
-        'en': 'English',
-        'es': 'Spanish',
-        'fr': 'French',
-        'de': 'German',
-        'it': 'Italian'
+        'en': 'English 🇬🇧',
+        'es': 'Spanish 🇪🇸',
+        'fr': 'French 🇫🇷',
+        'de': 'German 🇩🇪',
+        'it': 'Italian 🇮🇹'
     };
     return languages[code] || code;
 }
