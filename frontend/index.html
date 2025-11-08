@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Hello World API</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌿 Hello World API</h1>
+            <p class="subtitle">A green-themed interactive API interface</p>
+        </header>
+
+        <main>
+            <!-- API Status Card -->
+            <div class="card">
+                <h2>📊 API Status</h2>
+                <div id="status-indicator" class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span id="status-text">Checking...</span>
+                </div>
+                <button onclick="checkHealth()" class="btn">Check Health</button>
+            </div>
+
+            <!-- Welcome Message Card -->
+            <div class="card">
+                <h2>👋 Welcome Message</h2>
+                <div id="welcome-response" class="response-box">
+                    Click the button to get the welcome message
+                </div>
+                <button onclick="getWelcome()" class="btn">Get Welcome</button>
+            </div>
+
+            <!-- Hello World Card -->
+            <div class="card">
+                <h2>🌍 Hello World</h2>
+                <div id="hello-response" class="response-box">
+                    Click the button to say hello
+                </div>
+                <button onclick="getHello()" class="btn">Say Hello</button>
+            </div>
+
+            <!-- Personalized Greeting Card -->
+            <div class="card">
+                <h2>✨ Personalized Greeting</h2>
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="name-input" 
+                        placeholder="Enter your name"
+                        class="input-field"
+                        onkeypress="handleKeyPress(event)"
+                    >
+                    <button onclick="getPersonalizedGreeting()" class="btn">Greet Me</button>
+                </div>
+                <div id="personalized-response" class="response-box">
+                    Enter your name and click the button
+                </div>
+            </div>
+
+            <!-- API Documentation Card -->
+            <div class="card">
+                <h2>📚 API Documentation</h2>
+                <div class="api-links">
+                    <a href="http://localhost:8000/docs" target="_blank" class="btn btn-secondary">
+                        Swagger UI
+                    </a>
+                    <a href="http://localhost:8000/redoc" target="_blank" class="btn btn-secondary">
+                        ReDoc
+                    </a>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Powered by FastAPI & Vanilla JavaScript</p>
+            <p class="version">Version 1.0.0</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
