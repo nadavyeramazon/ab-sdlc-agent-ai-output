@@ -1,0 +1,25 @@
+# Development dependencies
+# This file includes all dependencies needed for local development
+
+# Backend dependencies
+-r backend/requirements.txt
+
+# Testing dependencies
+-r tests/requirements.txt
+
+# Code quality tools
+flake8==7.0.0
+black==24.1.1
+isort==5.13.2
+mypy==1.8.0
+
+# Development tools
+ipython==8.20.0
+ipdb==0.13.13
+
+# Documentation
+mkdocs==1.5.3
+mkdocs-material==9.5.4
+
+# Performance testing (optional)
+locust==2.20.0
