@@ -54,7 +54,7 @@ jobs:
         fail_ci_if_error: false
     
     - name: Archive coverage results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: coverage-report
         path: htmlcov/
@@ -117,11 +117,11 @@ jobs:
     
     - name: Test docker-compose configuration
       run: |
-        docker-compose config
+        docker compose config
     
     - name: Start services with docker-compose
       run: |
-        docker-compose up -d
+        docker compose up -d
         sleep 10
     
     - name: Check backend health
@@ -134,7 +134,7 @@ jobs:
     
     - name: Stop services
       run: |
-        docker-compose down
+        docker compose down
 
   integration:
     name: Integration Tests
@@ -147,7 +147,7 @@ jobs:
     
     - name: Start services
       run: |
-        docker-compose up -d
+        docker compose up -d
         sleep 15
     
     - name: Test API endpoint
@@ -173,4 +173,4 @@ jobs:
     - name: Stop services
       if: always()
       run: |
-        docker-compose down
+        docker compose down
