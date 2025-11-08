@@ -19,8 +19,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install fastapi pytest requests
+        pip install fastapi pytest requests uvicorn
     - name: Run tests
       run: |
         cd backend
-        pytest test_main.py
+        pytest -v
