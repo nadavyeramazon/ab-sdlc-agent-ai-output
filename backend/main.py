@@ -2,7 +2,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Dict
 import logging
 
 # Configure logging
@@ -15,10 +15,10 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configure CORS for frontend communication
+# Configure CORS for frontend communication with specific origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify exact origins
+    allow_origins=["http://localhost:3000", "http://localhost:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -69,6 +69,45 @@ HOWDY_GREETINGS = {
 }
 
 
+def validate_language(language: str, greetings_dict: Dict[str, str]) -> str:
+    """Validate that the language is supported.
+    
+    Args:
+        language: Language code to validate
+        greetings_dict: Dictionary of supported greetings
+        
+    Returns:
+        Lowercase language code
+        
+    Raises:
+        HTTPException: If language is not supported
+    """
+    language_lower = language.lower()
+    if language_lower not in greetings_dict:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Language '{language}' not supported. Supported languages: {', '.join(greetings_dict.keys())}"
+        )
+    return language_lower
+
+
+def handle_greeting_error(error: Exception, user_name: str, greeting_type: str = "greeting"):
+    """Handle errors that occur during greeting operations.
+    
+    Args:
+        error: The exception that was raised
+        user_name: Name of the user being greeted
+        greeting_type: Type of greeting (for logging)
+        
+    Raises:
+        HTTPException: If not already an HTTPException, raises 500 error
+    """
+    if isinstance(error, HTTPException):
+        raise
+    logger.error(f"Error in {greeting_type} for user {user_name}: {str(error)}")
+    raise HTTPException(status_code=500, detail="Internal server error")
+
+
 @app.get("/")
 async def root():
     """Root endpoint."""
@@ -100,16 +139,11 @@ async def greet_user(request: GreetRequest):
         GreetResponse with personalized greeting message
         
     Raises:
-        HTTPException: If language is not supported
+        HTTPException: If language is not supported or internal error occurs
     """
     try:
-        # Validate language
-        language = request.language.lower()
-        if language not in GREETINGS:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Language '{language}' not supported. Supported languages: {', '.join(GREETINGS.keys())}"
-            )
+        # Validate language using helper function
+        language = validate_language(request.language, GREETINGS)
         
         # Generate greeting message
         greeting = GREETINGS[language]
@@ -122,11 +156,8 @@ async def greet_user(request: GreetRequest):
             name=request.name,
             language=language
         )
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Error greeting user: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        handle_greeting_error(e, request.name, "greeting")
 
 
 @app.post("/api/howdy", response_model=HowdyResponse)
@@ -140,16 +171,11 @@ async def howdy_user(request: HowdyRequest):
         HowdyResponse with personalized casual howdy greeting
         
     Raises:
-        HTTPException: If language is not supported
+        HTTPException: If language is not supported or internal error occurs
     """
     try:
-        # Validate language
-        language = request.language.lower()
-        if language not in HOWDY_GREETINGS:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Language '{language}' not supported. Supported languages: {', '.join(HOWDY_GREETINGS.keys())}"
-            )
+        # Validate language using helper function
+        language = validate_language(request.language, HOWDY_GREETINGS)
         
         # Generate howdy greeting message
         howdy_greeting = HOWDY_GREETINGS[language]
@@ -163,11 +189,8 @@ async def howdy_user(request: HowdyRequest):
             language=language,
             greeting_type="howdy"
         )
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Error in howdy greeting: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        handle_greeting_error(e, request.name, "howdy greeting")
 
 
 if __name__ == "__main__":

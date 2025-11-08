@@ -166,7 +166,7 @@ async function checkApiHealth() {
         if (response.ok) {
             const data = await response.json();
             apiStatus.textContent = `API Status: ${data.status} ✅`;
-            apiStatus.style.color = 'var(--secondary-green)';
+            apiStatus.style.color = 'var(--secondary-blue)';
         } else {
             throw new Error('API not healthy');
         }
