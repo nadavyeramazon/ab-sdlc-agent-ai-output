@@ -2,12 +2,12 @@ version: '3'
 
 services:
 
-  frontend:
-    build: frontend
+  frontend:  
+    build: ./frontend
     ports:
       - 80:80
-
-  backend: 
-    build: backend
+      
+  backend:
+    build: ./backend
     ports:
       - 8000:8000
