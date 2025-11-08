@@ -18,7 +18,7 @@ class TestRootEndpoint:
         """Test that root endpoint returns correct message."""
         response = client.get("/")
         assert response.status_code == 200
-        assert response.json() == {"message": "Hello World"}
+        assert response.json() == {"message": "Hello, World!"}
     
     def test_root_endpoint_response_type(self):
         """Test that root endpoint returns JSON."""
@@ -145,7 +145,7 @@ class TestConcurrency:
         # All requests should succeed
         for response in responses:
             assert response.status_code == 200
-            assert response.json() == {"message": "Hello World"}
+            assert response.json() == {"message": "Hello, World!"}
 
 
 # Parametrized tests for better coverage

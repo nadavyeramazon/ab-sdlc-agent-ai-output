@@ -36,7 +36,7 @@ async def root():
     Returns:
         dict: A dictionary containing a hello world message
     """
-    return {"message": "Hello World"}
+    return {"message": "Hello, World!"}
 
 
 @app.get("/health")
