@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, test-* ]
+    branches: [ main, test-96 ]
   pull_request:
     branches: [ main ]
 
@@ -14,10 +14,23 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9'
+        python-version: 3.9
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install fastapi pytest httpx
+        pip install -r requirements.txt
     - name: Run tests
       run: pytest
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build Docker image
+      run: docker build -t myapp .
+    - name: Test Docker image
+      run: |
+        docker run -d --name test-container -p 8000:8000 myapp
+        sleep 5
+        curl http://localhost:8000
+        docker stop test-container
