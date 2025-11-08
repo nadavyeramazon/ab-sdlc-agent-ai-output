@@ -1,7 +1,7 @@
 """FastAPI Backend Application with Greeting API."""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 import uvicorn
 
@@ -22,7 +22,7 @@ app.add_middleware(
 
 class GreetingRequest(BaseModel):
     """Request model for greeting endpoint."""
-    name: str
+    name: str = Field(..., min_length=1, description="Name must not be empty")
     language: Optional[str] = "en"
 
 class GreetingResponse(BaseModel):

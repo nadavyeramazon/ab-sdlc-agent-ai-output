@@ -101,15 +101,15 @@ jobs:
     
     - name: Test docker-compose build
       run: |
-        docker-compose build
+        docker compose build
     
     - name: Run docker-compose health check
       run: |
-        docker-compose up -d
+        docker compose up -d
         sleep 10
-        docker-compose ps
+        docker compose ps
         curl -f http://localhost:8000/health || exit 1
-        docker-compose down
+        docker compose down
 
   integration-test:
     runs-on: ubuntu-latest
@@ -121,7 +121,7 @@ jobs:
     
     - name: Start services with docker-compose
       run: |
-        docker-compose up -d
+        docker compose up -d
         sleep 15
     
     - name: Test backend health endpoint
@@ -146,9 +146,9 @@ jobs:
     - name: Show service logs on failure
       if: failure()
       run: |
-        docker-compose logs
+        docker compose logs
     
     - name: Cleanup
       if: always()
       run: |
-        docker-compose down -v
+        docker compose down -v
