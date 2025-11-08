@@ -2,4 +2,6 @@ fastapi==0.104.1
 uvicorn[standard]==0.24.0
 pytest==7.4.3
 pytest-asyncio==0.21.1
+pytest-cov==0.6.0
 httpx==0.25.1
+requests==2.31.0
