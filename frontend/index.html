@@ -15,46 +15,109 @@
 
         <main>
             <div class="card">
-                <form id="greetingForm">
-                    <div class="form-group">
-                        <label for="nameInput">Your Name:</label>
-                        <input 
-                            type="text" 
-                            id="nameInput" 
-                            name="name" 
-                            placeholder="Enter your name" 
-                            required
-                            autocomplete="off"
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="languageSelect">Language:</label>
-                        <select id="languageSelect" name="language">
-                            <option value="en">English</option>
-                            <option value="es">Español</option>
-                            <option value="fr">Français</option>
-                            <option value="de">Deutsch</option>
-                            <option value="it">Italiano</option>
-                        </select>
-                    </div>
-
-                    <button type="submit" class="btn-primary">
-                        Get Greeting 👋
-                    </button>
-                </form>
-
-                <div id="greetingResult" class="result hidden">
-                    <div class="greeting-message">
-                        <span id="greetingText"></span>
-                    </div>
-                    <div class="greeting-details">
-                        <span class="detail">Name: <strong id="greetingName"></strong></span>
-                        <span class="detail">Language: <strong id="greetingLanguage"></strong></span>
-                    </div>
+                <!-- Tab Navigation -->
+                <div class="tabs">
+                    <button id="greetTab" class="tab-button active">Classic Greeting 👋</button>
+                    <button id="howdyTab" class="tab-button">Howdy Style 🤠</button>
                 </div>
 
-                <div id="errorMessage" class="error hidden"></div>
+                <!-- Classic Greeting Section -->
+                <div id="greetSection" class="tab-content">
+                    <form id="greetingForm">
+                        <div class="form-group">
+                            <label for="nameInput">Your Name:</label>
+                            <input 
+                                type="text" 
+                                id="nameInput" 
+                                name="name" 
+                                placeholder="Enter your name" 
+                                required
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="languageSelect">Language:</label>
+                            <select id="languageSelect" name="language">
+                                <option value="en">English</option>
+                                <option value="es">Español</option>
+                                <option value="fr">Français</option>
+                                <option value="de">Deutsch</option>
+                                <option value="it">Italiano</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn-primary">
+                            Get Greeting 👋
+                        </button>
+                    </form>
+
+                    <div id="greetingResult" class="result hidden">
+                        <div class="greeting-message">
+                            <span id="greetingText"></span>
+                        </div>
+                        <div class="greeting-details">
+                            <span class="detail">Name: <strong id="greetingName"></strong></span>
+                            <span class="detail">Language: <strong id="greetingLanguage"></strong></span>
+                        </div>
+                    </div>
+
+                    <div id="errorMessage" class="error hidden"></div>
+                </div>
+
+                <!-- Howdy Section -->
+                <div id="howdySection" class="tab-content hidden">
+                    <form id="howdyForm">
+                        <div class="form-group">
+                            <label for="howdyNameInput">Your Name:</label>
+                            <input 
+                                type="text" 
+                                id="howdyNameInput" 
+                                name="name" 
+                                placeholder="Enter your name" 
+                                required
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="howdyLanguageSelect">Language:</label>
+                            <select id="howdyLanguageSelect" name="language">
+                                <option value="en">English</option>
+                                <option value="es">Español</option>
+                                <option value="fr">Français</option>
+                                <option value="de">Deutsch</option>
+                                <option value="it">Italiano</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="howdyStyleSelect">Greeting Style:</label>
+                            <select id="howdyStyleSelect" name="style">
+                                <option value="casual">Casual - Relaxed and informal</option>
+                                <option value="formal">Formal - Professional and polite</option>
+                                <option value="friendly">Friendly - Warm and enthusiastic</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn-primary">
+                            Get Howdy 🤠
+                        </button>
+                    </form>
+
+                    <div id="howdyResult" class="result hidden">
+                        <div class="greeting-message">
+                            <span id="howdyText"></span>
+                        </div>
+                        <div class="greeting-details">
+                            <span class="detail">Name: <strong id="howdyName"></strong></span>
+                            <span class="detail">Language: <strong id="howdyLanguage"></strong></span>
+                            <span class="detail">Style: <strong id="howdyStyle"></strong></span>
+                        </div>
+                    </div>
+
+                    <div id="howdyErrorMessage" class="error hidden"></div>
+                </div>
             </div>
 
             <div class="info-card">
@@ -63,7 +126,9 @@
                     <li>Built with Vanilla JavaScript (no frameworks!)</li>
                     <li>FastAPI backend for processing requests</li>
                     <li>Blue theme for a calm, oceanic look 🌊</li>
+                    <li>Two greeting styles: Classic and Howdy</li>
                     <li>Supports multiple languages</li>
+                    <li>Three howdy styles: Casual, Formal, and Friendly</li>
                     <li>Dockerized for easy deployment</li>
                 </ul>
             </div>

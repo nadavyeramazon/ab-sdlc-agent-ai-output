@@ -89,6 +89,44 @@ main {
     margin-bottom: 8px;
 }
 
+/* Tab Styles */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    border-bottom: 2px solid var(--light-blue);
+}
+
+.tab-button {
+    flex: 1;
+    padding: 15px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-dark);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    bottom: -2px;
+}
+
+.tab-button:hover {
+    background: var(--very-light-blue);
+    color: var(--primary-blue);
+}
+
+.tab-button.active {
+    color: var(--primary-blue);
+    border-bottom-color: var(--primary-blue);
+    background: var(--very-light-blue);
+}
+
+.tab-content {
+    animation: fadeIn 0.5s ease-out;
+}
+
 .form-group {
     margin-bottom: 20px;
 }
@@ -140,6 +178,12 @@ select:focus {
 
 .btn-primary:active {
     transform: translateY(0);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .result {
@@ -218,6 +262,15 @@ footer {
     }
 }
 
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
 @keyframes slideIn {
     from {
         opacity: 0;
@@ -247,6 +300,20 @@ footer {
     
     .card, .info-card {
         padding: 20px;
+    }
+    
+    .tabs {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .tab-button {
+        border-bottom: 1px solid var(--light-blue);
+    }
+    
+    .tab-button.active {
+        border-left: 3px solid var(--primary-blue);
+        border-bottom: 1px solid var(--light-blue);
     }
     
     .greeting-details {
