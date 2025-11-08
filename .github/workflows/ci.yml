@@ -6,14 +6,20 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  PYTHON_VERSION: '3.11'
+  CACHE_VERSION: v1
+
 jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     
     strategy:
       matrix:
         python-version: ['3.11']
+      fail-fast: false
     
     steps:
     - name: Checkout code
@@ -28,41 +34,53 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt', 'tests/requirements.txt') }}
+        key: ${{ runner.os }}-pip-${{ env.CACHE_VERSION }}-${{ hashFiles('backend/requirements.txt', 'tests/requirements.txt') }}
         restore-keys: |
+          ${{ runner.os }}-pip-${{ env.CACHE_VERSION }}-
           ${{ runner.os }}-pip-
     
     - name: Install backend dependencies
       run: |
-        python -m pip install --upgrade pip
+        python -m pip install --upgrade pip setuptools wheel
         pip install -r backend/requirements.txt
     
     - name: Install test dependencies
       run: |
         pip install -r tests/requirements.txt
     
+    - name: Verify installation
+      run: |
+        python --version
+        pip list
+    
     - name: Run tests with coverage
       run: |
-        pytest tests/ -v --cov=backend --cov-report=term-missing --cov-report=xml --cov-report=html
+        pytest tests/ -v --cov=backend --cov-report=term-missing --cov-report=xml --cov-report=html --tb=short
+      env:
+        PYTHONPATH: .
     
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
+      if: always()
       with:
         file: ./coverage.xml
         flags: unittests
         name: codecov-umbrella
         fail_ci_if_error: false
+        verbose: true
     
     - name: Archive coverage results
       uses: actions/upload-artifact@v4
+      if: always()
       with:
-        name: coverage-report
+        name: coverage-report-py${{ matrix.python-version }}
         path: htmlcov/
         retention-days: 30
 
   lint:
     name: Code Quality
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     
     steps:
     - name: Checkout code
@@ -71,7 +89,15 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-lint-${{ env.CACHE_VERSION }}
+        restore-keys: |
+          ${{ runner.os }}-lint-
     
     - name: Install linting tools
       run: |
@@ -80,25 +106,35 @@ jobs:
     
     - name: Run flake8
       run: |
+        echo "::group::Flake8 - Critical Issues"
         # Stop the build if there are Python syntax errors or undefined names
         flake8 backend --count --select=E9,F63,F7,F82 --show-source --statistics
+        echo "::endgroup::"
+        
+        echo "::group::Flake8 - All Issues"
         # Exit-zero treats all errors as warnings
         flake8 backend --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        echo "::endgroup::"
       continue-on-error: true
     
     - name: Check code formatting with black
       run: |
-        black --check backend tests
+        echo "::group::Black - Check Formatting"
+        black --check --diff backend tests || echo "Code formatting issues found"
+        echo "::endgroup::"
       continue-on-error: true
     
     - name: Check import sorting with isort
       run: |
-        isort --check-only backend tests
+        echo "::group::isort - Check Import Sorting"
+        isort --check-only --diff backend tests || echo "Import sorting issues found"
+        echo "::endgroup::"
       continue-on-error: true
 
   docker:
-    name: Docker Build
+    name: Docker Build & Test
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     
     steps:
     - name: Checkout code
@@ -109,37 +145,84 @@ jobs:
     
     - name: Build backend Docker image
       run: |
+        echo "Building backend image..."
         docker build -t greeting-backend:test ./backend
+        docker images | grep greeting-backend
     
     - name: Build frontend Docker image
       run: |
+        echo "Building frontend image..."
         docker build -t greeting-frontend:test ./frontend
+        docker images | grep greeting-frontend
     
-    - name: Test docker-compose configuration
+    - name: Validate docker-compose configuration
       run: |
+        echo "Validating docker-compose.yml..."
         docker compose config
     
     - name: Start services with docker-compose
       run: |
+        echo "Starting services..."
         docker compose up -d
-        sleep 10
+        echo "Waiting for services to be ready..."
+        sleep 15
+    
+    - name: Check container status
+      run: |
+        echo "Container status:"
+        docker compose ps
+        echo ""
+        echo "Backend logs:"
+        docker compose logs backend | tail -20
+        echo ""
+        echo "Frontend logs:"
+        docker compose logs frontend | tail -20
     
     - name: Check backend health
       run: |
-        curl -f http://localhost:8000/health || exit 1
+        echo "Checking backend health..."
+        for i in {1..10}; do
+          if curl -f http://localhost:8000/health; then
+            echo "Backend is healthy!"
+            exit 0
+          fi
+          echo "Attempt $i failed, waiting..."
+          sleep 2
+        done
+        echo "Backend health check failed"
+        exit 1
     
     - name: Check frontend accessibility
       run: |
+        echo "Checking frontend accessibility..."
         curl -f http://localhost:3000 || exit 1
+        echo "Frontend is accessible!"
+    
+    - name: Test API root endpoint
+      run: |
+        echo "Testing API root endpoint..."
+        curl -s http://localhost:8000/ | jq .
+    
+    - name: Show container logs on failure
+      if: failure()
+      run: |
+        echo "=== Backend Logs ==="
+        docker compose logs backend
+        echo ""
+        echo "=== Frontend Logs ==="
+        docker compose logs frontend
     
     - name: Stop services
+      if: always()
       run: |
-        docker compose down
+        echo "Stopping services..."
+        docker compose down -v
 
   integration:
     name: Integration Tests
     runs-on: ubuntu-latest
     needs: [test, docker]
+    timeout-minutes: 10
     
     steps:
     - name: Checkout code
@@ -147,30 +230,79 @@ jobs:
     
     - name: Start services
       run: |
+        echo "Starting services for integration tests..."
         docker compose up -d
-        sleep 15
+        echo "Waiting for services to be ready..."
+        sleep 20
     
-    - name: Test API endpoint
+    - name: Verify services are running
       run: |
+        docker compose ps
+        curl -f http://localhost:8000/health
+        curl -f http://localhost:3000
+    
+    - name: Test API endpoint - English
+      run: |
+        echo "Testing English greeting..."
         response=$(curl -s -X POST http://localhost:8000/api/greet \
           -H "Content-Type: application/json" \
           -d '{"name": "CI Test", "language": "en"}')
         echo "Response: $response"
+        echo "$response" | jq .
         echo "$response" | grep -q "Hello, CI Test"
+        echo "✅ English greeting works!"
     
-    - name: Test multiple languages
+    - name: Test API endpoint - Spanish
       run: |
-        # Test Spanish
-        curl -s -X POST http://localhost:8000/api/greet \
+        echo "Testing Spanish greeting..."
+        response=$(curl -s -X POST http://localhost:8000/api/greet \
           -H "Content-Type: application/json" \
-          -d '{"name": "Test", "language": "es"}' | grep -q "Hola"
-        
-        # Test French
-        curl -s -X POST http://localhost:8000/api/greet \
+          -d '{"name": "Test", "language": "es"}')
+        echo "$response" | jq .
+        echo "$response" | grep -q "Hola"
+        echo "✅ Spanish greeting works!"
+    
+    - name: Test API endpoint - French
+      run: |
+        echo "Testing French greeting..."
+        response=$(curl -s -X POST http://localhost:8000/api/greet \
           -H "Content-Type: application/json" \
-          -d '{"name": "Test", "language": "fr"}' | grep -q "Bonjour"
+          -d '{"name": "Test", "language": "fr"}')
+        echo "$response" | jq .
+        echo "$response" | grep -q "Bonjour"
+        echo "✅ French greeting works!"
+    
+    - name: Test API endpoint - German
+      run: |
+        echo "Testing German greeting..."
+        response=$(curl -s -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name": "Test", "language": "de"}')
+        echo "$response" | jq .
+        echo "$response" | grep -q "Hallo"
+        echo "✅ German greeting works!"
+    
+    - name: Test API endpoint - Italian
+      run: |
+        echo "Testing Italian greeting..."
+        response=$(curl -s -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name": "Test", "language": "it"}')
+        echo "$response" | jq .
+        echo "$response" | grep -q "Ciao"
+        echo "✅ Italian greeting works!"
+    
+    - name: Test error handling
+      run: |
+        echo "Testing error handling with invalid language..."
+        response=$(curl -s -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name": "Test", "language": "invalid"}')
+        echo "$response" | jq .
+        echo "$response" | grep -q "not supported"
+        echo "✅ Error handling works!"
     
     - name: Stop services
       if: always()
       run: |
-        docker compose down
+        docker compose down -v
