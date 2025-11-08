@@ -131,7 +131,7 @@ jobs:
     
     - name: Start services with Docker Compose
       run: |
-        docker-compose up -d
+        docker compose up -d
         sleep 15
     
     - name: Check backend health
@@ -157,14 +157,14 @@ jobs:
       if: failure()
       run: |
         echo "=== Backend Logs ==="
-        docker-compose logs backend
+        docker compose logs backend
         echo "=== Frontend Logs ==="
-        docker-compose logs frontend
+        docker compose logs frontend
     
     - name: Stop services
       if: always()
       run: |
-        docker-compose down -v
+        docker compose down -v
 
   security-scan:
     name: Security Scan
