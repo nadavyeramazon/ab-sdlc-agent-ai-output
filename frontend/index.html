@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greeting App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f8f0;
+        }
+        #greeting {
+            font-size: 24px;
+            color: #2c3e50;
+            background-color: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="greeting">Loading...</div>
+
+    <script>
+        async function fetchGreeting() {
+            try {
+                const response = await fetch('http://localhost:8000/greet');
+                const data = await response.json();
+                document.getElementById('greeting').textContent = data.message;
+            } catch (error) {
+                console.error('Error fetching greeting:', error);
+                document.getElementById('greeting').textContent = 'Error fetching greeting';
+            }
+        }
+
+        fetchGreeting();
+    </script>
+</body>
+</html>
