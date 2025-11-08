@@ -1,5 +1,5 @@
 /**
- * Green Greeting App - Frontend JavaScript
+ * Blue Greeting App - Frontend JavaScript
  * Vanilla JavaScript implementation for greeting users
  */
 
