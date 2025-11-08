@@ -3,13 +3,17 @@
  * Handles user interactions and API communication
  */
 
-// Configuration
+// Configuration - supports environment-based URLs
 const CONFIG = {
-    API_BASE_URL: 'http://localhost:8000',
+    API_BASE_URL: window.location.hostname === 'localhost' 
+        ? 'http://localhost:8000' 
+        : `${window.location.protocol}//${window.location.hostname}:8000`,
     ENDPOINTS: {
         GREET: '/greet',
         HEALTH: '/health'
-    }
+    },
+    REQUEST_TIMEOUT: 10000, // 10 seconds
+    MAX_RETRIES: 3
 };
 
 // DOM Elements
@@ -30,6 +34,8 @@ const elements = {
  * Initialize the application
  */
 function init() {
+    console.log('Initializing Greeting Application...');
+    
     // Get DOM elements
     elements.form = document.getElementById('greetingForm');
     elements.nameInput = document.getElementById('nameInput');
@@ -42,16 +48,46 @@ function init() {
     elements.errorMessage = document.getElementById('errorMessage');
     elements.loadingContainer = document.getElementById('loadingContainer');
 
+    // Validate all elements exist
+    if (!validateElements()) {
+        console.error('Failed to initialize: Required DOM elements not found');
+        return;
+    }
+
     // Add event listeners
     elements.form.addEventListener('submit', handleSubmit);
+    elements.nameInput.addEventListener('input', clearErrorOnInput);
     
-    // Focus on name input
+    // Focus on name input for better UX
     elements.nameInput.focus();
     
     // Check API health on load
     checkAPIHealth();
     
-    console.log('Greeting Application initialized');
+    console.log('Greeting Application initialized successfully');
+}
+
+/**
+ * Validate that all required DOM elements exist
+ * @returns {boolean} True if all elements exist
+ */
+function validateElements() {
+    for (const [key, element] of Object.entries(elements)) {
+        if (element === null) {
+            console.error(`Required element not found: ${key}`);
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Clear error message when user starts typing
+ */
+function clearErrorOnInput() {
+    if (!elements.errorContainer.classList.contains('hidden')) {
+        elements.errorContainer.classList.add('hidden');
+    }
 }
 
 /**
@@ -68,6 +104,12 @@ async function handleSubmit(event) {
     // Validate input
     if (!name) {
         showError('Please enter your name');
+        elements.nameInput.focus();
+        return;
+    }
+    
+    if (name.length > 100) {
+        showError('Name is too long (maximum 100 characters)');
         return;
     }
     
@@ -76,16 +118,46 @@ async function handleSubmit(event) {
     showLoading();
     
     try {
-        // Call the API
-        const response = await greetUser(name, language);
+        // Call the API with retry logic
+        const response = await greetUserWithRetry(name, language);
         
         // Display the greeting
         displayGreeting(response);
     } catch (error) {
-        showError(error.message);
+        console.error('Error greeting user:', error);
+        showError(error.message || 'An unexpected error occurred');
     } finally {
         hideLoading();
     }
+}
+
+/**
+ * Call the greet API endpoint with retry logic
+ * @param {string} name - User's name
+ * @param {string} language - Selected language code
+ * @param {number} retryCount - Current retry attempt
+ * @returns {Promise<Object>} - API response
+ */
+async function greetUserWithRetry(name, language, retryCount = 0) {
+    try {
+        return await greetUser(name, language);
+    } catch (error) {
+        if (retryCount < CONFIG.MAX_RETRIES && error.message.includes('Cannot connect')) {
+            console.log(`Retrying... Attempt ${retryCount + 1} of ${CONFIG.MAX_RETRIES}`);
+            await sleep(1000 * (retryCount + 1)); // Exponential backoff
+            return await greetUserWithRetry(name, language, retryCount + 1);
+        }
+        throw error;
+    }
+}
+
+/**
+ * Sleep for specified milliseconds
+ * @param {number} ms - Milliseconds to sleep
+ * @returns {Promise<void>}
+ */
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
@@ -102,22 +174,37 @@ async function greetUser(name, language) {
         language: language
     };
     
+    console.log(`Sending greeting request to ${url}`);
+    
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT);
+        
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(requestData)
+            body: JSON.stringify(requestData),
+            signal: controller.signal
         });
         
+        clearTimeout(timeoutId);
+        
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'Failed to get greeting from server');
+            const errorData = await response.json().catch(() => ({
+                detail: 'Failed to get greeting from server'
+            }));
+            throw new Error(errorData.detail || `Server error: ${response.status}`);
         }
         
-        return await response.json();
+        const data = await response.json();
+        console.log('Greeting received successfully');
+        return data;
     } catch (error) {
+        if (error.name === 'AbortError') {
+            throw new Error('Request timeout. Please try again.');
+        }
         if (error instanceof TypeError) {
             throw new Error('Cannot connect to server. Please ensure the backend is running.');
         }
@@ -132,9 +219,14 @@ async function checkAPIHealth() {
     const url = `${CONFIG.API_BASE_URL}${CONFIG.ENDPOINTS.HEALTH}`;
     
     try {
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            method: 'GET',
+            signal: AbortSignal.timeout(5000)
+        });
+        
         if (response.ok) {
-            console.log('✅ API is healthy and reachable');
+            const data = await response.json();
+            console.log('✅ API is healthy:', data);
         } else {
             console.warn('⚠️ API returned non-OK status:', response.status);
         }
@@ -148,11 +240,26 @@ async function checkAPIHealth() {
  * @param {Object} data - Response data from API
  */
 function displayGreeting(data) {
-    elements.greetingMessage.textContent = data.message;
-    elements.responseName.textContent = data.name;
+    // Sanitize and display data
+    elements.greetingMessage.textContent = sanitizeText(data.message);
+    elements.responseName.textContent = sanitizeText(data.name);
     elements.responseLanguage.textContent = getLanguageName(data.language);
     
     elements.responseContainer.classList.remove('hidden');
+    
+    // Announce to screen readers
+    announceToScreenReader(`Greeting received: ${data.message}`);
+}
+
+/**
+ * Sanitize text to prevent XSS
+ * @param {string} text - Text to sanitize
+ * @returns {string} - Sanitized text
+ */
+function sanitizeText(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.textContent;
 }
 
 /**
@@ -160,8 +267,11 @@ function displayGreeting(data) {
  * @param {string} message - Error message to display
  */
 function showError(message) {
-    elements.errorMessage.textContent = message;
+    elements.errorMessage.textContent = sanitizeText(message);
     elements.errorContainer.classList.remove('hidden');
+    
+    // Announce to screen readers
+    announceToScreenReader(`Error: ${message}`);
 }
 
 /**
@@ -169,6 +279,7 @@ function showError(message) {
  */
 function showLoading() {
     elements.loadingContainer.classList.remove('hidden');
+    elements.loadingContainer.setAttribute('aria-live', 'polite');
 }
 
 /**
@@ -201,6 +312,17 @@ function getLanguageName(code) {
         'it': 'Italian (Italiano)'
     };
     return languages[code] || code;
+}
+
+/**
+ * Announce message to screen readers
+ * @param {string} message - Message to announce
+ */
+function announceToScreenReader(message) {
+    const announcement = document.getElementById('sr-announcement');
+    if (announcement) {
+        announcement.textContent = message;
+    }
 }
 
 // Initialize when DOM is ready

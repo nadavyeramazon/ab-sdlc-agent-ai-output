@@ -3,10 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A greeting application that welcomes users in multiple languages">
     <title>Greeting Application</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Screen reader announcements -->
+    <div id="sr-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+    
     <div class="container">
         <header>
             <h1>🌿 Welcome to the Greeting App 🌿</h1>
@@ -15,7 +19,7 @@
 
         <main>
             <div class="card">
-                <form id="greetingForm">
+                <form id="greetingForm" aria-label="Greeting form">
                     <div class="form-group">
                         <label for="nameInput">Your Name:</label>
                         <input 
@@ -25,12 +29,19 @@
                             placeholder="Enter your name" 
                             required
                             autocomplete="off"
+                            maxlength="100"
+                            aria-describedby="nameHelp"
                         >
+                        <small id="nameHelp" class="form-help">Maximum 100 characters</small>
                     </div>
 
                     <div class="form-group">
                         <label for="languageSelect">Language:</label>
-                        <select id="languageSelect" name="language">
+                        <select 
+                            id="languageSelect" 
+                            name="language"
+                            aria-label="Select greeting language"
+                        >
                             <option value="en">English</option>
                             <option value="es">Spanish (Español)</option>
                             <option value="fr">French (Français)</option>
@@ -39,12 +50,12 @@
                         </select>
                     </div>
 
-                    <button type="submit" class="btn-primary">
+                    <button type="submit" class="btn-primary" aria-label="Submit greeting request">
                         Get Greeting
                     </button>
                 </form>
 
-                <div id="responseContainer" class="response-container hidden">
+                <div id="responseContainer" class="response-container hidden" role="region" aria-live="polite">
                     <div class="response-content">
                         <h2 id="greetingMessage"></h2>
                         <div class="response-details">
@@ -54,12 +65,12 @@
                     </div>
                 </div>
 
-                <div id="errorContainer" class="error-container hidden">
+                <div id="errorContainer" class="error-container hidden" role="alert" aria-live="assertive">
                     <p id="errorMessage"></p>
                 </div>
 
-                <div id="loadingContainer" class="loading-container hidden">
-                    <div class="spinner"></div>
+                <div id="loadingContainer" class="loading-container hidden" role="status" aria-label="Loading">
+                    <div class="spinner" aria-hidden="true"></div>
                     <p>Loading...</p>
                 </div>
             </div>
@@ -71,16 +82,18 @@
                     <li>✅ FastAPI backend with RESTful API</li>
                     <li>✅ Vanilla JavaScript frontend (no frameworks)</li>
                     <li>✅ Docker Compose orchestration</li>
-                    <li>✅ Multi-language support</li>
+                    <li>✅ Multi-language support (5 languages)</li>
                     <li>✅ Responsive green-themed UI</li>
-                    <li>✅ Comprehensive testing</li>
-                    <li>✅ CI/CD with GitHub Actions</li>
+                    <li>✅ Comprehensive testing & CI/CD</li>
+                    <li>✅ Accessibility features (ARIA, screen readers)</li>
+                    <li>✅ Error handling & retry logic</li>
+                    <li>✅ Request logging & monitoring</li>
                 </ul>
             </div>
         </main>
 
         <footer>
-            <p>Built with ❤️ using FastAPI and Vanilla JavaScript</p>
+            <p>Built with ❤️ using FastAPI and Vanilla JavaScript | <a href="http://localhost:8000/docs" target="_blank" rel="noopener noreferrer">API Documentation</a></p>
         </footer>
     </div>
 

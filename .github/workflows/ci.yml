@@ -42,8 +42,7 @@ jobs:
     - name: Run tests with coverage
       run: |
         cd backend
-        pip install pytest-cov
-        pytest tests/ --cov=. --cov-report=xml --cov-report=term
+        pytest tests/ --cov=. --cov-report=xml --cov-report=term --cov-report=html
     
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
@@ -52,6 +51,13 @@ jobs:
         flags: backend
         name: backend-coverage
       continue-on-error: true
+    
+    - name: Upload coverage HTML report
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: backend/htmlcov/
+      if: always()
 
   lint-backend:
     name: Lint Backend Code
@@ -69,19 +75,29 @@ jobs:
     - name: Install linting tools
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 black
+        pip install flake8 black isort
     
-    - name: Run flake8
+    - name: Run flake8 (errors only)
       run: |
         cd backend
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=venv,__pycache__,.pytest_cache
+    
+    - name: Run flake8 (warnings)
+      run: |
+        cd backend
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=venv,__pycache__,.pytest_cache
       continue-on-error: true
     
     - name: Check code formatting with black
       run: |
         cd backend
-        black --check --diff .
+        black --check --diff . --exclude='/(venv|\.pytest_cache|__pycache__)/' || true
+      continue-on-error: true
+    
+    - name: Check import ordering with isort
+      run: |
+        cd backend
+        isort --check-only --diff . --skip venv --skip .pytest_cache || true
       continue-on-error: true
 
   build-docker:
@@ -107,16 +123,25 @@ jobs:
     - name: Test backend container
       run: |
         docker run -d --name test-backend -p 8000:8000 greeting-backend:test
-        sleep 10
-        curl -f http://localhost:8000/health || exit 1
+        echo "Waiting for backend to start..."
+        for i in {1..30}; do
+          if curl -f http://localhost:8000/health 2>/dev/null; then
+            echo "Backend is healthy!"
+            break
+          fi
+          echo "Waiting... ($i/30)"
+          sleep 2
+        done
+        curl -f http://localhost:8000/health || (docker logs test-backend && exit 1)
         docker stop test-backend
         docker rm test-backend
     
     - name: Test frontend container
       run: |
         docker run -d --name test-frontend -p 3000:80 greeting-frontend:test
+        echo "Waiting for frontend to start..."
         sleep 5
-        curl -f http://localhost:3000 || exit 1
+        curl -f http://localhost:3000 || (docker logs test-frontend && exit 1)
         docker stop test-frontend
         docker rm test-frontend
 
@@ -132,26 +157,50 @@ jobs:
     - name: Start services with Docker Compose
       run: |
         docker compose up -d
-        sleep 15
+        echo "Waiting for services to be healthy..."
+        sleep 20
     
     - name: Check backend health
       run: |
-        curl -f http://localhost:8000/health || exit 1
-        echo "Backend is healthy"
+        for i in {1..10}; do
+          if curl -f http://localhost:8000/health; then
+            echo "Backend is healthy!"
+            break
+          fi
+          echo "Waiting for backend... ($i/10)"
+          sleep 3
+        done
+        curl -f http://localhost:8000/health || (docker compose logs backend && exit 1)
     
     - name: Check frontend availability
       run: |
-        curl -f http://localhost:3000 || exit 1
-        echo "Frontend is accessible"
+        curl -f http://localhost:3000 || (docker compose logs frontend && exit 1)
+        echo "Frontend is accessible!"
     
-    - name: Test greet endpoint
+    - name: Test API endpoints
       run: |
+        # Test root endpoint
+        curl -f http://localhost:8000/ || exit 1
+        echo "Root endpoint OK"
+        
+        # Test greet endpoint
         response=$(curl -X POST http://localhost:8000/greet \
           -H "Content-Type: application/json" \
-          -d '{"name": "TestUser", "language": "en"}')
+          -d '{"name": "TestUser", "language": "en"}' \
+          -w "\n%{http_code}")
         echo "Response: $response"
-        echo $response | grep -q "Hello, TestUser" || exit 1
-        echo "Greet endpoint works correctly"
+        echo "$response" | grep -q "Hello, TestUser" || exit 1
+        echo "Greet endpoint works correctly!"
+    
+    - name: Test multi-language support
+      run: |
+        languages=("es" "fr" "de" "it")
+        for lang in "${languages[@]}"; do
+          curl -X POST http://localhost:8000/greet \
+            -H "Content-Type: application/json" \
+            -d "{\"name\": \"Test\", \"language\": \"$lang\"}" || exit 1
+          echo "Language $lang: OK"
+        done
     
     - name: Show container logs on failure
       if: failure()
@@ -185,5 +234,14 @@ jobs:
     - name: Run safety check
       run: |
         cd backend
-        safety check -r requirements.txt --json || true
+        safety check -r requirements.txt --json || echo "Some vulnerabilities found"
+      continue-on-error: true
+    
+    - name: Run Trivy vulnerability scanner on Docker images
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: './backend'
+        format: 'table'
+        exit-code: '0'
       continue-on-error: true

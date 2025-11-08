@@ -10,6 +10,7 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -19,6 +20,15 @@ services:
     networks:
       - app-network
     restart: unless-stopped
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
   frontend:
     build:
@@ -28,7 +38,8 @@ services:
     ports:
       - "3000:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80"]
       interval: 30s
@@ -37,6 +48,15 @@ services:
     networks:
       - app-network
     restart: unless-stopped
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
 
 networks:
   app-network:
