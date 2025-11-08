@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Greeting Service</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🌟 User Greeting Service 🌟</h1>
+            <p class="subtitle">Welcome! Enter your name to receive a personalized greeting</p>
+        </header>
+
+        <main class="main-content">
+            <div class="form-card">
+                <form id="greetingForm" class="greeting-form">
+                    <div class="form-group">
+                        <label for="title">Title (Optional)</label>
+                        <input 
+                            type="text" 
+                            id="title" 
+                            name="title" 
+                            placeholder="e.g., Mr., Ms., Dr."
+                            maxlength="50"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="name">Your Name *</label>
+                        <input 
+                            type="text" 
+                            id="name" 
+                            name="name" 
+                            placeholder="Enter your name"
+                            required
+                            maxlength="100"
+                        >
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        <span class="btn-text">Get Greeting</span>
+                        <span class="btn-loader" style="display: none;">⏳</span>
+                    </button>
+                </form>
+            </div>
+
+            <div id="responseArea" class="response-area" style="display: none;">
+                <div id="responseCard" class="response-card">
+                    <div class="response-icon">✨</div>
+                    <div id="greetingMessage" class="greeting-message"></div>
+                    <button class="btn-reset" onclick="resetForm()">Greet Someone Else</button>
+                </div>
+            </div>
+
+            <div id="errorArea" class="error-area" style="display: none;">
+                <div class="error-card">
+                    <div class="error-icon">⚠️</div>
+                    <div id="errorMessage" class="error-message"></div>
+                    <button class="btn-retry" onclick="hideError()">Try Again</button>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="api-status">
+                <span class="status-label">API Status:</span>
+                <span id="apiStatus" class="status-indicator">Checking...</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

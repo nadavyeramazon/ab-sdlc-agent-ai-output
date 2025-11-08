@@ -1,0 +1,121 @@
+name: CI - User Greeting API Tests
+
+on:
+  push:
+    branches: [ main, test-85 ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install backend dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r backend/requirements.txt
+      
+    - name: Install test dependencies
+      run: |
+        pip install -r tests/requirements.txt
+    
+    - name: Run tests with pytest
+      run: |
+        pytest tests/ -v --tb=short --color=yes
+      env:
+        PYTHONPATH: ${{ github.workspace }}
+    
+    - name: Generate test coverage report
+      if: matrix.python-version == '3.11'
+      run: |
+        pip install pytest-cov
+        pytest tests/ --cov=backend --cov-report=xml --cov-report=term
+    
+    - name: Upload coverage to artifacts
+      if: matrix.python-version == '3.11'
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: coverage.xml
+
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install linting tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black isort
+    
+    - name: Run flake8
+      run: |
+        flake8 backend/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 backend/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      continue-on-error: true
+    
+    - name: Check code formatting with black
+      run: |
+        black --check backend/ tests/
+      continue-on-error: true
+    
+    - name: Check import sorting with isort
+      run: |
+        isort --check-only backend/ tests/
+      continue-on-error: true
+
+  security:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety
+    
+    - name: Run bandit security scan
+      run: |
+        bandit -r backend/ -f json -o bandit-report.json
+      continue-on-error: true
+    
+    - name: Check for known security vulnerabilities
+      run: |
+        pip install -r backend/requirements.txt
+        safety check --json
+      continue-on-error: true
