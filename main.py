@@ -2,10 +2,6 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-@app.get("/")
+@app.get('/')
 def read_root():
-    return {"message": "Hello, World!"}
-
-@app.get("/hello/{name}")
-def read_item(name: str):
-    return {"message": f"Hello, {name}!"}
+    return {'Hello': 'World'}
