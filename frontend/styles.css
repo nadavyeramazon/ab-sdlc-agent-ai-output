@@ -1,10 +1,10 @@
-/* Green Theme Styling */
+/* Blue Theme Styling */
 :root {
-    --primary-green: #2ecc71;
-    --dark-green: #27ae60;
-    --light-green: #a9dfbf;
-    --very-light-green: #e8f8f5;
-    --forest-green: #1e8449;
+    --primary-blue: #3498db;
+    --dark-blue: #2980b9;
+    --light-blue: #85c1e9;
+    --very-light-blue: #ebf5fb;
+    --ocean-blue: #1f618d;
     --text-dark: #2c3e50;
     --text-light: #ecf0f1;
     --white: #ffffff;
@@ -20,7 +20,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, var(--light-green) 0%, var(--primary-green) 100%);
+    background: linear-gradient(135deg, var(--light-blue) 0%, var(--primary-blue) 100%);
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -48,7 +48,7 @@ header h1 {
 }
 
 .subtitle {
-    color: var(--very-light-green);
+    color: var(--very-light-blue);
     font-size: 1.2rem;
 }
 
@@ -65,16 +65,16 @@ main {
 }
 
 .card {
-    border: 3px solid var(--primary-green);
+    border: 3px solid var(--primary-blue);
 }
 
 .info-card {
-    background: var(--very-light-green);
-    border: 2px solid var(--light-green);
+    background: var(--very-light-blue);
+    border: 2px solid var(--light-blue);
 }
 
 .info-card h3 {
-    color: var(--forest-green);
+    color: var(--ocean-blue);
     margin-bottom: 15px;
     font-size: 1.3rem;
 }
@@ -96,7 +96,7 @@ main {
 label {
     display: block;
     margin-bottom: 8px;
-    color: var(--forest-green);
+    color: var(--ocean-blue);
     font-weight: 600;
     font-size: 1rem;
 }
@@ -105,24 +105,24 @@ input[type="text"],
 select {
     width: 100%;
     padding: 12px 15px;
-    border: 2px solid var(--light-green);
+    border: 2px solid var(--light-blue);
     border-radius: 8px;
     font-size: 1rem;
     transition: all 0.3s ease;
-    background: var(--very-light-green);
+    background: var(--very-light-blue);
 }
 
 input[type="text"]:focus,
 select:focus {
     outline: none;
-    border-color: var(--primary-green);
-    box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
 .btn-primary {
     width: 100%;
     padding: 15px;
-    background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-blue) 100%);
     color: var(--white);
     border: none;
     border-radius: 8px;
@@ -130,12 +130,12 @@ select:focus {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
 }
 
 .btn-primary:active {
@@ -145,15 +145,15 @@ select:focus {
 .result {
     margin-top: 30px;
     padding: 20px;
-    background: var(--very-light-green);
-    border-left: 5px solid var(--primary-green);
+    background: var(--very-light-blue);
+    border-left: 5px solid var(--primary-blue);
     border-radius: 8px;
     animation: slideIn 0.5s ease-out;
 }
 
 .greeting-message {
     font-size: 1.3rem;
-    color: var(--forest-green);
+    color: var(--ocean-blue);
     margin-bottom: 15px;
     font-weight: 600;
 }
@@ -170,7 +170,7 @@ select:focus {
 }
 
 .detail strong {
-    color: var(--forest-green);
+    color: var(--ocean-blue);
 }
 
 .error {

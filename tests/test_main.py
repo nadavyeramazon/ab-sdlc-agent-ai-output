@@ -18,6 +18,7 @@ class TestRootEndpoint:
         assert data["status"] == "healthy"
         assert "message" in data
         assert "version" in data
+        assert data["version"] == "1.1.0"  # Updated version
 
 
 class TestHealthEndpoint:
@@ -46,6 +47,7 @@ class TestGreetingEndpoint:
         assert data["language"] == "en"
         assert "Alice" in data["message"]
         assert "Hello" in data["message"]
+        assert "blue" in data["message"]  # Updated to blue theme
     
     def test_greet_user_spanish(self):
         """Test greeting user in Spanish."""
@@ -59,6 +61,7 @@ class TestGreetingEndpoint:
         assert data["language"] == "es"
         assert "Carlos" in data["message"]
         assert "Hola" in data["message"]
+        assert "azul" in data["message"]  # Blue in Spanish
     
     def test_greet_user_french(self):
         """Test greeting user in French."""
@@ -72,6 +75,7 @@ class TestGreetingEndpoint:
         assert data["language"] == "fr"
         assert "Marie" in data["message"]
         assert "Bonjour" in data["message"]
+        assert "bleu" in data["message"]  # Blue in French
     
     def test_greet_user_german(self):
         """Test greeting user in German."""
@@ -85,6 +89,7 @@ class TestGreetingEndpoint:
         assert data["language"] == "de"
         assert "Hans" in data["message"]
         assert "Hallo" in data["message"]
+        assert "blau" in data["message"]  # Blue in German
     
     def test_greet_user_italian(self):
         """Test greeting user in Italian."""
@@ -98,6 +103,7 @@ class TestGreetingEndpoint:
         assert data["language"] == "it"
         assert "Giuseppe" in data["message"]
         assert "Ciao" in data["message"]
+        assert "blu" in data["message"]  # Blue in Italian
     
     def test_greet_user_default_language(self):
         """Test greeting user with default language (English)."""
@@ -244,11 +250,11 @@ class TestEdgeCases:
         """Test greeting with emoji in name."""
         response = client.post(
             "/api/greet",
-            json={"name": "Alice 🌿", "language": "en"}
+            json={"name": "Alice 🌊", "language": "en"}
         )
         assert response.status_code == 200
         data = response.json()
-        assert "Alice 🌿" in data["message"]
+        assert "Alice 🌊" in data["message"]
     
     def test_multiple_consecutive_requests(self):
         """Test multiple consecutive requests work correctly."""
