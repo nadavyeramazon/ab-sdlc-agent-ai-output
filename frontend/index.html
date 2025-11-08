@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Greeting App 🌿</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🌿 Welcome to the Green Greeting App 🌿</h1>
+            <p class="subtitle">Enter your name and get a personalized greeting!</p>
+        </header>
+
+        <main class="main-content">
+            <div class="card">
+                <form id="greetingForm" class="greeting-form">
+                    <div class="form-group">
+                        <label for="nameInput">Your Name:</label>
+                        <input 
+                            type="text" 
+                            id="nameInput" 
+                            name="name" 
+                            placeholder="Enter your name" 
+                            required 
+                            minlength="1" 
+                            maxlength="100"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="languageSelect">Language:</label>
+                        <select id="languageSelect" name="language">
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        Greet Me! 🌱
+                    </button>
+                </form>
+
+                <div id="resultContainer" class="result-container hidden">
+                    <div class="result-card">
+                        <h2 id="greetingMessage" class="greeting-message"></h2>
+                        <p id="greetingDetails" class="greeting-details"></p>
+                        <button id="resetBtn" class="btn-reset">Greet Again</button>
+                    </div>
+                </div>
+
+                <div id="errorContainer" class="error-container hidden">
+                    <p id="errorMessage" class="error-message"></p>
+                    <button id="errorResetBtn" class="btn-reset">Try Again</button>
+                </div>
+
+                <div id="loadingContainer" class="loading-container hidden">
+                    <div class="spinner"></div>
+                    <p>Getting your greeting...</p>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h3>About This App</h3>
+                <p>This is a fullstack application featuring:</p>
+                <ul>
+                    <li>🎨 Green-themed vanilla JavaScript frontend</li>
+                    <li>🚀 FastAPI Python backend</li>
+                    <li>🐳 Docker Compose orchestration</li>
+                    <li>✅ Comprehensive testing with pytest</li>
+                    <li>🔄 CI/CD with GitHub Actions</li>
+                </ul>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>Made with 💚 by the Green Team | <span id="apiStatus">Checking API...</span></p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
