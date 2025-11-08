@@ -162,15 +162,15 @@ class TestGreetEndpoint:
         data = response.json()
         assert "José-María" in data["message"]
 
-    def test_greet_message_contains_green_theme_reference(self, client):
-        """Test that greeting message references green theme."""
+    def test_greet_message_contains_blue_theme_reference(self, client):
+        """Test that greeting message references blue theme."""
         response = client.post(
             "/api/greet",
             json={"name": "John", "language": "en"}
         )
         assert response.status_code == 200
         data = response.json()
-        assert "green" in data["message"].lower()
+        assert "blue" in data["message"].lower()
 
     def test_greet_without_language_uses_default(self, client):
         """Test that omitting language parameter uses default English."""
