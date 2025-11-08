@@ -1,5 +1,5 @@
 /**
- * Green Themed API Interface - Vanilla JavaScript
+ * Blue Themed API Interface - Vanilla JavaScript
  * 
  * This script handles all interactions with the FastAPI backend.
  * No frameworks used - pure JavaScript for simplicity and performance.
@@ -305,7 +305,7 @@ async function handleGreeting() {
  * Check backend connectivity on page load
  */
 async function checkInitialConnection() {
-    console.log('🌿 Checking backend connectivity...');
+    console.log('🔵 Checking backend connectivity...');
     const result = await makeApiRequest('/health');
     
     if (result.success) {
@@ -373,7 +373,7 @@ if (document.readyState === 'loading') {
 }
 
 // Log initialization
-console.log('🌿 Green Themed API Interface initialized');
+console.log('🔵 Blue Themed API Interface initialized');
 console.log(`📡 API Base URL: ${API_BASE_URL}`);
 console.log(`🔄 Retry attempts: ${API_CONFIGS.retryAttempts}`);
 console.log(`⏱️ Request timeout: ${API_CONFIGS.timeout}ms`);

@@ -1,16 +1,16 @@
-/* Green Themed Styles */
+/* Blue Themed Styles */
 :root {
-    --primary-green: #2d5016;
-    --secondary-green: #4a7c2c;
-    --light-green: #6da83e;
-    --accent-green: #8bc34a;
-    --pale-green: #c8e6c9;
-    --background: #f1f8e9;
+    --primary-blue: #1a3d7c;
+    --secondary-blue: #2c5aa0;
+    --light-blue: #4a90e2;
+    --accent-blue: #5dade2;
+    --pale-blue: #aed6f1;
+    --background: #e8f4f8;
     --white: #ffffff;
-    --text-dark: #1b5e20;
-    --text-light: #558b2f;
-    --shadow: rgba(45, 80, 22, 0.15);
-    --border: #a5d6a7;
+    --text-dark: #154360;
+    --text-light: #2874a6;
+    --shadow: rgba(26, 61, 124, 0.15);
+    --border: #85c1e9;
     --error-red: #ef5350;
     --error-bg: #ffebee;
     --error-dark: #c62828;
@@ -24,7 +24,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, var(--background) 0%, var(--pale-green) 100%);
+    background: linear-gradient(135deg, var(--background) 0%, var(--pale-blue) 100%);
     color: var(--text-dark);
     line-height: 1.6;
     min-height: 100vh;
@@ -42,7 +42,7 @@ body {
 
 /* Header Styles */
 .header {
-    background: linear-gradient(135deg, var(--primary-green) 0%, var(--secondary-green) 100%);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
     color: var(--white);
     padding: 40px 30px;
     text-align: center;
@@ -97,8 +97,8 @@ body {
 }
 
 .connection-status.connected {
-    background: rgba(139, 195, 74, 0.2);
-    border: 2px solid rgba(139, 195, 74, 0.5);
+    background: rgba(93, 173, 226, 0.2);
+    border: 2px solid rgba(93, 173, 226, 0.5);
     color: var(--white);
 }
 
@@ -129,20 +129,20 @@ body {
     border: 2px solid var(--border);
     overflow: hidden;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 10px rgba(45, 80, 22, 0.1);
+    box-shadow: 0 4px 10px rgba(26, 61, 124, 0.1);
 }
 
 .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(45, 80, 22, 0.2);
-    border-color: var(--accent-green);
+    box-shadow: 0 8px 20px rgba(26, 61, 124, 0.2);
+    border-color: var(--accent-blue);
 }
 
 .card-header {
-    background: linear-gradient(135deg, var(--light-green) 0%, var(--accent-green) 100%);
+    background: linear-gradient(135deg, var(--light-blue) 0%, var(--accent-blue) 100%);
     color: var(--white);
     padding: 20px;
-    border-bottom: 3px solid var(--secondary-green);
+    border-bottom: 3px solid var(--secondary-blue);
 }
 
 .card-header h2 {
@@ -196,19 +196,19 @@ body {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--secondary-green) 0%, var(--light-green) 100%);
+    background: linear-gradient(135deg, var(--secondary-blue) 0%, var(--light-blue) 100%);
     color: var(--white);
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--light-green) 0%, var(--accent-green) 100%);
+    background: linear-gradient(135deg, var(--light-blue) 0%, var(--accent-blue) 100%);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(45, 80, 22, 0.3);
+    box-shadow: 0 4px 12px rgba(26, 61, 124, 0.3);
 }
 
 .btn-primary:active:not(:disabled) {
     transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(45, 80, 22, 0.2);
+    box-shadow: 0 2px 6px rgba(26, 61, 124, 0.2);
 }
 
 .btn-primary:disabled {
@@ -221,17 +221,17 @@ body {
 }
 
 .btn-secondary {
-    background: var(--pale-green);
+    background: var(--pale-blue);
     color: var(--text-dark);
     border: 2px solid var(--border);
 }
 
 .btn-secondary:hover {
-    background: var(--accent-green);
+    background: var(--accent-blue);
     color: var(--white);
-    border-color: var(--accent-green);
+    border-color: var(--accent-blue);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(45, 80, 22, 0.3);
+    box-shadow: 0 4px 12px rgba(26, 61, 124, 0.3);
 }
 
 .button-group {
@@ -262,9 +262,9 @@ body {
 
 .input-field:focus {
     outline: none;
-    border-color: var(--accent-green);
+    border-color: var(--accent-blue);
     background: var(--white);
-    box-shadow: 0 0 0 3px rgba(139, 195, 74, 0.2);
+    box-shadow: 0 0 0 3px rgba(93, 173, 226, 0.2);
 }
 
 .input-field::placeholder {
@@ -295,8 +295,8 @@ body {
 }
 
 .result-box.success {
-    background: var(--pale-green);
-    border: 2px solid var(--accent-green);
+    background: var(--pale-blue);
+    border: 2px solid var(--accent-blue);
     color: var(--text-dark);
 }
 
@@ -320,7 +320,7 @@ body {
 
 /* Footer Styles */
 .footer {
-    background: linear-gradient(135deg, var(--primary-green) 0%, var(--secondary-green) 100%);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
     color: var(--white);
     padding: 30px;
     text-align: center;
@@ -348,7 +348,7 @@ body {
     width: 16px;
     height: 16px;
     border: 3px solid var(--border);
-    border-top: 3px solid var(--accent-green);
+    border-top: 3px solid var(--accent-blue);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-left: 10px;
@@ -366,12 +366,12 @@ body {
 }
 
 .result-box::-webkit-scrollbar-thumb {
-    background: var(--accent-green);
+    background: var(--accent-blue);
     border-radius: 4px;
 }
 
 .result-box::-webkit-scrollbar-thumb:hover {
-    background: var(--light-green);
+    background: var(--light-blue);
 }
 
 /* Responsive Design */
@@ -440,7 +440,7 @@ body {
 /* Accessibility */
 .btn:focus,
 .input-field:focus {
-    outline: 3px solid var(--accent-green);
+    outline: 3px solid var(--accent-blue);
     outline-offset: 2px;
 }
 
