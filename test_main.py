@@ -4,7 +4,7 @@ from main import app
 
 @pytest.fixture
 def client():
-    return TestClient(app=app)
+    return TestClient(app)
 
 def test_read_root(client):
     response = client.get("/")
