@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greeting User App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌟 Welcome to Greeting App</h1>
+            <p class="subtitle">Greet users in multiple languages!</p>
+        </header>
+
+        <main>
+            <div class="card">
+                <h2>Enter Your Details</h2>
+                
+                <form id="greetingForm">
+                    <div class="form-group">
+                        <label for="nameInput">
+                            <span class="label-icon">👤</span>
+                            Your Name:
+                        </label>
+                        <input 
+                            type="text" 
+                            id="nameInput" 
+                            placeholder="Enter your name" 
+                            required
+                            maxlength="100"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="languageSelect">
+                            <span class="label-icon">🌍</span>
+                            Language:
+                        </label>
+                        <select id="languageSelect">
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        <span class="btn-text">Get Greeting</span>
+                        <span class="btn-icon">✨</span>
+                    </button>
+                </form>
+            </div>
+
+            <div id="resultContainer" class="result-container hidden">
+                <div class="result-card">
+                    <div class="success-icon">✅</div>
+                    <h3>Greeting Message</h3>
+                    <p id="greetingMessage" class="greeting-message"></p>
+                    <div class="result-details">
+                        <span class="detail-item">
+                            <strong>Name:</strong> <span id="resultName"></span>
+                        </span>
+                        <span class="detail-item">
+                            <strong>Language:</strong> <span id="resultLanguage"></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="errorContainer" class="error-container hidden">
+                <div class="error-card">
+                    <div class="error-icon">❌</div>
+                    <h3>Error</h3>
+                    <p id="errorMessage" class="error-message"></p>
+                </div>
+            </div>
+
+            <div class="api-info">
+                <h3>📡 API Information</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>Endpoint:</strong> POST /greet
+                    </div>
+                    <div class="info-item">
+                        <strong>Alternative:</strong> GET /greet/{name}
+                    </div>
+                    <div class="info-item">
+                        <strong>Status:</strong> <span id="apiStatus" class="status-badge">Checking...</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Greeting User App | Built with FastAPI & Vanilla JS</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
