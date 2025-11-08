@@ -20,4 +20,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install fastapi pytest requests
     - name: Run tests
-      run: pytest
+      run: |
+        cd backend
+        pytest
