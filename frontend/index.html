@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Themed API Interface</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🌿 Green Themed API Interface</h1>
+            <p class="subtitle">A beautiful green-themed UI for interacting with our FastAPI backend</p>
+        </header>
+
+        <div class="content">
+            <!-- Health Status Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🏥 Health Check</h2>
+                </div>
+                <div class="card-body">
+                    <p>Check the health status of the API backend.</p>
+                    <button id="healthCheckBtn" class="btn btn-primary">Check Health</button>
+                    <div id="healthResult" class="result-box"></div>
+                </div>
+            </div>
+
+            <!-- Hello World Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>👋 Hello World</h2>
+                </div>
+                <div class="card-body">
+                    <p>Get a simple hello world message from the API.</p>
+                    <button id="helloWorldBtn" class="btn btn-primary">Say Hello</button>
+                    <div id="helloWorldResult" class="result-box"></div>
+                </div>
+            </div>
+
+            <!-- Personalized Greeting Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>💬 Personalized Greeting</h2>
+                </div>
+                <div class="card-body">
+                    <p>Get a personalized greeting by entering your name.</p>
+                    <div class="input-group">
+                        <input 
+                            type="text" 
+                            id="nameInput" 
+                            class="input-field" 
+                            placeholder="Enter your name"
+                            autocomplete="off"
+                        />
+                        <button id="greetBtn" class="btn btn-primary">Greet Me</button>
+                    </div>
+                    <div id="greetResult" class="result-box"></div>
+                </div>
+            </div>
+
+            <!-- API Documentation Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>📚 API Documentation</h2>
+                </div>
+                <div class="card-body">
+                    <p>Access the interactive API documentation.</p>
+                    <div class="button-group">
+                        <a href="http://localhost:8000/docs" target="_blank" class="btn btn-secondary">Swagger UI</a>
+                        <a href="http://localhost:8000/redoc" target="_blank" class="btn btn-secondary">ReDoc</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>Built with 💚 using FastAPI and Vanilla JavaScript</p>
+            <p class="small">Powered by Docker Compose | Backend: FastAPI | Frontend: Pure JavaScript</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

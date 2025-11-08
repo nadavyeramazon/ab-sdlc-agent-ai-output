@@ -40,14 +40,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
-      - name: Run tests with pytest
+      - name: Run unit tests with pytest
         run: |
-          pytest tests/ -v --tb=short
+          pytest tests/test_main.py -v --tb=short
+      
+      - name: Run Docker integration tests
+        run: |
+          pytest tests/test_docker_integration.py -v --tb=short -m "not integration"
       
       - name: Run tests with coverage
         run: |
           pip install pytest-cov
-          pytest tests/ --cov=. --cov-report=term-missing --cov-report=xml
+          pytest tests/ --cov=. --cov-report=term-missing --cov-report=xml -m "not integration"
       
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
@@ -57,6 +61,52 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
+
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build backend Docker image
+        run: |
+          docker build -t fastapi-backend:test .
+      
+      - name: Build frontend Docker image
+        run: |
+          docker build -t nginx-frontend:test ./frontend
+      
+      - name: Test Docker Compose configuration
+        run: |
+          docker compose config
+      
+      - name: Start services with Docker Compose
+        run: |
+          docker compose up -d
+          sleep 10
+      
+      - name: Check backend health
+        run: |
+          curl -f http://localhost:8000/health || exit 1
+      
+      - name: Check frontend accessibility
+        run: |
+          curl -f http://localhost:3000 || exit 1
+      
+      - name: Test backend API endpoints
+        run: |
+          curl -f http://localhost:8000/ || exit 1
+          curl -f http://localhost:8000/hello/TestUser || exit 1
+      
+      - name: Stop Docker Compose services
+        if: always()
+        run: |
+          docker compose down
 
   lint:
     name: Code Quality Checks
