@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Greeting App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌿 Welcome to the Greeting App 🌿</h1>
+            <p class="subtitle">Get a personalized greeting in your favorite language!</p>
+        </header>
+
+        <main>
+            <div class="card">
+                <form id="greetingForm">
+                    <div class="form-group">
+                        <label for="nameInput">Your Name:</label>
+                        <input 
+                            type="text" 
+                            id="nameInput" 
+                            name="name" 
+                            placeholder="Enter your name" 
+                            required
+                            autocomplete="off"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="languageSelect">Language:</label>
+                        <select id="languageSelect" name="language">
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <option value="it">Italiano</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-primary">
+                        Get Greeting 👋
+                    </button>
+                </form>
+
+                <div id="greetingResult" class="result hidden">
+                    <div class="greeting-message">
+                        <span id="greetingText"></span>
+                    </div>
+                    <div class="greeting-details">
+                        <span class="detail">Name: <strong id="greetingName"></strong></span>
+                        <span class="detail">Language: <strong id="greetingLanguage"></strong></span>
+                    </div>
+                </div>
+
+                <div id="errorMessage" class="error hidden"></div>
+            </div>
+
+            <div class="info-card">
+                <h3>ℹ️ About This App</h3>
+                <ul>
+                    <li>Built with Vanilla JavaScript (no frameworks!)</li>
+                    <li>FastAPI backend for processing requests</li>
+                    <li>Green theme for a fresh, eco-friendly look 🌱</li>
+                    <li>Supports multiple languages</li>
+                    <li>Dockerized for easy deployment</li>
+                </ul>
+            </div>
+        </main>
+
+        <footer>
+            <p>© 2024 Green Greeting App | Built with ❤️ and 🌿</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

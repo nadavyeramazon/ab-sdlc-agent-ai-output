@@ -1,0 +1,256 @@
+/* Green Theme Styling */
+:root {
+    --primary-green: #2ecc71;
+    --dark-green: #27ae60;
+    --light-green: #a9dfbf;
+    --very-light-green: #e8f8f5;
+    --forest-green: #1e8449;
+    --text-dark: #2c3e50;
+    --text-light: #ecf0f1;
+    --white: #ffffff;
+    --error-red: #e74c3c;
+    --shadow: rgba(0, 0, 0, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, var(--light-green) 0%, var(--primary-green) 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    color: var(--text-dark);
+}
+
+.container {
+    max-width: 800px;
+    width: 100%;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: fadeInDown 0.8s ease-out;
+}
+
+header h1 {
+    color: var(--white);
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.subtitle {
+    color: var(--very-light-green);
+    font-size: 1.2rem;
+}
+
+main {
+    animation: fadeInUp 0.8s ease-out;
+}
+
+.card, .info-card {
+    background: var(--white);
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 30px var(--shadow);
+    margin-bottom: 20px;
+}
+
+.card {
+    border: 3px solid var(--primary-green);
+}
+
+.info-card {
+    background: var(--very-light-green);
+    border: 2px solid var(--light-green);
+}
+
+.info-card h3 {
+    color: var(--forest-green);
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+.info-card ul {
+    list-style-position: inside;
+    color: var(--text-dark);
+    line-height: 1.8;
+}
+
+.info-card li {
+    margin-bottom: 8px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--forest-green);
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+input[type="text"],
+select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid var(--light-green);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: var(--very-light-green);
+}
+
+input[type="text"]:focus,
+select:focus {
+    outline: none;
+    border-color: var(--primary-green);
+    box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.result {
+    margin-top: 30px;
+    padding: 20px;
+    background: var(--very-light-green);
+    border-left: 5px solid var(--primary-green);
+    border-radius: 8px;
+    animation: slideIn 0.5s ease-out;
+}
+
+.greeting-message {
+    font-size: 1.3rem;
+    color: var(--forest-green);
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.greeting-details {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    color: var(--text-dark);
+}
+
+.detail {
+    font-size: 0.95rem;
+}
+
+.detail strong {
+    color: var(--forest-green);
+}
+
+.error {
+    margin-top: 20px;
+    padding: 15px;
+    background: #fadbd8;
+    border-left: 5px solid var(--error-red);
+    border-radius: 8px;
+    color: #641e16;
+    animation: shake 0.5s ease-out;
+}
+
+.hidden {
+    display: none;
+}
+
+footer {
+    text-align: center;
+    margin-top: 40px;
+    color: var(--white);
+    font-size: 0.9rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Animations */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    header h1 {
+        font-size: 2rem;
+    }
+    
+    .subtitle {
+        font-size: 1rem;
+    }
+    
+    .card, .info-card {
+        padding: 20px;
+    }
+    
+    .greeting-details {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
