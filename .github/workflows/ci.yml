@@ -115,13 +115,21 @@ jobs:
       run: |
         curl -f http://localhost:3000 || exit 1
         
-    - name: Test API endpoint
+    - name: Test API greet endpoint
       run: |
         response=$(curl -X POST http://localhost:8000/api/greet \
           -H "Content-Type: application/json" \
           -d '{"name":"CI Test","language":"en"}')
-        echo "Response: $response"
+        echo "Greet Response: $response"
         echo "$response" | grep -q "Hello" || exit 1
+        
+    - name: Test API howdy endpoint
+      run: |
+        response=$(curl -X POST http://localhost:8000/api/howdy \
+          -H "Content-Type: application/json" \
+          -d '{"name":"CI Test","language":"en"}')
+        echo "Howdy Response: $response"
+        echo "$response" | grep -q "Howdy" || exit 1
         
     - name: Stop services
       if: always()
@@ -172,8 +180,31 @@ jobs:
           -H "Content-Type: application/json" \
           -d '{"name":"Hans","language":"de"}' | grep -q "Guten Tag"
         
-        # Test frontend is accessible
-        curl -f http://localhost:3000 | grep -q "Green Greeting App"
+        # Test howdy endpoint with different languages
+        curl -X POST http://localhost:8000/api/howdy \
+          -H "Content-Type: application/json" \
+          -d '{"name":"Alice","language":"en"}' | grep -q "Howdy"
+          
+        curl -X POST http://localhost:8000/api/howdy \
+          -H "Content-Type: application/json" \
+          -d '{"name":"Maria","language":"es"}' | grep -q "Qué tal"
+          
+        curl -X POST http://localhost:8000/api/howdy \
+          -H "Content-Type: application/json" \
+          -d '{"name":"Pierre","language":"fr"}' | grep -q "Salut"
+          
+        curl -X POST http://localhost:8000/api/howdy \
+          -H "Content-Type: application/json" \
+          -d '{"name":"Hans","language":"de"}' | grep -q "Moin"
+        
+        # Verify howdy returns greeting_type field
+        response=$(curl -X POST http://localhost:8000/api/howdy \
+          -H "Content-Type: application/json" \
+          -d '{"name":"Test","language":"en"}')
+        echo "$response" | grep -q '"greeting_type":"howdy"' || exit 1
+        
+        # Test frontend is accessible and has blue theme
+        curl -f http://localhost:3000 | grep -q "Blue Greeting App"
         
     - name: Cleanup
       if: always()

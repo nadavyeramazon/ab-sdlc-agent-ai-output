@@ -1,15 +1,15 @@
-/* Green Theme Styles */
+/* Blue Theme Styles */
 :root {
-    --primary-green: #2d6a4f;
-    --secondary-green: #40916c;
-    --light-green: #52b788;
-    --lighter-green: #74c69d;
-    --lightest-green: #95d5b2;
-    --background-green: #d8f3dc;
+    --primary-blue: #1e3a8a;
+    --secondary-blue: #2563eb;
+    --light-blue: #3b82f6;
+    --lighter-blue: #60a5fa;
+    --lightest-blue: #93c5fd;
+    --background-blue: #dbeafe;
     --white: #ffffff;
-    --text-dark: #1b4332;
+    --text-dark: #1e293b;
     --error-red: #c1121f;
-    --shadow: rgba(45, 106, 79, 0.2);
+    --shadow: rgba(30, 58, 138, 0.2);
 }
 
 * {
@@ -20,7 +20,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, var(--background-green) 0%, var(--lightest-green) 100%);
+    background: linear-gradient(135deg, var(--background-blue) 0%, var(--lightest-blue) 100%);
     color: var(--text-dark);
     min-height: 100vh;
     line-height: 1.6;
@@ -36,7 +36,7 @@ body {
 .header {
     text-align: center;
     padding: 40px 20px;
-    background: linear-gradient(135deg, var(--primary-green) 0%, var(--secondary-green) 100%);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
     color: var(--white);
     border-radius: 20px;
     margin-bottom: 30px;
@@ -96,24 +96,24 @@ body {
 
 .form-group label {
     font-weight: 600;
-    color: var(--primary-green);
+    color: var(--primary-blue);
     font-size: 1.1em;
 }
 
 .form-group input,
 .form-group select {
     padding: 12px 15px;
-    border: 2px solid var(--lighter-green);
+    border: 2px solid var(--lighter-blue);
     border-radius: 10px;
     font-size: 1em;
     transition: all 0.3s ease;
-    background: var(--background-green);
+    background: var(--background-blue);
 }
 
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
-    border-color: var(--secondary-green);
+    border-color: var(--secondary-blue);
     background: var(--white);
     box-shadow: 0 0 10px var(--shadow);
 }
@@ -132,7 +132,7 @@ body {
 }
 
 .btn-submit {
-    background: linear-gradient(135deg, var(--secondary-green) 0%, var(--light-green) 100%);
+    background: linear-gradient(135deg, var(--secondary-blue) 0%, var(--light-blue) 100%);
     color: var(--white);
     box-shadow: 0 5px 15px var(--shadow);
 }
@@ -148,13 +148,13 @@ body {
 }
 
 .btn-reset {
-    background: var(--lighter-green);
-    color: var(--primary-green);
+    background: var(--lighter-blue);
+    color: var(--primary-blue);
     margin-top: 20px;
 }
 
 .btn-reset:hover {
-    background: var(--light-green);
+    background: var(--light-blue);
     color: var(--white);
 }
 
@@ -166,19 +166,19 @@ body {
 .result-card {
     text-align: center;
     padding: 20px;
-    background: linear-gradient(135deg, var(--background-green) 0%, var(--lightest-green) 100%);
+    background: linear-gradient(135deg, var(--background-blue) 0%, var(--lightest-blue) 100%);
     border-radius: 10px;
-    border: 3px solid var(--light-green);
+    border: 3px solid var(--light-blue);
 }
 
 .greeting-message {
-    color: var(--primary-green);
+    color: var(--primary-blue);
     font-size: 1.8em;
     margin-bottom: 15px;
 }
 
 .greeting-details {
-    color: var(--secondary-green);
+    color: var(--secondary-blue);
     font-size: 1.1em;
     font-style: italic;
 }
@@ -206,8 +206,8 @@ body {
 .spinner {
     width: 50px;
     height: 50px;
-    border: 5px solid var(--lightest-green);
-    border-top: 5px solid var(--primary-green);
+    border: 5px solid var(--lightest-blue);
+    border-top: 5px solid var(--primary-blue);
     border-radius: 50%;
     margin: 0 auto 20px;
     animation: spin 1s linear infinite;
@@ -215,7 +215,7 @@ body {
 
 /* Info Card */
 .info-card h3 {
-    color: var(--primary-green);
+    color: var(--primary-blue);
     margin-bottom: 15px;
     font-size: 1.5em;
 }
@@ -227,7 +227,7 @@ body {
 
 .info-card li {
     padding: 8px 0;
-    border-bottom: 1px solid var(--lightest-green);
+    border-bottom: 1px solid var(--lightest-blue);
 }
 
 .info-card li:last-child {
@@ -241,7 +241,7 @@ body {
     background: var(--white);
     border-radius: 10px;
     box-shadow: 0 5px 15px var(--shadow);
-    color: var(--primary-green);
+    color: var(--primary-blue);
 }
 
 #apiStatus {
