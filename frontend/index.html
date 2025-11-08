@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greeting App - Green Theme</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌿 Welcome to Greeting App</h1>
+            <p class="subtitle">Get a personalized greeting in your preferred language</p>
+        </header>
+
+        <main>
+            <div class="card">
+                <form id="greetingForm">
+                    <div class="form-group">
+                        <label for="userName">Your Name:</label>
+                        <input 
+                            type="text" 
+                            id="userName" 
+                            name="userName" 
+                            placeholder="Enter your name"
+                            required
+                            minlength="1"
+                            maxlength="100"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="language">Language:</label>
+                        <select id="language" name="language">
+                            <option value="en" selected>English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <option value="it">Italiano</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-primary" id="submitBtn">
+                        Get Greeting
+                    </button>
+                </form>
+
+                <div id="result" class="result hidden">
+                    <div class="greeting-message" id="greetingMessage"></div>
+                    <div class="greeting-details" id="greetingDetails"></div>
+                </div>
+
+                <div id="error" class="error hidden"></div>
+
+                <div id="loading" class="loading hidden">
+                    <div class="spinner"></div>
+                    <p>Loading...</p>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h3>📋 Features</h3>
+                <ul>
+                    <li>✅ Multi-language support (5 languages)</li>
+                    <li>✅ Real-time API integration</li>
+                    <li>✅ Responsive green-themed design</li>
+                    <li>✅ Error handling and validation</li>
+                </ul>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Greeting App. Built with FastAPI and Vanilla JavaScript.</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
