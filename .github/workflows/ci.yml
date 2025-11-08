@@ -139,9 +139,16 @@ jobs:
           -d '{"name": "CI Test", "language": "en"}' \
           -f
     
+    - name: Test backend howdy API
+      run: |
+        curl -X POST http://localhost:8000/api/howdy \
+          -H "Content-Type: application/json" \
+          -d '{"name": "CI Test", "language": "en", "style": "casual"}' \
+          -f
+    
     - name: Test frontend accessibility
       run: |
-        curl -f http://localhost:80/ | grep -q "Green Greeting App"
+        curl -f http://localhost:80/ | grep -q "Blue Greeting App"
     
     - name: Show service logs on failure
       if: failure()
