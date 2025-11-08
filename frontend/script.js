@@ -1,21 +1,12 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const nameInput = document.getElementById('nameInput');
-    const greetButton = document.getElementById('greetButton');
-    const greeting = document.getElementById('greeting');
-
-    greetButton.addEventListener('click', async () => {
-        const name = nameInput.value.trim();
-        if (name) {
-            try {
-                const response = await fetch(`http://localhost:8000/greet/${name}`);
-                const data = await response.json();
-                greeting.textContent = data.message;
-            } catch (error) {
-                console.error('Error:', error);
-                greeting.textContent = 'An error occurred while fetching the greeting.';
-            }
-        } else {
-            greeting.textContent = 'Please enter a name.';
-        }
-    });
+document.getElementById('greetingForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const name = document.getElementById('nameInput').value;
+    try {
+        const response = await fetch(`http://localhost:8000/greet/${name}`);
+        const data = await response.json();
+        document.getElementById('greeting').textContent = data.message;
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('greeting').textContent = 'An error occurred. Please try again.';
+    }
 });

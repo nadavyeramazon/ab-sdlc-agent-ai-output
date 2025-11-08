@@ -4,14 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Greeting App</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <h1>Greeting App</h1>
-        <input type="text" id="nameInput" placeholder="Enter your name">
-        <button id="greetButton">Greet</button>
-        <p id="greeting"></p>
+        <form id="greetingForm">
+            <input type="text" id="nameInput" placeholder="Enter your name" required>
+            <button type="submit">Greet</button>
+        </form>
+        <div id="greeting" class="greeting"></div>
     </div>
     <script src="script.js"></script>
 </body>
