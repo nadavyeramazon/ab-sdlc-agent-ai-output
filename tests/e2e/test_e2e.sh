@@ -197,21 +197,21 @@ else
     ((TESTS_FAILED++))
 fi
 
-# Test 7: Invalid POST request (empty name)
+# Test 7: Invalid POST request (empty name) - Expects 422 due to Pydantic validation
 echo -n "Test 7: Invalid POST request (empty name)... "
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${BACKEND_URL}/greet" \
     -H "Content-Type: application/json" \
     -d '{"name":""}')
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
 
-if [ "$HTTP_CODE" -eq 400 ]; then
+if [ "$HTTP_CODE" -eq 422 ]; then
     test_result
 else
-    echo -e "${ERROR_COLOR}✗ FAILED - Expected HTTP 400, got $HTTP_CODE${RESET_COLOR}"
+    echo -e "${ERROR_COLOR}✗ FAILED - Expected HTTP 422, got $HTTP_CODE${RESET_COLOR}"
     ((TESTS_FAILED++))
 fi
 
-# Test 8: Invalid POST request (whitespace only)
+# Test 8: Invalid POST request (whitespace only) - Custom validation returns 400
 echo -n "Test 8: Invalid POST request (whitespace only)... "
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${BACKEND_URL}/greet" \
     -H "Content-Type: application/json" \

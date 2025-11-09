@@ -217,7 +217,7 @@ jobs:
           -H "Content-Type: application/json" \
           -d '{"name":""}')
         echo "Empty name HTTP code: $http_code"
-        [ "$http_code" -eq 400 ] || exit 1
+        [ "$http_code" -eq 422 ] || exit 1
     
     - name: Test frontend accessibility with curl
       run: |
