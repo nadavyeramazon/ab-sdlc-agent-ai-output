@@ -38,10 +38,10 @@ TESTS_FAILED=0
 test_result() {
     if [ $? -eq 0 ]; then
         echo -e "${ECHO_COLOR}✓ PASSED${RESET_COLOR}"
-        ((TESTS_PASSED++))
+        TESTS_PASSED=$((TESTS_PASSED + 1))
     else
         echo -e "${ERROR_COLOR}✗ FAILED${RESET_COLOR}"
-        ((TESTS_FAILED++))
+        TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 }
 
@@ -92,11 +92,11 @@ if [ "$HTTP_CODE" -eq 200 ]; then
     else
         echo -e "${ERROR_COLOR}✗ FAILED - Invalid response body${RESET_COLOR}"
         echo "Response: $BODY"
-        ((TESTS_FAILED++))
+        TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 else
     echo -e "${ERROR_COLOR}✗ FAILED - HTTP $HTTP_CODE${RESET_COLOR}"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 # Test 2: Root Endpoint
@@ -110,11 +110,11 @@ if [ "$HTTP_CODE" -eq 200 ]; then
         test_result
     else
         echo -e "${ERROR_COLOR}✗ FAILED - Invalid response body${RESET_COLOR}"
-        ((TESTS_FAILED++))
+        TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 else
     echo -e "${ERROR_COLOR}✗ FAILED - HTTP $HTTP_CODE${RESET_COLOR}"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 # Test 3: POST /greet endpoint
@@ -131,11 +131,11 @@ if [ "$HTTP_CODE" -eq 200 ]; then
     else
         echo -e "${ERROR_COLOR}✗ FAILED - Name not in response${RESET_COLOR}"
         echo "Response: $BODY"
-        ((TESTS_FAILED++))
+        TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 else
     echo -e "${ERROR_COLOR}✗ FAILED - HTTP $HTTP_CODE${RESET_COLOR}"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 # Test 4: GET /greet/{name} endpoint
@@ -150,11 +150,11 @@ if [ "$HTTP_CODE" -eq 200 ]; then
     else
         echo -e "${ERROR_COLOR}✗ FAILED - Name not in response${RESET_COLOR}"
         echo "Response: $BODY"
-        ((TESTS_FAILED++))
+        TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 else
     echo -e "${ERROR_COLOR}✗ FAILED - HTTP $HTTP_CODE${RESET_COLOR}"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 # Test 5: POST /howdy endpoint
@@ -171,11 +171,11 @@ if [ "$HTTP_CODE" -eq 200 ]; then
     else
         echo -e "${ERROR_COLOR}✗ FAILED - Howdy not in response${RESET_COLOR}"
         echo "Response: $BODY"
-        ((TESTS_FAILED++))
+        TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 else
     echo -e "${ERROR_COLOR}✗ FAILED - HTTP $HTTP_CODE${RESET_COLOR}"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 # Test 6: GET /howdy/{name} endpoint
@@ -190,11 +190,11 @@ if [ "$HTTP_CODE" -eq 200 ]; then
     else
         echo -e "${ERROR_COLOR}✗ FAILED - Invalid response${RESET_COLOR}"
         echo "Response: $BODY"
-        ((TESTS_FAILED++))
+        TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 else
     echo -e "${ERROR_COLOR}✗ FAILED - HTTP $HTTP_CODE${RESET_COLOR}"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 # Test 7: Invalid POST request (empty name) - Expects 422 due to Pydantic validation
@@ -208,7 +208,7 @@ if [ "$HTTP_CODE" -eq 422 ]; then
     test_result
 else
     echo -e "${ERROR_COLOR}✗ FAILED - Expected HTTP 422, got $HTTP_CODE${RESET_COLOR}"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 # Test 8: Invalid POST request (whitespace only) - Custom validation returns 400
@@ -222,7 +222,7 @@ if [ "$HTTP_CODE" -eq 400 ]; then
     test_result
 else
     echo -e "${ERROR_COLOR}✗ FAILED - Expected HTTP 400, got $HTTP_CODE${RESET_COLOR}"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 # Test 9: Red theme verification in greeting response
@@ -233,7 +233,7 @@ if echo "$RESPONSE" | grep -q 'red-themed'; then
 else
     echo -e "${ERROR_COLOR}✗ FAILED - Red theme not mentioned${RESET_COLOR}"
     echo "Response: $RESPONSE"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 echo ""
@@ -252,11 +252,11 @@ if [ "$HTTP_CODE" -eq 200 ]; then
         test_result
     else
         echo -e "${ERROR_COLOR}✗ FAILED - Red Greeting not found in HTML${RESET_COLOR}"
-        ((TESTS_FAILED++))
+        TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 else
     echo -e "${ERROR_COLOR}✗ FAILED - HTTP $HTTP_CODE${RESET_COLOR}"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 # Test 11: Frontend has correct title
@@ -266,7 +266,7 @@ if echo "$HTML" | grep -q '<title>Red Greeting App</title>'; then
     test_result
 else
     echo -e "${ERROR_COLOR}✗ FAILED - Title not found or incorrect${RESET_COLOR}"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 # Test 12: Frontend includes CSS file
@@ -276,7 +276,7 @@ if echo "$HTML" | grep -q 'styles.css'; then
     test_result
 else
     echo -e "${ERROR_COLOR}✗ FAILED - CSS link not found${RESET_COLOR}"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 # Test 13: Frontend includes JavaScript file
@@ -286,7 +286,7 @@ if echo "$HTML" | grep -q 'app.js'; then
     test_result
 else
     echo -e "${ERROR_COLOR}✗ FAILED - JavaScript link not found${RESET_COLOR}"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 # Test 14: CSS file accessible
@@ -300,11 +300,11 @@ if [ "$HTTP_CODE" -eq 200 ]; then
         test_result
     else
         echo -e "${ERROR_COLOR}✗ FAILED - CSS content incorrect${RESET_COLOR}"
-        ((TESTS_FAILED++))
+        TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 else
     echo -e "${ERROR_COLOR}✗ FAILED - HTTP $HTTP_CODE${RESET_COLOR}"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 # Test 15: JavaScript file accessible
@@ -318,11 +318,11 @@ if [ "$HTTP_CODE" -eq 200 ]; then
         test_result
     else
         echo -e "${ERROR_COLOR}✗ FAILED - JavaScript content incorrect${RESET_COLOR}"
-        ((TESTS_FAILED++))
+        TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 else
     echo -e "${ERROR_COLOR}✗ FAILED - HTTP $HTTP_CODE${RESET_COLOR}"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 echo ""
@@ -337,7 +337,7 @@ if echo "$HEADERS" | grep -qi 'access-control-allow-origin'; then
     test_result
 else
     echo -e "${ERROR_COLOR}✗ FAILED - CORS headers not found${RESET_COLOR}"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 # Test 17: Health check returns correct structure
@@ -350,7 +350,7 @@ if echo "$RESPONSE" | grep -q '"status"' && \
 else
     echo -e "${ERROR_COLOR}✗ FAILED - Missing required fields${RESET_COLOR}"
     echo "Response: $RESPONSE"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 # Test 18: API Documentation accessible
@@ -362,7 +362,7 @@ if [ "$HTTP_CODE" -eq 200 ]; then
     test_result
 else
     echo -e "${ERROR_COLOR}✗ FAILED - HTTP $HTTP_CODE${RESET_COLOR}"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 # Test 19: OpenAPI JSON accessible
@@ -376,11 +376,11 @@ if [ "$HTTP_CODE" -eq 200 ]; then
         test_result
     else
         echo -e "${ERROR_COLOR}✗ FAILED - Invalid OpenAPI response${RESET_COLOR}"
-        ((TESTS_FAILED++))
+        TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 else
     echo -e "${ERROR_COLOR}✗ FAILED - HTTP $HTTP_CODE${RESET_COLOR}"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 # Test 20: Service name consistency
@@ -391,7 +391,7 @@ if echo "$RESPONSE" | grep -q 'red-greeting'; then
 else
     echo -e "${ERROR_COLOR}✗ FAILED - Service name doesn't match red theme${RESET_COLOR}"
     echo "Response: $RESPONSE"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 echo ""

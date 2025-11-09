@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
   # Backend FastAPI service
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: green-greeting-backend
+    container_name: red-greeting-backend
     ports:
       - "8000:8000"
     environment:
@@ -26,7 +24,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: green-greeting-frontend
+    container_name: red-greeting-frontend
     ports:
       - "80:80"
     depends_on:
