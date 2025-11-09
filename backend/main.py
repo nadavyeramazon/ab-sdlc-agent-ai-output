@@ -11,8 +11,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Green Greeting API",
-    description="A simple greeting API with health check",
+    title="Red Greeting API",
+    description="A simple greeting API with health check and howdy support",
     version="1.0.0"
 )
 
@@ -37,6 +37,17 @@ class GreetResponse(BaseModel):
     name: str
 
 
+class HowdyRequest(BaseModel):
+    """Request model for howdy endpoint."""
+    name: str = Field(..., min_length=1, max_length=100, description="Name to greet with howdy")
+
+
+class HowdyResponse(BaseModel):
+    """Response model for howdy endpoint."""
+    message: str
+    name: str
+
+
 class HealthResponse(BaseModel):
     """Response model for health check endpoint."""
     status: str
@@ -48,7 +59,7 @@ class HealthResponse(BaseModel):
 async def root() -> Dict[str, str]:
     """Root endpoint providing API information."""
     return {
-        "message": "Welcome to Green Greeting API",
+        "message": "Welcome to Red Greeting API",
         "docs": "/docs",
         "health": "/health"
     }
@@ -64,7 +75,7 @@ async def health_check() -> HealthResponse:
     logger.info("Health check requested")
     return HealthResponse(
         status="healthy",
-        service="green-greeting-api",
+        service="red-greeting-api",
         version="1.0.0"
     )
 
@@ -92,7 +103,7 @@ async def greet_user(request: GreetRequest) -> GreetResponse:
     logger.info(f"Greeting user: {request.name}")
     
     return GreetResponse(
-        message=f"Hello, {request.name}! Welcome to our green-themed application! 🌿",
+        message=f"Hello, {request.name}! Welcome to our red-themed application! ❤️",
         name=request.name
     )
 
@@ -126,6 +137,68 @@ async def greet_user_get(name: str) -> GreetResponse:
     logger.info(f"Greeting user via GET: {name}")
     
     return GreetResponse(
-        message=f"Hello, {name}! Welcome to our green-themed application! 🌿",
+        message=f"Hello, {name}! Welcome to our red-themed application! ❤️",
+        name=name
+    )
+
+
+@app.post("/howdy", response_model=HowdyResponse, tags=["Greeting"])
+async def howdy_user(request: HowdyRequest) -> HowdyResponse:
+    """Greet a user with a howdy message.
+    
+    Args:
+        request: HowdyRequest containing the name to greet
+    
+    Returns:
+        HowdyResponse: Personalized howdy greeting message
+    
+    Raises:
+        HTTPException: If name is invalid
+    """
+    if not request.name.strip():
+        logger.warning(f"Invalid howdy request with empty name")
+        raise HTTPException(
+            status_code=400,
+            detail="Name cannot be empty or contain only whitespace"
+        )
+    
+    logger.info(f"Howdy greeting for user: {request.name}")
+    
+    return HowdyResponse(
+        message=f"Howdy, {request.name}! Welcome partner to our red-themed application! 🤠",
+        name=request.name
+    )
+
+
+@app.get("/howdy/{name}", response_model=HowdyResponse, tags=["Greeting"])
+async def howdy_user_get(name: str) -> HowdyResponse:
+    """Greet a user with a howdy message using GET request.
+    
+    Args:
+        name: Name to greet (path parameter)
+    
+    Returns:
+        HowdyResponse: Personalized howdy greeting message
+    
+    Raises:
+        HTTPException: If name is invalid
+    """
+    if not name or not name.strip():
+        logger.warning(f"Invalid howdy request with empty name")
+        raise HTTPException(
+            status_code=400,
+            detail="Name cannot be empty or contain only whitespace"
+        )
+    
+    if len(name) > 100:
+        raise HTTPException(
+            status_code=400,
+            detail="Name is too long (maximum 100 characters)"
+        )
+    
+    logger.info(f"Howdy greeting for user via GET: {name}")
+    
+    return HowdyResponse(
+        message=f"Howdy, {name}! Welcome partner to our red-themed application! 🤠",
         name=name
     )

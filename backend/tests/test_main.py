@@ -2,7 +2,7 @@
 
 import pytest
 from fastapi.testclient import TestClient
-from main import app, GreetRequest, GreetResponse, HealthResponse
+from main import app, GreetRequest, GreetResponse, HowdyRequest, HowdyResponse, HealthResponse
 
 
 @pytest.fixture
@@ -20,7 +20,7 @@ class TestRootEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert "message" in data
-        assert "Green Greeting API" in data["message"]
+        assert "Red Greeting API" in data["message"]
         assert "docs" in data
         assert "health" in data
 
@@ -34,7 +34,7 @@ class TestHealthEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "healthy"
-        assert data["service"] == "green-greeting-api"
+        assert data["service"] == "red-greeting-api"
         assert "version" in data
 
     def test_health_check_response_model(self, client):
@@ -46,7 +46,7 @@ class TestHealthEndpoint:
         # Validate against HealthResponse model
         health_response = HealthResponse(**data)
         assert health_response.status == "healthy"
-        assert health_response.service == "green-greeting-api"
+        assert health_response.service == "red-greeting-api"
         assert health_response.version == "1.0.0"
 
     def test_health_check_multiple_calls(self, client):
@@ -70,7 +70,8 @@ class TestGreetPostEndpoint:
         assert data["name"] == "Alice"
         assert "Hello, Alice!" in data["message"]
         assert "Welcome" in data["message"]
-        assert "🌿" in data["message"]
+        assert "❤️" in data["message"]
+        assert "red-themed" in data["message"]
 
     def test_greet_user_with_long_name(self, client):
         """Test greeting a user with a long name."""
@@ -136,6 +137,7 @@ class TestGreetGetEndpoint:
         assert data["name"] == "Charlie"
         assert "Hello, Charlie!" in data["message"]
         assert "Welcome" in data["message"]
+        assert "red-themed" in data["message"]
 
     def test_greet_user_get_with_spaces(self, client):
         """Test greeting a user with spaces in name via GET."""
@@ -164,6 +166,194 @@ class TestGreetGetEndpoint:
         assert response.status_code == 400
 
 
+class TestHowdyPostEndpoint:
+    """Test cases for the POST /howdy endpoint."""
+
+    def test_howdy_user_success(self, client):
+        """Test howdy greeting a user with a valid name."""
+        response = client.post("/howdy", json={"name": "Alice"})
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == "Alice"
+        assert "Howdy, Alice!" in data["message"]
+        assert "Welcome partner" in data["message"]
+        assert "🤠" in data["message"]
+        assert "red-themed" in data["message"]
+
+    def test_howdy_user_with_long_name(self, client):
+        """Test howdy greeting a user with a long name."""
+        long_name = "Alexander" * 5  # 50 characters
+        response = client.post("/howdy", json={"name": long_name})
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == long_name
+        assert long_name in data["message"]
+        assert "Howdy" in data["message"]
+
+    def test_howdy_user_with_special_characters(self, client):
+        """Test howdy greeting a user with special characters in name."""
+        special_name = "José María"
+        response = client.post("/howdy", json={"name": special_name})
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == special_name
+        assert special_name in data["message"]
+        assert "Howdy" in data["message"]
+
+    def test_howdy_user_empty_name(self, client):
+        """Test that empty name returns an error."""
+        response = client.post("/howdy", json={"name": ""})
+        assert response.status_code == 422  # Validation error
+
+    def test_howdy_user_whitespace_only_name(self, client):
+        """Test that whitespace-only name returns an error."""
+        response = client.post("/howdy", json={"name": "   "})
+        assert response.status_code == 400
+        assert "empty" in response.json()["detail"].lower()
+
+    def test_howdy_user_missing_name(self, client):
+        """Test that missing name field returns validation error."""
+        response = client.post("/howdy", json={})
+        assert response.status_code == 422
+
+    def test_howdy_user_name_too_long(self, client):
+        """Test that name exceeding max length returns validation error."""
+        too_long_name = "A" * 101  # 101 characters
+        response = client.post("/howdy", json={"name": too_long_name})
+        assert response.status_code == 422
+
+    def test_howdy_user_response_model(self, client):
+        """Test that howdy response matches the expected model."""
+        response = client.post("/howdy", json={"name": "Bob"})
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Validate against HowdyResponse model
+        howdy_response = HowdyResponse(**data)
+        assert howdy_response.name == "Bob"
+        assert isinstance(howdy_response.message, str)
+        assert len(howdy_response.message) > 0
+        assert "Howdy" in howdy_response.message
+
+    def test_howdy_multiple_users(self, client):
+        """Test howdy greeting multiple users in sequence."""
+        names = ["Alice", "Bob", "Charlie", "Diana"]
+        for name in names:
+            response = client.post("/howdy", json={"name": name})
+            assert response.status_code == 200
+            data = response.json()
+            assert data["name"] == name
+            assert f"Howdy, {name}!" in data["message"]
+
+
+class TestHowdyGetEndpoint:
+    """Test cases for the GET /howdy/{name} endpoint."""
+
+    def test_howdy_user_get_success(self, client):
+        """Test howdy greeting a user via GET request."""
+        response = client.get("/howdy/Charlie")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == "Charlie"
+        assert "Howdy, Charlie!" in data["message"]
+        assert "Welcome partner" in data["message"]
+        assert "red-themed" in data["message"]
+
+    def test_howdy_user_get_with_spaces(self, client):
+        """Test howdy greeting a user with spaces in name via GET."""
+        response = client.get("/howdy/John%20Doe")  # URL encoded space
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == "John Doe"
+        assert "Howdy" in data["message"]
+
+    def test_howdy_user_get_with_special_chars(self, client):
+        """Test howdy greeting a user with special characters via GET."""
+        response = client.get("/howdy/María")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == "María"
+        assert "Howdy" in data["message"]
+
+    def test_howdy_user_get_empty_name(self, client):
+        """Test that empty name in path is handled."""
+        # Empty path parameter will not match the route
+        response = client.get("/howdy/")
+        assert response.status_code in [404, 405]  # Not found or method not allowed
+
+    def test_howdy_user_get_too_long_name(self, client):
+        """Test that name exceeding max length returns error."""
+        too_long_name = "A" * 101
+        response = client.get(f"/howdy/{too_long_name}")
+        assert response.status_code == 400
+
+
+class TestIntegrationGreetAndHowdy:
+    """Integration tests for greet and howdy endpoints working together."""
+
+    def test_greet_and_howdy_same_user(self, client):
+        """Test that both greet and howdy work for the same user."""
+        test_name = "IntegrationUser"
+        
+        # Test greet endpoint
+        greet_response = client.post("/greet", json={"name": test_name})
+        assert greet_response.status_code == 200
+        greet_data = greet_response.json()
+        assert greet_data["name"] == test_name
+        assert "Hello" in greet_data["message"]
+        
+        # Test howdy endpoint
+        howdy_response = client.post("/howdy", json={"name": test_name})
+        assert howdy_response.status_code == 200
+        howdy_data = howdy_response.json()
+        assert howdy_data["name"] == test_name
+        assert "Howdy" in howdy_data["message"]
+        
+        # Verify messages are different
+        assert greet_data["message"] != howdy_data["message"]
+
+    def test_greet_and_howdy_get_endpoints(self, client):
+        """Test that both GET endpoints work correctly."""
+        test_name = "GetUser"
+        
+        # Test GET greet endpoint
+        greet_response = client.get(f"/greet/{test_name}")
+        assert greet_response.status_code == 200
+        greet_data = greet_response.json()
+        assert "Hello" in greet_data["message"]
+        
+        # Test GET howdy endpoint
+        howdy_response = client.get(f"/howdy/{test_name}")
+        assert howdy_response.status_code == 200
+        howdy_data = howdy_response.json()
+        assert "Howdy" in howdy_data["message"]
+
+    def test_health_check_with_greetings(self, client):
+        """Test that health check works while greeting endpoints are used."""
+        # Check health
+        health_response = client.get("/health")
+        assert health_response.status_code == 200
+        assert health_response.json()["status"] == "healthy"
+        
+        # Use greet endpoint
+        greet_response = client.post("/greet", json={"name": "User1"})
+        assert greet_response.status_code == 200
+        
+        # Check health again
+        health_response2 = client.get("/health")
+        assert health_response2.status_code == 200
+        assert health_response2.json()["status"] == "healthy"
+        
+        # Use howdy endpoint
+        howdy_response = client.post("/howdy", json={"name": "User2"})
+        assert howdy_response.status_code == 200
+        
+        # Check health one more time
+        health_response3 = client.get("/health")
+        assert health_response3.status_code == 200
+        assert health_response3.json()["status"] == "healthy"
+
+
 class TestCORSConfiguration:
     """Test cases for CORS configuration."""
 
@@ -178,6 +368,9 @@ class TestCORSConfiguration:
         """Test that POST requests work (CORS allows them)."""
         response = client.post("/greet", json={"name": "TestUser"})
         assert response.status_code == 200
+        
+        response = client.post("/howdy", json={"name": "TestUser"})
+        assert response.status_code == 200
 
 
 class TestAPIDocumentation:
@@ -190,7 +383,7 @@ class TestAPIDocumentation:
         schema = response.json()
         assert "openapi" in schema
         assert "info" in schema
-        assert schema["info"]["title"] == "Green Greeting API"
+        assert schema["info"]["title"] == "Red Greeting API"
 
     def test_docs_endpoint_available(self, client):
         """Test that interactive docs are available."""
@@ -201,6 +394,16 @@ class TestAPIDocumentation:
         """Test that ReDoc documentation is available."""
         response = client.get("/redoc")
         assert response.status_code == 200
+
+    def test_openapi_schema_includes_howdy(self, client):
+        """Test that OpenAPI schema includes howdy endpoints."""
+        response = client.get("/openapi.json")
+        assert response.status_code == 200
+        schema = response.json()
+        
+        # Check that /howdy endpoints are in the schema
+        assert "/howdy" in schema["paths"]
+        assert "/howdy/{name}" in schema["paths"]
 
 
 class TestEdgeCases:
@@ -216,10 +419,22 @@ class TestEdgeCases:
         response = client.put("/greet", json={"name": "Test"})
         assert response.status_code in [404, 405]
 
+    def test_invalid_method_on_howdy(self, client):
+        """Test that invalid HTTP methods on howdy return appropriate errors."""
+        response = client.put("/howdy", json={"name": "Test"})
+        assert response.status_code in [404, 405]
+
     def test_malformed_json_post(self, client):
         """Test that malformed JSON returns appropriate error."""
         response = client.post(
             "/greet",
+            data="{invalid json}",
+            headers={"Content-Type": "application/json"}
+        )
+        assert response.status_code == 422
+        
+        response = client.post(
+            "/howdy",
             data="{invalid json}",
             headers={"Content-Type": "application/json"}
         )
@@ -231,10 +446,20 @@ class TestEdgeCases:
         assert response.status_code == 200
         data = response.json()
         assert data["name"] == "12345"
+        
+        response = client.post("/howdy", json={"name": "12345"})
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == "12345"
 
     def test_unicode_emoji_name(self, client):
         """Test greeting with emoji in name."""
         response = client.post("/greet", json={"name": "Alice 👋"})
+        assert response.status_code == 200
+        data = response.json()
+        assert "Alice 👋" in data["message"]
+        
+        response = client.post("/howdy", json={"name": "Alice 👋"})
         assert response.status_code == 200
         data = response.json()
         assert "Alice 👋" in data["message"]

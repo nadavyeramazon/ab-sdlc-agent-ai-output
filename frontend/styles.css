@@ -1,20 +1,21 @@
-/* Green Theme Stylesheet */
+/* Red Theme Stylesheet */
 
 :root {
-    /* Green color palette */
-    --primary-green: #2d5016;
-    --medium-green: #4a7c2f;
-    --light-green: #6fa842;
-    --very-light-green: #a8d68f;
-    --background-green: #f0f8e8;
+    /* Red color palette */
+    --primary-red: #8b0000;
+    --medium-red: #b22222;
+    --light-red: #dc143c;
+    --very-light-red: #ff6b6b;
+    --background-red: #ffe8e8;
     --card-background: #ffffff;
-    --text-dark: #1a3a0f;
-    --text-medium: #2d5016;
-    --text-light: #5a7a4a;
-    --border-color: #c8e6b4;
+    --text-dark: #3a0f0f;
+    --text-medium: #6b1616;
+    --text-light: #8b4747;
+    --border-color: #ffb4b4;
     --success-green: #4caf50;
     --error-red: #d32f2f;
     --warning-yellow: #f9a825;
+    --accent-red: #c41e3a;
     
     /* Spacing */
     --spacing-xs: 0.5rem;
@@ -29,9 +30,9 @@
     --radius-lg: 12px;
     
     /* Shadows */
-    --shadow-sm: 0 2px 4px rgba(45, 80, 22, 0.1);
-    --shadow-md: 0 4px 8px rgba(45, 80, 22, 0.15);
-    --shadow-lg: 0 8px 16px rgba(45, 80, 22, 0.2);
+    --shadow-sm: 0 2px 4px rgba(139, 0, 0, 0.1);
+    --shadow-md: 0 4px 8px rgba(139, 0, 0, 0.15);
+    --shadow-lg: 0 8px 16px rgba(139, 0, 0, 0.2);
 }
 
 * {
@@ -42,7 +43,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, var(--background-green) 0%, #e8f5dc 100%);
+    background: linear-gradient(135deg, var(--background-red) 0%, #ffd4d4 100%);
     color: var(--text-dark);
     line-height: 1.6;
     min-height: 100vh;
@@ -58,7 +59,7 @@ body {
 header {
     text-align: center;
     padding: var(--spacing-xl) 0;
-    background: linear-gradient(135deg, var(--primary-green) 0%, var(--medium-green) 100%);
+    background: linear-gradient(135deg, var(--primary-red) 0%, var(--medium-red) 100%);
     color: white;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
@@ -95,16 +96,16 @@ section:hover {
 }
 
 section h2 {
-    color: var(--primary-green);
+    color: var(--primary-red);
     font-size: 1.8rem;
     margin-bottom: var(--spacing-md);
-    border-bottom: 3px solid var(--light-green);
+    border-bottom: 3px solid var(--light-red);
     padding-bottom: var(--spacing-sm);
 }
 
 /* Health Status Section */
 .status-container {
-    background: var(--background-green);
+    background: var(--background-red);
     border: 2px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: var(--spacing-md);
@@ -152,7 +153,7 @@ section h2 {
 }
 
 .status-info strong {
-    color: var(--primary-green);
+    color: var(--primary-red);
 }
 
 /* Form Styles */
@@ -162,6 +163,12 @@ section h2 {
 
 .form-group {
     margin-bottom: var(--spacing-md);
+}
+
+.button-group {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
 }
 
 label {
@@ -179,13 +186,13 @@ input[type="text"] {
     border-radius: var(--radius-md);
     font-size: 1rem;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    background-color: var(--background-green);
+    background-color: var(--background-red);
 }
 
 input[type="text"]:focus {
     outline: none;
-    border-color: var(--medium-green);
-    box-shadow: 0 0 0 3px rgba(111, 168, 66, 0.2);
+    border-color: var(--medium-red);
+    box-shadow: 0 0 0 3px rgba(220, 20, 60, 0.2);
 }
 
 input[type="text"]::placeholder {
@@ -204,6 +211,8 @@ input[type="text"]::placeholder {
     box-shadow: var(--shadow-sm);
     display: inline-block;
     text-decoration: none;
+    flex: 1;
+    min-width: 150px;
 }
 
 .btn:hover {
@@ -222,28 +231,37 @@ input[type="text"]::placeholder {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--medium-green) 0%, var(--light-green) 100%);
+    background: linear-gradient(135deg, var(--medium-red) 0%, var(--light-red) 100%);
     color: white;
 }
 
 .btn-primary:hover {
-    background: linear-gradient(135deg, var(--primary-green) 0%, var(--medium-green) 100%);
+    background: linear-gradient(135deg, var(--primary-red) 0%, var(--medium-red) 100%);
+}
+
+.btn-accent {
+    background: linear-gradient(135deg, var(--accent-red) 0%, var(--very-light-red) 100%);
+    color: white;
+}
+
+.btn-accent:hover {
+    background: linear-gradient(135deg, var(--primary-red) 0%, var(--accent-red) 100%);
 }
 
 .btn-secondary {
-    background: linear-gradient(135deg, var(--very-light-green) 0%, var(--border-color) 100%);
+    background: linear-gradient(135deg, var(--very-light-red) 0%, var(--border-color) 100%);
     color: var(--text-dark);
 }
 
 .btn-secondary:hover {
-    background: linear-gradient(135deg, var(--light-green) 0%, var(--very-light-green) 100%);
+    background: linear-gradient(135deg, var(--light-red) 0%, var(--very-light-red) 100%);
     color: white;
 }
 
 /* Result Container */
 .result-container {
-    background: linear-gradient(135deg, var(--background-green) 0%, #e0f2d4 100%);
-    border: 2px solid var(--light-green);
+    background: linear-gradient(135deg, var(--background-red) 0%, #ffd0d0 100%);
+    border: 2px solid var(--light-red);
     border-radius: var(--radius-md);
     padding: var(--spacing-lg);
     margin-top: var(--spacing-md);
@@ -252,7 +270,7 @@ input[type="text"]::placeholder {
 
 .greeting-message {
     font-size: 1.3rem;
-    color: var(--primary-green);
+    color: var(--primary-red);
     font-weight: 600;
     text-align: center;
     line-height: 1.8;
@@ -317,31 +335,31 @@ input[type="text"]::placeholder {
 }
 
 .info-content strong {
-    color: var(--primary-green);
+    color: var(--primary-red);
 }
 
 .info-content a {
-    color: var(--medium-green);
+    color: var(--medium-red);
     text-decoration: none;
     font-weight: 600;
     transition: color 0.3s ease;
 }
 
 .info-content a:hover {
-    color: var(--light-green);
+    color: var(--light-red);
     text-decoration: underline;
 }
 
 .features {
     margin-top: var(--spacing-md);
     padding: var(--spacing-md);
-    background: var(--background-green);
+    background: var(--background-red);
     border-radius: var(--radius-md);
-    border-left: 4px solid var(--light-green);
+    border-left: 4px solid var(--light-red);
 }
 
 .features h3 {
-    color: var(--primary-green);
+    color: var(--primary-red);
     margin-bottom: var(--spacing-sm);
 }
 
@@ -413,6 +431,10 @@ footer {
     .btn {
         width: 100%;
         padding: var(--spacing-md);
+    }
+    
+    .button-group {
+        flex-direction: column;
     }
 }
 

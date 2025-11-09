@@ -1,8 +1,8 @@
 /**
- * Green Greeting Application - Frontend JavaScript
+ * Red Greeting Application - Frontend JavaScript
  * 
  * This application provides a user interface for interacting with the
- * Green Greeting API backend service.
+ * Red Greeting API backend service.
  */
 
 // Configuration
@@ -30,6 +30,7 @@ const elements = {
     refreshHealthBtn: document.getElementById('refresh-health'),
     nameInput: document.getElementById('name-input'),
     greetBtn: document.getElementById('greet-btn'),
+    howdyBtn: document.getElementById('howdy-btn'),
     greetingResult: document.getElementById('greeting-result'),
     greetingMessage: document.querySelector('.greeting-message'),
     errorMessage: document.getElementById('error-message'),
@@ -52,7 +53,7 @@ function init() {
     // Initial health check
     checkHealth();
     
-    console.log('Green Greeting App initialized');
+    console.log('Red Greeting App initialized');
 }
 
 /**
@@ -67,6 +68,11 @@ function setupEventListeners() {
     // Greet button
     elements.greetBtn.addEventListener('click', () => {
         handleGreeting();
+    });
+    
+    // Howdy button
+    elements.howdyBtn.addEventListener('click', () => {
+        handleHowdy();
     });
     
     // Enter key on name input
@@ -163,8 +169,9 @@ async function handleGreeting() {
         return;
     }
     
-    // Disable button and show loading state
+    // Disable buttons and show loading state
     elements.greetBtn.disabled = true;
+    elements.howdyBtn.disabled = true;
     elements.greetBtn.textContent = 'Loading...';
     hideError();
     hideResult();
@@ -190,9 +197,62 @@ async function handleGreeting() {
         console.error('Greeting request failed:', error);
         showError(error.message || 'Failed to get greeting. Please try again.');
     } finally {
-        // Re-enable button
+        // Re-enable buttons
         elements.greetBtn.disabled = false;
+        elements.howdyBtn.disabled = false;
         elements.greetBtn.textContent = 'Get Greeting';
+    }
+}
+
+/**
+ * Handle the howdy request
+ */
+async function handleHowdy() {
+    const name = elements.nameInput.value.trim();
+    
+    // Validate input
+    if (!name) {
+        showError('Please enter your name');
+        return;
+    }
+    
+    if (name.length > 100) {
+        showError('Name is too long (maximum 100 characters)');
+        return;
+    }
+    
+    // Disable buttons and show loading state
+    elements.greetBtn.disabled = true;
+    elements.howdyBtn.disabled = true;
+    elements.howdyBtn.textContent = 'Loading...';
+    hideError();
+    hideResult();
+    
+    try {
+        const response = await fetch(`${CONFIG.apiUrl}/howdy`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name: name })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        displayGreeting(data);
+        
+    } catch (error) {
+        console.error('Howdy request failed:', error);
+        showError(error.message || 'Failed to get howdy greeting. Please try again.');
+    } finally {
+        // Re-enable buttons
+        elements.greetBtn.disabled = false;
+        elements.howdyBtn.disabled = false;
+        elements.howdyBtn.textContent = 'Get Howdy';
     }
 }
 
@@ -260,6 +320,7 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         checkHealth,
         handleGreeting,
+        handleHowdy,
         displayGreeting,
         showError,
         hideError
