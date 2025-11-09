@@ -132,7 +132,7 @@ jobs:
     
     - name: Build and start services
       run: |
-        docker-compose up -d --build
+        docker compose up -d --build
     
     - name: Wait for services to be ready
       run: |
@@ -166,14 +166,14 @@ jobs:
       if: failure()
       run: |
         echo "=== Backend Logs ==="
-        docker-compose logs backend
+        docker compose logs backend
         echo "=== Frontend Logs ==="
-        docker-compose logs frontend
+        docker compose logs frontend
     
     - name: Cleanup
       if: always()
       run: |
-        docker-compose down -v
+        docker compose down -v
 
   security-scan:
     name: Security Scan
