@@ -7,19 +7,21 @@
 
 // Configuration
 const CONFIG = {
-    // Determine API URL based on environment
-    // In Docker, backend service is named 'backend'
-    // For local development, use localhost:8000
-    API_BASE_URL: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'http://localhost:8000'
-        : 'http://backend:8000',
+    // Use nginx proxy path for API calls
+    // When deployed with docker-compose, nginx proxies /api/* to backend:8000
+    // For local development, you can override with window.API_URL
+    API_BASE_URL: '/api',
     
-    // Fallback to environment variable if available
+    // Allow override from window object (for development/testing)
     get apiUrl() {
-        // Try to get from window object (can be set by Docker environment)
         if (window.API_URL) {
             return window.API_URL;
         }
+        // For local development outside Docker, detect and use localhost
+        if (window.location.hostname === 'localhost' && window.location.port !== '80') {
+            return 'http://localhost:8000';
+        }
+        // Use nginx proxy path (works in Docker Compose)
         return this.API_BASE_URL;
     }
 };
@@ -44,8 +46,12 @@ const elements = {
  */
 function init() {
     // Set up API endpoint display
-    elements.apiEndpoint.textContent = CONFIG.apiUrl;
-    elements.docsLink.href = `${CONFIG.apiUrl}/docs`;
+    const displayUrl = CONFIG.apiUrl === '/api' ? 'Backend API (via nginx proxy)' : CONFIG.apiUrl;
+    elements.apiEndpoint.textContent = displayUrl;
+    
+    // Set docs link
+    const docsUrl = CONFIG.apiUrl === '/api' ? '/api/docs' : `${CONFIG.apiUrl}/docs`;
+    elements.docsLink.href = docsUrl;
     
     // Set up event listeners
     setupEventListeners();
@@ -54,6 +60,7 @@ function init() {
     checkHealth();
     
     console.log('Red Greeting App initialized');
+    console.log('API URL:', CONFIG.apiUrl);
 }
 
 /**
@@ -92,7 +99,7 @@ function setupEventListeners() {
  * Check the health status of the backend service
  */
 async function checkHealth() {
-    elements.healthStatus.innerHTML = '<div class="loading">Checking service health</div>';
+    elements.healthStatus.innerHTML = '<div class="loading">Checking service health...</div>';
     
     try {
         const response = await fetch(`${CONFIG.apiUrl}/health`, {
