@@ -1,12 +1,12 @@
-# 🌿 Green Greeting Fullstack Application
+# ❤️ Red Greeting Fullstack Application
 
-A modern, eco-friendly themed fullstack web application featuring a FastAPI backend and vanilla JavaScript frontend, fully containerized with Docker.
+A modern, vibrant red-themed fullstack web application featuring a FastAPI backend and vanilla JavaScript frontend, fully containerized with Docker.
 
 ## 🚀 Features
 
 ### Backend (FastAPI)
 - ✅ **Health Check Endpoint** (`/health`) - Monitor service status
-- ✅ **Greeting Endpoint** (`/greet`) - Personalized user greetings
+- ✅ **Greeting Endpoints** (`/greet`, `/howdy`) - Personalized user greetings
 - ✅ **RESTful API Design** - Clean and well-documented endpoints
 - ✅ **CORS Support** - Frontend-backend communication enabled
 - ✅ **Input Validation** - Pydantic models for request validation
@@ -14,18 +14,20 @@ A modern, eco-friendly themed fullstack web application featuring a FastAPI back
 - ✅ **Interactive API Docs** - Swagger UI and ReDoc available
 
 ### Frontend (Vanilla JavaScript)
-- ✅ **Green Theme** - Eco-friendly color palette
+- ✅ **Red Theme** - Bold, vibrant red color palette
 - ✅ **Real-time Health Monitoring** - Live backend status checks
 - ✅ **Interactive Greeting Interface** - User-friendly name input
+- ✅ **Multiple Greeting Styles** - Regular greetings and "Howdy" western style
 - ✅ **Responsive Design** - Mobile and desktop friendly
 - ✅ **Error Handling** - Graceful error messages
 - ✅ **Pure JavaScript** - No frameworks, lightweight and fast
 
-### DevOps
+### DevOps & Testing
 - ✅ **Docker Integration** - Containerized services
 - ✅ **Docker Compose** - Single-command deployment
 - ✅ **GitHub Actions CI** - Automated testing and builds
-- ✅ **Comprehensive Tests** - pytest test suite with 30+ tests
+- ✅ **Comprehensive Tests** - pytest test suite with 50+ tests
+- ✅ **E2E Tests** - Full stack testing with curl and docker-compose
 - ✅ **Security Scanning** - Trivy vulnerability checks
 
 ## 📋 Prerequisites
@@ -33,6 +35,7 @@ A modern, eco-friendly themed fullstack web application featuring a FastAPI back
 - Docker and Docker Compose
 - Python 3.11+ (for local development)
 - Git
+- Bash (for running e2e tests)
 
 ## 🏃 Quick Start
 
@@ -46,7 +49,7 @@ A modern, eco-friendly themed fullstack web application featuring a FastAPI back
 
 2. **Start the application:**
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 3. **Access the application:**
@@ -56,7 +59,7 @@ A modern, eco-friendly themed fullstack web application featuring a FastAPI back
 
 4. **Stop the application:**
    ```bash
-   docker-compose down
+   docker compose down
    ```
 
 ### Local Development
@@ -90,7 +93,7 @@ python -m http.server 8080
 
 ## 🧪 Testing
 
-### Run Backend Tests
+### Run Backend Unit Tests
 
 ```bash
 cd backend
@@ -98,7 +101,7 @@ pip install -r requirements.txt
 pytest tests/ -v
 ```
 
-### Run Tests with Coverage
+### Run Backend Tests with Coverage
 
 ```bash
 cd backend
@@ -106,9 +109,24 @@ pip install pytest-cov
 pytest tests/ --cov=. --cov-report=html --cov-report=term
 ```
 
-### Integration Tests
+### Run E2E Tests
 
-Integration tests run automatically in the CI pipeline using Docker Compose.
+End-to-end tests verify the complete integration using Docker Compose and curl:
+
+```bash
+# Make script executable
+chmod +x tests/e2e/test_e2e.sh
+
+# Run e2e tests
+./tests/e2e/test_e2e.sh
+```
+
+The e2e test suite includes:
+- 9 Backend API tests (health, greet, howdy endpoints)
+- 6 Frontend tests (accessibility, files, content)
+- 5 Integration tests (CORS, documentation, theme consistency)
+
+See [E2E Test Documentation](tests/e2e/README.md) for details.
 
 ## 📚 API Documentation
 
@@ -120,7 +138,7 @@ Root endpoint with API information.
 **Response:**
 ```json
 {
-  "message": "Welcome to Green Greeting API",
+  "message": "Welcome to Red Greeting API",
   "docs": "/docs",
   "health": "/health"
 }
@@ -133,7 +151,7 @@ Health check endpoint.
 ```json
 {
   "status": "healthy",
-  "service": "green-greeting-api",
+  "service": "red-greeting-api",
   "version": "1.0.0"
 }
 ```
@@ -151,7 +169,7 @@ Greet a user by name.
 **Response:**
 ```json
 {
-  "message": "Hello, Alice! Welcome to our green-themed application! 🌿",
+  "message": "Hello, Alice! Welcome to our red-themed application! ❤️",
   "name": "Alice"
 }
 ```
@@ -162,8 +180,37 @@ Greet a user by name (GET variant).
 **Response:**
 ```json
 {
-  "message": "Hello, Bob! Welcome to our green-themed application! 🌿",
+  "message": "Hello, Bob! Welcome to our red-themed application! ❤️",
   "name": "Bob"
+}
+```
+
+#### POST `/howdy`
+Greet a user with a western-style howdy message.
+
+**Request Body:**
+```json
+{
+  "name": "Charlie"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Howdy, Charlie! Welcome partner to our red-themed application! 🤠",
+  "name": "Charlie"
+}
+```
+
+#### GET `/howdy/{name}`
+Greet a user with howdy (GET variant).
+
+**Response:**
+```json
+{
+  "message": "Howdy, Dave! Welcome partner to our red-themed application! 🤠",
+  "name": "Dave"
 }
 ```
 
@@ -177,14 +224,20 @@ Greet a user by name (GET variant).
 │   ├── Dockerfile          # Backend container config
 │   └── tests/
 │       ├── __init__.py
-│       ├── test_main.py    # Comprehensive test suite
+│       ├── test_main.py    # Comprehensive unit tests
+│       ├── test_integration.py  # Integration tests
+│       ├── test_color_theme.py  # Red theme verification tests
 │       └── pytest.ini      # Pytest configuration
 ├── frontend/
 │   ├── index.html          # Main HTML page
-│   ├── styles.css          # Green theme styles
+│   ├── styles.css          # Red theme styles
 │   ├── app.js              # Frontend logic
 │   ├── nginx.conf          # Nginx configuration
 │   └── Dockerfile          # Frontend container config
+├── tests/
+│   └── e2e/
+│       ├── test_e2e.sh     # E2E test script
+│       └── README.md       # E2E test documentation
 ├── .github/
 │   └── workflows/
 │       └── ci.yml          # GitHub Actions CI pipeline
@@ -199,23 +252,26 @@ The GitHub Actions CI pipeline includes:
 1. **Backend Testing** - Run pytest suite with coverage
 2. **Backend Linting** - flake8 and black checks
 3. **Docker Build** - Build backend and frontend images
-4. **Integration Testing** - Test services with Docker Compose
-5. **Security Scanning** - Trivy vulnerability scan
+4. **E2E Testing** - Full stack tests with Docker Compose and curl
+5. **Integration Testing** - Test service communication
+6. **Security Scanning** - Trivy vulnerability scan
 
 ## 🎨 Frontend Features
 
-### Green Theme
-- Primary color: `#2d5016` (Dark green)
-- Accent colors: Various shades of green
-- Background: Light green gradient
+### Red Theme
+- Primary color: `#8b0000` (Dark red)
+- Secondary color: `#b22222` (Firebrick)
+- Accent color: `#dc143c` (Crimson)
+- Light background: `#ffe8e8` (Light pink-red)
 - Responsive and accessible design
 
 ### User Experience
-- Real-time service health status
+- Real-time service health status with visual indicators
 - Instant feedback on user actions
 - Smooth animations and transitions
 - Clear error messages
 - Mobile-friendly interface
+- Two greeting styles (regular and "howdy" western style)
 
 ## 🔒 Security
 
@@ -224,16 +280,17 @@ The GitHub Actions CI pipeline includes:
 - Security headers in nginx
 - Regular vulnerability scanning
 - No hardcoded secrets
+- Rate limiting ready (can be added)
 
 ## 🐛 Troubleshooting
 
 ### Backend not responding
 ```bash
 # Check backend logs
-docker-compose logs backend
+docker compose logs backend
 
 # Restart backend
-docker-compose restart backend
+docker compose restart backend
 ```
 
 ### Frontend can't connect to backend
@@ -252,6 +309,25 @@ pip install -r requirements.txt
 pytest tests/ -v
 ```
 
+### E2E tests failing
+```bash
+# Clean docker environment
+docker compose down -v
+docker system prune -f
+
+# Rebuild and test
+docker compose up -d --build
+./tests/e2e/test_e2e.sh
+```
+
+## 📊 Test Coverage
+
+- **Backend Unit Tests**: 30+ tests covering all endpoints and edge cases
+- **Integration Tests**: 10+ tests for service interactions
+- **Color Theme Tests**: 10+ tests verifying red theme consistency
+- **E2E Tests**: 20 comprehensive tests for full stack validation
+- **Total**: 70+ automated tests
+
 ## 📝 License
 
 This project is licensed under the Apache License 2.0.
@@ -261,7 +337,7 @@ This project is licensed under the Apache License 2.0.
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Run tests
+4. Run all tests (unit, integration, and e2e)
 5. Submit a pull request
 
 ## 📧 Contact
@@ -270,4 +346,4 @@ For questions or support, please open an issue in the repository.
 
 ---
 
-**Built with ❤️ and 🌿 using FastAPI and Vanilla JavaScript**
+**Built with ❤️ using FastAPI and Vanilla JavaScript**
