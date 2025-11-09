@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green Greeting App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌿 Green Greeting Application</h1>
+            <p class="subtitle">Welcome to our eco-friendly greeting service</p>
+        </header>
+
+        <main>
+            <!-- Health Status Section -->
+            <section class="health-section">
+                <h2>Service Health</h2>
+                <div id="health-status" class="status-container">
+                    <div class="loading">Checking service health...</div>
+                </div>
+                <button id="refresh-health" class="btn btn-secondary">Refresh Health Status</button>
+            </section>
+
+            <!-- Greeting Section -->
+            <section class="greeting-section">
+                <h2>Get Your Greeting</h2>
+                <div class="greeting-form">
+                    <div class="form-group">
+                        <label for="name-input">Enter Your Name:</label>
+                        <input 
+                            type="text" 
+                            id="name-input" 
+                            placeholder="Your name here..." 
+                            maxlength="100"
+                            autocomplete="name"
+                        >
+                    </div>
+                    <button id="greet-btn" class="btn btn-primary">Get Greeting</button>
+                </div>
+                
+                <div id="greeting-result" class="result-container hidden">
+                    <div class="greeting-message"></div>
+                </div>
+                
+                <div id="error-message" class="error-container hidden">
+                    <div class="error-text"></div>
+                </div>
+            </section>
+
+            <!-- API Information Section -->
+            <section class="info-section">
+                <h2>API Information</h2>
+                <div class="info-content">
+                    <p><strong>API Endpoint:</strong> <span id="api-endpoint">Loading...</span></p>
+                    <p><strong>Documentation:</strong> <a id="docs-link" href="#" target="_blank">View API Docs</a></p>
+                    <div class="features">
+                        <h3>Features:</h3>
+                        <ul>
+                            <li>✅ Real-time health monitoring</li>
+                            <li>✅ Personalized greetings</li>
+                            <li>✅ Green, eco-friendly theme</li>
+                            <li>✅ RESTful API design</li>
+                            <li>✅ Responsive interface</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Green Greeting App | Powered by FastAPI & Vanilla JavaScript</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
