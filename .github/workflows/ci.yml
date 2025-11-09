@@ -239,8 +239,8 @@ jobs:
     
     - name: Test CORS headers with curl
       run: |
-        # Use GET request with -D flag to dump headers, avoiding HEAD request issues
-        headers=$(curl -s -D - -o /dev/null http://localhost:8000/health)
+        # Send Origin header to trigger CORS response
+        headers=$(curl -s -D - -o /dev/null -H "Origin: http://localhost:3000" http://localhost:8000/health)
         echo "Headers: $headers"
         echo "$headers" | grep -qi "access-control-allow-origin" || exit 1
     

@@ -330,13 +330,15 @@ echo -e "${INFO_COLOR}Step 5: Running Integration Tests${RESET_COLOR}"
 echo "=========================================="
 echo ""
 
-# Test 16: CORS headers present
+# Test 16: CORS headers present (with Origin header to trigger CORS)
 echo -n "Test 16: CORS headers present... "
-HEADERS=$(curl -s -I "${BACKEND_URL}/health")
+HEADERS=$(curl -s -D - -o /dev/null -H "Origin: http://localhost:3000" "${BACKEND_URL}/health")
 if echo "$HEADERS" | grep -qi 'access-control-allow-origin'; then
     test_result
 else
     echo -e "${ERROR_COLOR}✗ FAILED - CORS headers not found${RESET_COLOR}"
+    echo "Headers received:"
+    echo "$HEADERS"
     TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
