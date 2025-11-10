@@ -108,7 +108,7 @@ jobs:
       
     - name: Build and start services
       run: |
-        docker-compose up -d --build
+        docker compose up -d --build
         
     - name: Wait for services to be healthy
       run: |
@@ -144,13 +144,13 @@ jobs:
       if: failure()
       run: |
         echo "=== Backend logs ==="
-        docker-compose logs backend
+        docker compose logs backend
         echo "=== Frontend logs ==="
-        docker-compose logs frontend
+        docker compose logs frontend
         
     - name: Cleanup
       if: always()
-      run: docker-compose down -v
+      run: docker compose down -v
 
   summary:
     name: Test Summary
