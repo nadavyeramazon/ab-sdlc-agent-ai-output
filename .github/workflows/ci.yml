@@ -127,7 +127,7 @@ jobs:
 
     - name: Start services with Docker Compose
       run: |
-        docker-compose up -d
+        docker compose up -d
 
     - name: Wait for services to be healthy
       run: |
@@ -157,14 +157,14 @@ jobs:
       if: failure()
       run: |
         echo "=== Backend logs ==="
-        docker-compose logs backend
+        docker compose logs backend
         echo "=== Frontend logs ==="
-        docker-compose logs frontend
+        docker compose logs frontend
 
     - name: Stop services
       if: always()
       run: |
-        docker-compose down -v
+        docker compose down -v
 
   # Final status check
   ci-success:
