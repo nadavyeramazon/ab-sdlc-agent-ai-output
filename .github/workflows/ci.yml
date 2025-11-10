@@ -33,7 +33,7 @@ jobs:
       run: |
         pytest test_main.py -v --tb=short
         
-    - name: Test backend health endpoint
+    - name: Test backend endpoints
       working-directory: backend
       run: |
         # Start server in background
@@ -48,6 +48,25 @@ jobs:
         
         # Test hello endpoint
         curl -f http://localhost:8000/api/hello || exit 1
+        
+        # Test greet endpoint with valid name
+        response=$(curl -s -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name":"TestUser"}')
+        echo "Greet response: $response"
+        echo $response | grep -q '"greeting"' || exit 1
+        echo $response | grep -q 'TestUser' || exit 1
+        echo $response | grep -q 'purple-themed app' || exit 1
+        
+        # Test greet endpoint with empty name (should fail)
+        status_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name":""}')
+        echo "Empty name status code: $status_code"
+        if [ "$status_code" != "422" ]; then
+          echo "Expected 422 status code for empty name, got $status_code"
+          exit 1
+        fi
         
         # Clean up
         kill $SERVER_PID
@@ -118,7 +137,7 @@ jobs:
         echo "Waiting for frontend to be ready..."
         timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
         
-    - name: Test backend API
+    - name: Test backend API endpoints
       run: |
         # Test health endpoint
         response=$(curl -s http://localhost:8000/health)
@@ -131,6 +150,16 @@ jobs:
         echo $response | grep -q '"message":"Hello World from Backend!"' || exit 1
         echo $response | grep -q '"timestamp"' || exit 1
         
+        # Test new greet endpoint
+        response=$(curl -s -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name":"IntegrationTest"}')
+        echo "Greet response: $response"
+        echo $response | grep -q '"greeting"' || exit 1
+        echo $response | grep -q 'IntegrationTest' || exit 1
+        echo $response | grep -q 'purple-themed app' || exit 1
+        echo $response | grep -q '"timestamp"' || exit 1
+        
     - name: Test frontend
       run: |
         # Check frontend is accessible
@@ -139,6 +168,9 @@ jobs:
         # Check for Hello World content
         response=$(curl -s http://localhost:3000)
         echo $response | grep -q 'Hello World' || exit 1
+        
+        # Check for purple theme indicators
+        echo $response | grep -q 'Purple Theme' || exit 1
         
     - name: Show service logs on failure
       if: failure()
