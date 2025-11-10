@@ -5,7 +5,7 @@ Provides REST API endpoints for frontend integration.
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime
+from datetime import datetime, timezone
 import uvicorn
 
 app = FastAPI(
@@ -33,7 +33,7 @@ async def get_hello():
     """
     return {
         "message": "Hello World from Backend!",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 
