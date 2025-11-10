@@ -1,19 +1,22 @@
-# Green Theme Hello World Fullstack Application
+# Purple Theme Hello World Fullstack Application
 
 ![CI Status](https://github.com/nadavyeramazon/ab-sdlc-agent-ai-backend/workflows/CI%20-%20Test%20Backend%20and%20Frontend/badge.svg?branch=feature/testing-react-frontend-v1)
 
-A simple fullstack "Hello World" application with a green-themed React frontend and Python FastAPI backend, orchestrated with Docker Compose.
+A simple fullstack "Hello World" application with a purple-themed React frontend and Python FastAPI backend, orchestrated with Docker Compose.
 
 ## 🚀 Features
 
 - **React Frontend** (Vite + React 18)
-  - Green-themed responsive UI
-  - Interactive button to fetch data from backend
+  - Purple-themed responsive UI
+  - User greet input with personalized greeting from backend
+  - Interactive button to fetch data from backend API
   - Loading states and error handling
   - Comprehensive test coverage with React Testing Library
 
 - **FastAPI Backend** (Python 3.11)
-  - RESTful API with `/api/hello` and `/health` endpoints
+  - RESTful API with `/api/hello`, `/api/greet`, and `/health` endpoints
+  - POST /api/greet endpoint for personalized greetings
+  - Input validation and error handling
   - CORS enabled for frontend communication
   - Comprehensive test coverage with pytest
 
@@ -113,7 +116,7 @@ The GitHub Actions CI workflow automatically runs:
 ├── frontend/
 │   ├── src/
 │   │   ├── App.jsx         # Main React component
-│   │   ├── App.css         # Green theme styles
+│   │   ├── App.css         # Purple theme styles
 │   │   ├── App.test.jsx    # Frontend tests
 │   │   ├── main.jsx        # React entry point
 │   │   └── test/
@@ -143,6 +146,31 @@ Returns a hello message with timestamp.
 }
 ```
 
+### POST /api/greet
+Returns a personalized greeting for the provided name.
+
+**Request:**
+```json
+{
+  "name": "John"
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "greeting": "Hello, John! Welcome to our purple-themed app!",
+  "timestamp": "2024-01-01T12:00:00.000Z"
+}
+```
+
+**Error Response (400):**
+```json
+{
+  "detail": "Name cannot be empty"
+}
+```
+
 ### GET /health
 Health check endpoint.
 
@@ -155,40 +183,45 @@ Health check endpoint.
 
 ## 🎨 UI Features
 
-- **Green Theme**: Primary color #2ecc71, secondary #27ae60
+- **Purple Theme**: Primary color #9b59b6, secondary #8e44ad
+- **User Greet**: Input field to enter name and receive personalized greeting
 - **Responsive Design**: Works on desktop, tablet, and mobile
 - **Loading States**: Visual feedback during API calls
 - **Error Handling**: User-friendly error messages
 - **Accessibility**: ARIA labels and semantic HTML
+- **Keyboard Support**: Enter key support for form submission
 
 ## ✅ Acceptance Criteria Met
 
-### Story 1: Frontend Display ✓
-- ✅ Page displays "Hello World" heading
-- ✅ Green-themed background (#2ecc71)
-- ✅ Responsive and centered layout
-- ✅ Accessible via http://localhost:3000
-- ✅ Built with React functional components
+### Story 1: Purple Theme Update ✓
+- ✅ All green colors replaced with purple (#9b59b6 primary, #8e44ad secondary)
+- ✅ Page background, buttons, and accents use purple theme
+- ✅ Text remains readable with good contrast
+- ✅ Existing "Hello World" functionality unchanged
 
-### Story 2: Backend API ✓
-- ✅ GET /api/hello returns "Hello World from Backend!"
-- ✅ GET /health returns "healthy" status
-- ✅ Backend runs on port 8000
-- ✅ CORS enabled for frontend
+### Story 2: User Greet API Endpoint ✓
+- ✅ POST /api/greet endpoint accepts JSON with "name" field
+- ✅ Returns personalized greeting: "Hello, [name]! Welcome to our purple-themed app!"
+- ✅ Validates that name is not empty
+- ✅ Returns 400 error for invalid input
+- ✅ CORS enabled for frontend access
 
-### Story 3: Frontend-Backend Integration ✓
-- ✅ Button labeled "Get Message from Backend"
-- ✅ Fetches data using React hooks
-- ✅ Displays backend response
-- ✅ Shows loading state
-- ✅ Handles errors gracefully
+### Story 3: Frontend User Greet Integration ✓
+- ✅ Input field for entering name
+- ✅ Button labeled "Greet Me"
+- ✅ On click, sends name to /api/greet endpoint
+- ✅ Displays personalized greeting from backend
+- ✅ Shows validation error if name is empty
+- ✅ Shows loading state during API call
+- ✅ Handles network errors gracefully
+- ✅ Enter key support for form submission
 
-### Story 4: Docker Compose Orchestration ✓
-- ✅ `docker-compose up` starts both services
-- ✅ Frontend accessible at localhost:3000
-- ✅ Backend accessible at localhost:8000
-- ✅ Services communicate with each other
-- ✅ Hot reload enabled (Vite HMR)
+### Story 4: Maintain Existing Functionality ✓
+- ✅ Original "Get Message from Backend" button still works
+- ✅ /api/hello endpoint still functional
+- ✅ /health endpoint still functional
+- ✅ Docker compose still works
+- ✅ All existing tests pass
 
 ## 🔧 Development
 
@@ -214,20 +247,24 @@ npm install <package>
 
 ## 📊 Test Coverage
 
-### Backend Tests
+### Backend Tests (50+ tests)
 - Health endpoint tests
 - Hello endpoint tests
+- Greet endpoint tests (valid input, empty name, whitespace validation)
 - CORS configuration tests
 - API performance tests
 - Response structure validation
+- Timestamp validation
 
-### Frontend Tests
+### Frontend Tests (60+ tests)
 - Component rendering tests
-- User interaction tests
+- User interaction tests (button clicks, input changes, Enter key)
 - API integration tests
 - Loading state tests
 - Error handling tests
 - Accessibility tests
+- Form validation tests
+- Greet functionality tests
 
 ### Integration Tests
 - Docker Compose startup
@@ -235,6 +272,7 @@ npm install <package>
 - API endpoint validation
 - Frontend accessibility
 - End-to-end workflow
+- Cross-service communication
 
 ## 🚀 CI/CD Pipeline
 

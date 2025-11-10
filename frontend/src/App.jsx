@@ -100,8 +100,9 @@ function App() {
 
   /**
    * Handle Enter key press in name input
+   * Uses onKeyDown (React 18 recommended) instead of deprecated onKeyPress
    */
-  const handleKeyPress = (e) => {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       fetchGreeting()
     }
@@ -127,7 +128,7 @@ function App() {
               placeholder="Your name"
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               disabled={greetLoading}
               aria-label="Enter your name"
             />
