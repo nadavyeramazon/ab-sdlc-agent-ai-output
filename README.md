@@ -164,10 +164,18 @@ Returns a personalized greeting for the provided name.
 }
 ```
 
-**Error Response (400):**
+**Error Response (422 Unprocessable Entity):**
 ```json
 {
-  "detail": "Name cannot be empty"
+  "detail": [
+    {
+      "type": "value_error",
+      "loc": ["body", "name"],
+      "msg": "Value error, Name cannot be empty",
+      "input": "",
+      "ctx": {"error": {}}
+    }
+  ]
 }
 ```
 
@@ -203,7 +211,7 @@ Health check endpoint.
 - ✅ POST /api/greet endpoint accepts JSON with "name" field
 - ✅ Returns personalized greeting: "Hello, [name]! Welcome to our purple-themed app!"
 - ✅ Validates that name is not empty
-- ✅ Returns 400 error for invalid input
+- ✅ Returns 422 Unprocessable Entity for validation errors (Pydantic default)
 - ✅ CORS enabled for frontend access
 
 ### Story 3: Frontend User Greet Integration ✓
