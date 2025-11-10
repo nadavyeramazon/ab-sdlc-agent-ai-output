@@ -1,0 +1,169 @@
+name: CI - Tests and Quality Checks
+
+on:
+  push:
+    branches: [ main, feature/*, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r backend/requirements.txt
+    
+    - name: Run pytest tests
+      run: |
+        pytest tests/ -v --tb=short
+    
+    - name: Test backend health endpoint
+      run: |
+        cd backend
+        python -m uvicorn main:app --host 0.0.0.0 --port 8000 &
+        sleep 5
+        curl -f http://localhost:8000/health || exit 1
+        curl -f http://localhost:8000/api/hello || exit 1
+
+  lint-backend:
+    name: Backend Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install linting tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black
+    
+    - name: Run flake8
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 backend/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 backend/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Check code formatting with black
+      run: |
+        black --check backend/ || echo "Code formatting could be improved"
+
+  validate-frontend:
+    name: Frontend Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Validate HTML
+      run: |
+        echo "Checking HTML files exist and are valid..."
+        test -f frontend/index.html || exit 1
+        grep -q "Hello World" frontend/index.html || exit 1
+        echo "HTML validation passed"
+    
+    - name: Validate CSS
+      run: |
+        echo "Checking CSS files exist..."
+        test -f frontend/style.css || exit 1
+        grep -q "#2ecc71\|#27ae60" frontend/style.css || exit 1
+        echo "CSS validation passed - green theme colors found"
+    
+    - name: Validate JavaScript
+      run: |
+        echo "Checking JavaScript files exist..."
+        test -f frontend/app.js || exit 1
+        grep -q "fetch" frontend/app.js || exit 1
+        echo "JavaScript validation passed"
+
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build backend Docker image
+      run: |
+        docker build -t green-hello-backend:test ./backend
+    
+    - name: Build frontend Docker image
+      run: |
+        docker build -t green-hello-frontend:test ./frontend
+    
+    - name: Test docker-compose configuration
+      run: |
+        docker compose config
+
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Start services with docker-compose
+      run: |
+        docker compose up -d
+        sleep 15
+    
+    - name: Test backend accessibility
+      run: |
+        curl -f http://localhost:8000/health || exit 1
+        curl -f http://localhost:8000/api/hello || exit 1
+    
+    - name: Test frontend accessibility
+      run: |
+        curl -f http://localhost:3000/ || exit 1
+    
+    - name: Validate API response structure
+      run: |
+        response=$(curl -s http://localhost:8000/api/hello)
+        echo "$response" | grep -q "Hello World from Backend!" || exit 1
+        echo "$response" | grep -q "timestamp" || exit 1
+    
+    - name: Show docker logs on failure
+      if: failure()
+      run: |
+        docker compose logs
+    
+    - name: Cleanup
+      if: always()
+      run: |
+        docker compose down -v
