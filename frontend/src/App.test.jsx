@@ -45,7 +45,7 @@ describe('App Component', () => {
 
     it('renders greeting section', () => {
       render(<App />)
-      const heading = screen.getByRole('heading', { name: /get your personalized greeting/i })
+      const heading = screen.getByRole('heading', { name: /get your personalized greeting/i, level: 3 })
       expect(heading).toBeInTheDocument()
     })
 
@@ -327,7 +327,8 @@ describe('App Component', () => {
       fireEvent.click(button)
 
       await waitFor(() => {
-        expect(screen.getByText(/your personalized greeting/i)).toBeInTheDocument()
+        // Use more specific query - look for the heading with level 4
+        expect(screen.getByRole('heading', { name: /your personalized greeting/i, level: 4 })).toBeInTheDocument()
       })
     })
   })

@@ -6,7 +6,7 @@ Includes CORS middleware for frontend communication.
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator, ValidationError
 from datetime import datetime
 import pytz
 
@@ -36,8 +36,9 @@ class GreetRequest(BaseModel):
     """
     name: str
     
-    @validator('name')
-    def validate_name(cls, v):
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v: str) -> str:
         """Validate that name is not empty after trimming whitespace.
         
         Args:
@@ -95,23 +96,20 @@ async def greet_user(request: GreetRequest):
     Raises:
         HTTPException: 400 Bad Request if name validation fails
     """
-    try:
-        # Get the validated (trimmed) name
-        name = request.name
-        
-        # Generate personalized greeting
-        greeting_message = f"Hello, {name}! Welcome to our purple-themed app!"
-        
-        # Generate ISO-8601 timestamp
-        current_time = datetime.utcnow().isoformat() + "Z"
-        
-        return GreetResponse(
-            greeting=greeting_message,
-            timestamp=current_time
-        )
-    except ValueError as e:
-        # Handle validation errors
-        raise HTTPException(status_code=400, detail=str(e))
+    # Get the validated (trimmed) name
+    # The validation happens in the field_validator
+    name = request.name
+    
+    # Generate personalized greeting
+    greeting_message = f"Hello, {name}! Welcome to our purple-themed app!"
+    
+    # Generate ISO-8601 timestamp
+    current_time = datetime.utcnow().isoformat() + "Z"
+    
+    return GreetResponse(
+        greeting=greeting_message,
+        timestamp=current_time
+    )
 
 
 @app.get("/health")
@@ -139,3 +137,34 @@ async def root():
         "docs": "/docs",
         "health": "/health"
     }
+
+
+# Custom exception handler to convert Pydantic validation errors to 400 instead of 422
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc: RequestValidationError):
+    """Convert Pydantic validation errors to 400 Bad Request.
+    
+    This ensures that validation errors for the greet endpoint return 400
+    instead of the default 422 Unprocessable Entity.
+    """
+    # Extract error details from Pydantic validation error
+    errors = exc.errors()
+    
+    # Check if this is a validation error for the name field
+    for error in errors:
+        if 'name' in error.get('loc', []):
+            # Return 400 with the validation error message
+            if error.get('type') == 'value_error':
+                return JSONResponse(
+                    status_code=400,
+                    content={"detail": error.get('msg', 'Name cannot be empty')}
+                )
+    
+    # For other validation errors, return default 422
+    return JSONResponse(
+        status_code=422,
+        content={"detail": errors}
+    )
