@@ -122,8 +122,10 @@ class TestCORSConfiguration:
         # Check that CORSMiddleware is in the app's middleware stack
         from fastapi.middleware.cors import CORSMiddleware
         
-        middleware_types = [type(m) for m in app.user_middleware]
-        assert CORSMiddleware in middleware_types, "CORSMiddleware not found in app middleware"
+        # app.user_middleware contains Middleware wrapper objects
+        # We need to check the 'cls' attribute to get the actual middleware class
+        middleware_classes = [m.cls for m in app.user_middleware]
+        assert CORSMiddleware in middleware_classes, "CORSMiddleware not found in app middleware"
     
     def test_cors_headers_on_options_request(self):
         """Test that CORS headers are present on OPTIONS preflight request"""
