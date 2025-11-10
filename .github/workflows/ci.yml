@@ -148,10 +148,45 @@ jobs:
         echo "$response" | grep -q '"message":"Hello World from Backend!"' || exit 1
         echo "$response" | grep -q '"timestamp"' || exit 1
 
+    - name: Test backend /api/greet endpoint with valid name
+      run: |
+        response=$(curl -s -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name": "TestUser"}')
+        echo "Greet response: $response"
+        echo "$response" | grep -q '"greeting":"Hello, TestUser! Welcome to our purple-themed app!"' || exit 1
+        echo "$response" | grep -q '"timestamp"' || exit 1
+
+    - name: Test backend /api/greet endpoint validation (empty name)
+      run: |
+        response=$(curl -s -w "\nHTTP_CODE:%{http_code}" -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name": ""}')
+        echo "Validation error response: $response"
+        echo "$response" | grep -q 'HTTP_CODE:400' || exit 1
+        echo "$response" | grep -q '"detail"' || exit 1
+
+    - name: Test backend /api/greet endpoint validation (whitespace name)
+      run: |
+        response=$(curl -s -w "\nHTTP_CODE:%{http_code}" -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name": "   "}')
+        echo "Whitespace validation response: $response"
+        echo "$response" | grep -q 'HTTP_CODE:400' || exit 1
+
     - name: Test frontend accessibility
       run: |
         timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
         echo "Frontend is accessible!"
+
+    - name: Test CORS configuration for POST requests
+      run: |
+        response=$(curl -s -i -X OPTIONS http://localhost:8000/api/greet \
+          -H "Origin: http://localhost:3000" \
+          -H "Access-Control-Request-Method: POST" \
+          -H "Access-Control-Request-Headers: Content-Type")
+        echo "CORS preflight response: $response"
+        echo "$response" | grep -q "access-control-allow-origin" || exit 1
 
     - name: Show service logs on failure
       if: failure()
@@ -180,3 +215,4 @@ jobs:
         echo "Frontend tests: ✅"
         echo "Docker builds: ✅"
         echo "Integration tests: ✅"
+        echo "Purple theme update with user greet API: ✅"

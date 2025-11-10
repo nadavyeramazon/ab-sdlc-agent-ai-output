@@ -1,10 +1,11 @@
 /**
- * Green Theme Styles for Hello World Application
+ * Purple Theme Styles for Hello World Application
  * 
  * Color Palette:
- * - Primary green: #2ecc71
- * - Secondary green: #27ae60
- * - Text on green: #ffffff (white)
+ * - Primary purple: #9b59b6
+ * - Secondary purple: #8e44ad
+ * - Hover state: #7d3c98
+ * - Text on purple: #ffffff (white)
  * - Text on white: #2c3e50 (dark gray)
  * - Error: #e74c3c (red)
  * - Loading: #95a5a6 (gray)
@@ -25,10 +26,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Main application container with green gradient background */
+/* Main application container with purple gradient background */
 .app-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -48,7 +49,7 @@ body {
 
 /* Main heading */
 .main-heading {
-  color: #2ecc71;
+  color: #9b59b6;
   font-size: 3rem;
   font-weight: 700;
   margin-bottom: 16px;
@@ -65,7 +66,7 @@ body {
 
 /* Button styles */
 .fetch-button {
-  background-color: #2ecc71;
+  background-color: #9b59b6;
   color: white;
   font-size: 1rem;
   font-weight: 600;
@@ -74,25 +75,114 @@ body {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+  box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3);
   margin-bottom: 24px;
 }
 
 .fetch-button:hover:not(:disabled) {
-  background-color: #27ae60;
+  background-color: #8e44ad;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(46, 204, 113, 0.4);
+  box-shadow: 0 6px 16px rgba(155, 89, 182, 0.4);
 }
 
 .fetch-button:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(46, 204, 113, 0.3);
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3);
 }
 
 .fetch-button:disabled {
   background-color: #95a5a6;
   cursor: not-allowed;
   box-shadow: none;
+}
+
+/* Greeting form section */
+.greeting-section {
+  margin: 32px 0;
+  padding: 24px;
+  background-color: #f8f4fb;
+  border-radius: 12px;
+  border: 2px solid #e8d5f0;
+}
+
+.greeting-section h3 {
+  color: #8e44ad;
+  font-size: 1.25rem;
+  margin-bottom: 16px;
+}
+
+/* Input field styles */
+.input-group {
+  margin-bottom: 16px;
+}
+
+.input-label {
+  display: block;
+  color: #2c3e50;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.name-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 1rem;
+  border: 2px solid #d5b8e0;
+  border-radius: 8px;
+  transition: border-color 0.3s ease;
+  font-family: inherit;
+}
+
+.name-input:focus {
+  outline: none;
+  border-color: #9b59b6;
+  box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1);
+}
+
+.name-input::placeholder {
+  color: #95a5a6;
+}
+
+/* Greet button - distinct from fetch button */
+.greet-button {
+  background-color: #8e44ad;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(142, 68, 173, 0.3);
+}
+
+.greet-button:hover:not(:disabled) {
+  background-color: #7d3c98;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(142, 68, 173, 0.4);
+}
+
+.greet-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(142, 68, 173, 0.3);
+}
+
+.greet-button:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Validation error message */
+.validation-error {
+  color: #c0392b;
+  font-size: 0.875rem;
+  margin-top: 8px;
+  text-align: left;
+  font-weight: 500;
 }
 
 /* Loading container */
@@ -109,7 +199,7 @@ body {
   width: 40px;
   height: 40px;
   border: 4px solid #ecf0f1;
-  border-top: 4px solid #2ecc71;
+  border-top: 4px solid #9b59b6;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -142,8 +232,8 @@ body {
 
 /* Message container */
 .message-container {
-  background-color: #e8f8f5;
-  border: 2px solid #2ecc71;
+  background-color: #f3e9f8;
+  border: 2px solid #9b59b6;
   border-radius: 8px;
   padding: 24px;
   margin: 24px 0;
@@ -151,7 +241,7 @@ body {
 }
 
 .message-heading {
-  color: #27ae60;
+  color: #8e44ad;
   font-size: 1.25rem;
   font-weight: 600;
   margin-bottom: 12px;
@@ -174,6 +264,30 @@ body {
   color: #2c3e50;
 }
 
+/* Greeting display container */
+.greeting-container {
+  background-color: #f3e9f8;
+  border: 2px solid #9b59b6;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 16px;
+  text-align: center;
+}
+
+.greeting-heading {
+  color: #8e44ad;
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.greeting-text {
+  color: #2c3e50;
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
 /* Responsive design for mobile devices */
 @media (max-width: 768px) {
   .content-wrapper {
@@ -188,7 +302,8 @@ body {
     font-size: 1rem;
   }
 
-  .fetch-button {
+  .fetch-button,
+  .greet-button {
     width: 100%;
     padding: 12px 24px;
   }
@@ -208,7 +323,9 @@ body {
   }
 
   .message-container,
-  .error-container {
+  .error-container,
+  .greeting-section,
+  .greeting-container {
     padding: 16px;
   }
 }
@@ -219,13 +336,21 @@ body {
     animation: none;
   }
   
-  .fetch-button {
+  .fetch-button,
+  .greet-button,
+  .name-input {
     transition: none;
   }
 }
 
 /* Focus styles for keyboard navigation */
-.fetch-button:focus-visible {
-  outline: 3px solid #2ecc71;
+.fetch-button:focus-visible,
+.greet-button:focus-visible {
+  outline: 3px solid #9b59b6;
+  outline-offset: 2px;
+}
+
+.name-input:focus-visible {
+  outline: 3px solid #9b59b6;
   outline-offset: 2px;
 }
