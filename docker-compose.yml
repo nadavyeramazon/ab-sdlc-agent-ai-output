@@ -37,7 +37,8 @@ services:
       - ./frontend/vite.config.js:/app/vite.config.js
     environment:
       - NODE_ENV=development
-      - VITE_API_URL=http://localhost:8000
+      # Use Docker service name for container-to-container communication
+      - VITE_API_URL=http://backend:8000
     depends_on:
       - backend
     restart: unless-stopped

@@ -15,6 +15,11 @@
 
 import { useState } from 'react'
 
+// API base URL from environment variable with fallback for local development
+// In Docker: uses http://backend:8000 (service name)
+// Local dev: uses http://localhost:8000 (fallback)
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
 function App() {
   // State management for existing hello endpoint
   const [message, setMessage] = useState('')
@@ -45,7 +50,7 @@ function App() {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000)
 
-      const response = await fetch('http://localhost:8000/api/hello', {
+      const response = await fetch(`${API_BASE_URL}/api/hello`, {
         signal: controller.signal,
       })
 
@@ -133,7 +138,7 @@ function App() {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000)
 
-      const response = await fetch('http://localhost:8000/api/greet', {
+      const response = await fetch(`${API_BASE_URL}/api/greet`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
