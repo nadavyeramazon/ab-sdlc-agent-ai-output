@@ -109,6 +109,7 @@ jobs:
           context: ./backend
           file: ./backend/Dockerfile
           push: false
+          load: true
           tags: green-hello-backend:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -119,6 +120,7 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: false
+          load: true
           tags: green-hello-frontend:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
