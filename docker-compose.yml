@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # Backend FastAPI service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: green-hello-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount source code for hot reload
+      - ./backend:/app
+    environment:
+      - LOG_LEVEL=info
+    restart: unless-stopped
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Frontend React service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: green-hello-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount source code for hot reload
+      - ./frontend/src:/app/src
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.js:/app/vite.config.js
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    restart: unless-stopped
+    networks:
+      - app-network
+    depends_on:
+      backend:
+        condition: service_healthy
+
+networks:
+  app-network:
+    driver: bridge
