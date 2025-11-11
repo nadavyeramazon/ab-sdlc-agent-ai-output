@@ -2,10 +2,20 @@
  * Main Application Component
  * 
  * Displays a green-themed Hello World page with backend integration.
- * Includes state management for loading, error handling, and dynamic content display.
+ * Implements comprehensive state management for loading, error handling,
+ * and dynamic content display with accessibility support.
+ * 
+ * Features:
+ * - Responsive green-themed UI
+ * - Asynchronous API calls with loading states
+ * - Comprehensive error handling (network, HTTP, timeout)
+ * - Accessibility compliance (ARIA labels, live regions)
+ * - Request timeout (5 seconds)
+ * - User-friendly error messages
  */
 
 import { useState } from 'react'
+import './App.css'
 
 function App() {
   // State management for backend response, loading status, and errors
@@ -16,27 +26,37 @@ function App() {
 
   /**
    * Fetch message from backend API
-   * Handles loading states, success responses, and error scenarios
+   * 
+   * Makes an HTTP GET request to the backend /api/hello endpoint
+   * with timeout and error handling. Updates component state based
+   * on the response.
+   * 
+   * Handles three types of errors:
+   * 1. AbortError - Request timeout (5 seconds)
+   * 2. Network errors - Unable to connect to backend
+   * 3. HTTP errors - Non-200 status codes
    */
   const fetchMessage = async () => {
-    // Reset states
+    // Reset all states before making new request
     setLoading(true)
     setError(null)
     setBackendMessage(null)
     setTimestamp(null)
 
     try {
-      // Make API call with timeout
+      // Create AbortController for timeout functionality
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000)
 
+      // Make API call with abort signal
       const response = await fetch('http://localhost:8000/api/hello', {
         signal: controller.signal,
       })
 
+      // Clear timeout if request completes before timeout
       clearTimeout(timeoutId)
 
-      // Check if response is successful
+      // Check if response is successful (status 200-299)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -47,13 +67,13 @@ function App() {
       // Update state with response data
       setBackendMessage(data.message)
       
-      // Format timestamp for display
+      // Format timestamp for human-readable display
       if (data.timestamp) {
         const date = new Date(data.timestamp)
         setTimestamp(date.toLocaleString())
       }
     } catch (err) {
-      // Handle different error types
+      // Handle different error types with specific messages
       if (err.name === 'AbortError') {
         setError('Request timed out. Please try again.')
       } else if (err.message.includes('Failed to fetch')) {
@@ -63,6 +83,7 @@ function App() {
       }
       console.error('Fetch error:', err)
     } finally {
+      // Always set loading to false, whether success or error
       setLoading(false)
     }
   }
@@ -76,7 +97,7 @@ function App() {
         {/* Subtitle */}
         <p className="subtitle">Green Theme Fullstack Application</p>
 
-        {/* Fetch button */}
+        {/* Fetch button - disabled during loading to prevent duplicate requests */}
         <button
           className="fetch-button"
           onClick={fetchMessage}
@@ -86,22 +107,22 @@ function App() {
           {loading ? 'Loading...' : 'Get Message from Backend'}
         </button>
 
-        {/* Loading indicator */}
+        {/* Loading indicator with spinner and text */}
         {loading && (
           <div className="loading" role="status" aria-live="polite">
-            <div className="spinner"></div>
+            <div className="spinner" aria-hidden="true"></div>
             <p>Fetching data from backend...</p>
           </div>
         )}
 
-        {/* Error message display */}
+        {/* Error message display - only shown when error exists */}
         {error && (
           <div className="error" role="alert">
             <p>{error}</p>
           </div>
         )}
 
-        {/* Success message display */}
+        {/* Success message display - only shown when data is available */}
         {backendMessage && !loading && !error && (
           <div className="success" role="status" aria-live="polite">
             <h2>Response from Backend:</h2>
