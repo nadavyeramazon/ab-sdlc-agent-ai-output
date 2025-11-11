@@ -1,5 +1,6 @@
 name: CI - Green Theme Fullstack App
 
+# Trigger workflow on push to feature branch and pull requests to main
 on:
   push:
     branches:
@@ -28,17 +29,24 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
+          cache-dependency-path: './backend/requirements.txt'
       
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
-      - name: Run pytest
+      - name: Run pytest with coverage
         run: |
-          pytest test_main.py -v --tb=short
+          pytest test_main.py -v --tb=short --cov=main --cov-report=term-missing
       
-      - name: Check backend code with flake8 (optional)
+      - name: Check response time performance
+        run: |
+          echo "Verifying API response time requirements..."
+          pytest test_main.py::TestHealthEndpoint::test_health_response_time -v
+          pytest test_main.py::TestHelloEndpoint::test_hello_response_time -v
+      
+      - name: Lint backend code (optional)
         continue-on-error: true
         run: |
           pip install flake8
@@ -67,11 +75,20 @@ jobs:
       - name: Install dependencies
         run: npm install
       
-      - name: Run Vitest
-        run: npm test -- --run
+      - name: Run Vitest with coverage
+        run: npm test -- --run --coverage
+      
+      - name: Lint frontend code (optional)
+        continue-on-error: true
+        run: npm run lint
       
       - name: Build frontend (production)
         run: npm run build
+      
+      - name: Check build size
+        run: |
+          echo "Build size:"
+          du -sh dist/
 
   # Docker build verification job
   docker-build:
@@ -105,8 +122,13 @@ jobs:
           tags: green-hello-frontend:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      
+      - name: Verify Docker images
+        run: |
+          echo "Docker images built successfully:"
+          docker images | grep green-hello
 
-  # Integration test job (optional - docker compose up and test)
+  # Integration test job with Docker Compose
   integration-tests:
     name: Integration Tests (Docker Compose)
     runs-on: ubuntu-latest
@@ -119,28 +141,54 @@ jobs:
       - name: Start services with Docker Compose
         run: |
           docker compose up -d
-          sleep 15  # Wait for services to be ready
+          echo "Waiting for services to be ready..."
+          sleep 15
       
       - name: Check backend health
         run: |
+          echo "Testing backend health endpoint..."
           curl -f http://localhost:8000/health || exit 1
-          echo "Backend health check passed"
+          echo "✅ Backend health check passed"
       
-      - name: Test backend /api/hello endpoint
+      - name: Test backend API endpoint
         run: |
+          echo "Testing backend /api/hello endpoint..."
           response=$(curl -s http://localhost:8000/api/hello)
           echo "Backend response: $response"
           echo "$response" | grep -q "Hello World from Backend!" || exit 1
-          echo "Backend API test passed"
+          echo "$response" | grep -q "timestamp" || exit 1
+          echo "✅ Backend API test passed"
+      
+      - name: Verify CORS configuration
+        run: |
+          echo "Testing CORS headers..."
+          response=$(curl -s -H "Origin: http://localhost:3000" \
+                         -H "Access-Control-Request-Method: GET" \
+                         -X OPTIONS \
+                         -i http://localhost:8000/api/hello)
+          echo "$response" | grep -q "access-control-allow-origin" || exit 1
+          echo "✅ CORS configuration test passed"
       
       - name: Check frontend accessibility
         run: |
+          echo "Testing frontend accessibility..."
           curl -f http://localhost:3000 || exit 1
-          echo "Frontend accessibility check passed"
+          echo "✅ Frontend accessibility check passed"
       
-      - name: Show service logs
-        if: always()
-        run: docker compose logs
+      - name: Test frontend content
+        run: |
+          echo "Verifying frontend content..."
+          response=$(curl -s http://localhost:3000)
+          echo "$response" | grep -q "Hello World" || exit 1
+          echo "✅ Frontend content verification passed"
+      
+      - name: Show service logs on failure
+        if: failure()
+        run: |
+          echo "=== Backend Logs ==="
+          docker compose logs backend
+          echo "=== Frontend Logs ==="
+          docker compose logs frontend
       
       - name: Stop services
         if: always()
@@ -156,8 +204,15 @@ jobs:
     steps:
       - name: Success message
         run: |
+          echo ""
+          echo "✅ ==============================================="
           echo "✅ All CI checks passed successfully!"
+          echo "✅ ==============================================="
+          echo ""
           echo "✅ Backend tests: PASSED"
           echo "✅ Frontend tests: PASSED"
           echo "✅ Docker builds: PASSED"
           echo "✅ Integration tests: PASSED"
+          echo ""
+          echo "🚀 Ready for review and merge!"
+          echo ""
