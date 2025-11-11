@@ -35,13 +35,12 @@ app = FastAPI(
 # Allow requests from:
 # 1. http://localhost:3000 - Local development (frontend running on host)
 # 2. http://frontend:3000 - Docker internal network (frontend container)
-# 3. * - Wildcard for Docker container-to-container communication
+# Note: Do NOT use wildcard "*" as it breaks specific origin testing
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",  # Local development
         "http://frontend:3000",   # Docker internal network
-        "*"                        # Allow all origins for Docker deployment
     ],
     allow_credentials=False,
     allow_methods=["GET"],
