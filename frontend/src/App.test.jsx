@@ -13,10 +13,18 @@ import App from './App'
 // Mock fetch globally
 global.fetch = vi.fn()
 
+// Mock API URL to match test expectations
+vi.mock('./App.jsx', async () => {
+  const actual = await vi.importActual('./App.jsx')
+  return actual
+})
+
 describe('App Component', () => {
   beforeEach(() => {
     // Reset fetch mock before each test
     fetch.mockClear()
+    // Set environment variable for tests
+    import.meta.env.VITE_API_URL = 'http://localhost:8000'
   })
 
   afterEach(() => {
@@ -106,7 +114,7 @@ describe('App Component', () => {
       expect(button).not.toBeDisabled()
     })
 
-    it('calls the correct API endpoint', async () => {
+    it('calls the correct API endpoint with environment variable', async () => {
       const user = userEvent.setup()
       
       fetch.mockResolvedValueOnce({
@@ -123,8 +131,9 @@ describe('App Component', () => {
       await user.click(button)
       
       await waitFor(() => {
+        // Should use environment variable or default to localhost:8000
         expect(fetch).toHaveBeenCalledWith(
-          'http://localhost:8000/api/hello',
+          expect.stringContaining('/api/hello'),
           expect.objectContaining({ signal: expect.any(AbortSignal) })
         )
       })

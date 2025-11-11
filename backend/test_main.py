@@ -6,7 +6,7 @@ and error handling scenarios.
 
 import pytest
 from fastapi.testclient import TestClient
-from datetime import datetime
+from datetime import datetime, timezone
 import re
 from main import app
 
@@ -92,10 +92,11 @@ class TestHelloEndpoint:
         data = response.json()
         timestamp_str = data["timestamp"].replace("Z", "+00:00")
         timestamp = datetime.fromisoformat(timestamp_str)
-        now = datetime.utcnow()
+        # Use timezone-aware datetime (modern Python API)
+        now = datetime.now(timezone.utc)
         
         # Check timestamp is recent (within 5 seconds)
-        diff = abs((now - timestamp.replace(tzinfo=None)).total_seconds())
+        diff = abs((now - timestamp).total_seconds())
         assert diff < 5, f"Timestamp is {diff} seconds old, expected < 5 seconds"
     
     def test_hello_response_time(self):

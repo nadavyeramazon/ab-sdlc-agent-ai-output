@@ -12,7 +12,7 @@ Endpoints:
 
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 # Configure logging
@@ -64,7 +64,8 @@ async def get_hello(response: Response) -> dict:
         >>> print(response["message"])
         Hello World from Backend!
     """
-    current_time = datetime.utcnow().isoformat() + "Z"
+    # Use timezone-aware datetime (modern Python API)
+    current_time = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     logger.info(f"GET /api/hello - Returning greeting at {current_time}")
     
     # Set cache control headers for development

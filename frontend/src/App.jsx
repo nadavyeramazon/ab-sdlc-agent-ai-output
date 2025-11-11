@@ -12,10 +12,14 @@
  * - Accessibility compliance (ARIA labels, live regions)
  * - Request timeout (5 seconds)
  * - User-friendly error messages
+ * - Configurable API URL via environment variable
  */
 
 import { useState } from 'react'
 import './App.css'
+
+// Get API URL from environment variable with fallback to localhost
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 function App() {
   // State management for backend response, loading status, and errors
@@ -48,8 +52,8 @@ function App() {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000)
 
-      // Make API call with abort signal
-      const response = await fetch('http://localhost:8000/api/hello', {
+      // Make API call with abort signal using configurable API URL
+      const response = await fetch(`${API_URL}/api/hello`, {
         signal: controller.signal,
       })
 
