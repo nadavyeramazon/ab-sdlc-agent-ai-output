@@ -174,10 +174,20 @@ describe('App Component', () => {
     it('displays timeout error when request takes too long', async () => {
       const user = userEvent.setup()
       
-      // Mock fetch that never resolves
-      fetch.mockImplementation(() => 
-        new Promise(() => {})
-      )
+      // Mock fetch that simulates an abort error when aborted
+      fetch.mockImplementation((url, options) => {
+        return new Promise((resolve, reject) => {
+          // Listen for abort signal
+          if (options?.signal) {
+            options.signal.addEventListener('abort', () => {
+              const abortError = new Error('The user aborted a request.')
+              abortError.name = 'AbortError'
+              reject(abortError)
+            })
+          }
+          // Don't resolve - simulate a hanging request
+        })
+      })
 
       render(<App />)
       const button = screen.getByRole('button', { name: /get message from backend/i })
