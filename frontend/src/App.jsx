@@ -12,13 +12,15 @@
  * - Accessibility compliance (ARIA labels, live regions)
  * - Request timeout (5 seconds)
  * - User-friendly error messages
- * - Configurable API URL via environment variable
+ * - Environment-aware API URL configuration
  */
 
 import { useState } from 'react'
 import './App.css'
 
 // Get API URL from environment variable with fallback to localhost
+// When running in Docker Compose, VITE_API_URL will be http://backend:8000
+// When running locally, it defaults to http://localhost:8000
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 function App() {
@@ -52,7 +54,7 @@ function App() {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000)
 
-      // Make API call with abort signal using configurable API URL
+      // Make API call with abort signal using environment-aware API URL
       const response = await fetch(`${API_URL}/api/hello`, {
         signal: controller.signal,
       })

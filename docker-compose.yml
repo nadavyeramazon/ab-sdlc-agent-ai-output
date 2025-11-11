@@ -39,7 +39,10 @@ services:
       - ./frontend/index.html:/app/index.html
       - ./frontend/vite.config.js:/app/vite.config.js
     environment:
-      - VITE_API_URL=http://localhost:8000
+      # Use backend service name for Docker internal networking
+      # Inside Docker, localhost refers to the container itself
+      # Use the service name 'backend' to communicate between containers
+      - VITE_API_URL=http://backend:8000
     restart: unless-stopped
     networks:
       - app-network
