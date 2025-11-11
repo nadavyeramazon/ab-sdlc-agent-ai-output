@@ -20,6 +20,12 @@ This project serves as a reference implementation for building fullstack applica
 - ♿ WCAG 2.1 Level A accessibility compliance
 - 📱 Fully responsive design (mobile, tablet, desktop)
 
+## 📚 Documentation
+
+- **[README.md](README.md)** - This file: Quick start and basic usage
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Comprehensive development guide with architecture, debugging, and best practices
+- **[TESTING.md](TESTING.md)** - Complete testing guide covering unit, integration, and CI/CD testing
+
 ## 📋 Prerequisites
 
 Before you begin, ensure you have the following installed:
@@ -66,6 +72,7 @@ This single command will:
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:8000
 - **API Documentation**: http://localhost:8000/docs (Swagger UI)
+- **API ReDoc**: http://localhost:8000/redoc (Alternative docs)
 
 ### 4. Stop the Application
 
@@ -76,6 +83,18 @@ docker compose down
 # Stop and remove volumes
 docker compose down -v
 ```
+
+## 📌 Quick Links
+
+### For Developers
+- 🛠️ [Development Guide](DEVELOPMENT.md) - Architecture, debugging, and workflows
+- 🧪 [Testing Guide](TESTING.md) - Testing strategies and examples
+- 💻 [API Documentation](http://localhost:8000/docs) - Interactive Swagger UI
+
+### For Users
+- 🎯 [Try the App](http://localhost:3000) - Frontend interface
+- 🔌 [API Endpoints](#-api-endpoints) - Available REST endpoints
+- 🐛 [Troubleshooting](#-troubleshooting) - Common issues and solutions
 
 ## 📁 Project Structure
 
@@ -91,20 +110,39 @@ project-root/
 │   ├── index.html            # HTML template
 │   ├── package.json          # Node dependencies
 │   ├── vite.config.js        # Vite configuration
-│   └── Dockerfile            # Frontend container
+│   ├── Dockerfile            # Frontend container
+│   └── .dockerignore         # Docker build exclusions
 ├── backend/                   # FastAPI backend application
 │   ├── main.py               # FastAPI application
 │   ├── test_main.py          # Backend tests
 │   ├── requirements.txt      # Python dependencies
-│   └── Dockerfile            # Backend container
+│   ├── Dockerfile            # Backend container
+│   └── .dockerignore         # Docker build exclusions
 ├── .github/
 │   └── workflows/
 │       └── ci.yml            # GitHub Actions CI/CD
 ├── docker-compose.yml        # Service orchestration
-└── README.md                 # This file
+├── README.md                 # This file
+├── DEVELOPMENT.md            # Development guide
+├── TESTING.md                # Testing guide
+└── .gitignore                # Git exclusions
 ```
 
 ## 🔌 API Endpoints
+
+### GET /
+
+Root endpoint providing service information.
+
+**Response:**
+```json
+{
+  "service": "Green Theme Hello World API",
+  "version": "1.0.0",
+  "documentation": "/docs",
+  "health": "/health"
+}
+```
 
 ### GET /api/hello
 
@@ -114,7 +152,7 @@ Returns a greeting message with server timestamp.
 ```json
 {
   "message": "Hello World from Backend!",
-  "timestamp": "2024-01-15T10:30:00.000Z"
+  "timestamp": "2024-01-15T10:30:00.000000Z"
 }
 ```
 
@@ -160,16 +198,16 @@ Both frontend and backend support hot reload in development mode:
 
 ### Running Tests
 
+See [TESTING.md](TESTING.md) for comprehensive testing guide.
+
 #### Backend Tests (pytest)
 
 ```bash
 # Run tests in Docker container
 docker compose exec backend pytest test_main.py -v
 
-# Run tests locally (requires Python 3.11+)
-cd backend
-pip install -r requirements.txt
-pytest test_main.py -v
+# Run with coverage
+docker compose exec backend pytest test_main.py --cov=main --cov-report=term-missing
 ```
 
 #### Frontend Tests (Vitest)
@@ -178,10 +216,8 @@ pytest test_main.py -v
 # Run tests in Docker container
 docker compose exec frontend npm test
 
-# Run tests locally (requires Node 18+)
-cd frontend
-npm install
-npm test
+# Run once (no watch mode)
+docker compose exec frontend npm test -- --run
 ```
 
 ### Viewing Logs
@@ -213,9 +249,9 @@ docker compose up --build
 
 ## 🧪 Testing
 
-### Test Coverage
+### Test Coverage Summary
 
-#### Backend Tests (`backend/test_main.py`)
+#### Backend Tests (`backend/test_main.py`) - 15+ Tests
 - ✅ Health endpoint functionality
 - ✅ Hello endpoint response structure
 - ✅ ISO 8601 timestamp format validation
@@ -224,7 +260,7 @@ docker compose up --build
 - ✅ Error handling (404, 405)
 - ✅ API documentation availability
 
-#### Frontend Tests (`frontend/src/App.test.jsx`)
+#### Frontend Tests (`frontend/src/App.test.jsx`) - 20+ Tests
 - ✅ Component rendering
 - ✅ User interactions (button clicks)
 - ✅ Loading states
@@ -239,12 +275,13 @@ docker compose up --build
 
 GitHub Actions automatically runs tests on every push and pull request:
 
-```yaml
-# .github/workflows/ci.yml
-- Backend tests with pytest
-- Frontend tests with Vitest
-- Linting and code quality checks
-```
+- 🐍 **Backend tests** with pytest and coverage
+- ⚛️ **Frontend tests** with Vitest and coverage
+- 🐳 **Docker build** verification for both services
+- 🔗 **Integration tests** with Docker Compose
+- ✅ **All jobs must pass** for PR merge
+
+See [TESTING.md](TESTING.md) for detailed testing information.
 
 ## 🎨 Design Specifications
 
@@ -325,6 +362,8 @@ netstat -ano | findstr :3000  # Windows
 3. Check for environment-specific issues
 4. Review CI logs in GitHub Actions
 
+See [DEVELOPMENT.md](DEVELOPMENT.md) for more troubleshooting tips.
+
 ## 🔧 Configuration
 
 ### Environment Variables
@@ -377,9 +416,13 @@ services:
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit changes: `git commit -am 'Add new feature'`
-4. Push to branch: `git push origin feature/your-feature`
-5. Submit a pull request
+3. Make your changes following the style guides
+4. Run tests: `npm test` and `pytest`
+5. Commit changes: `git commit -am 'feat: Add new feature'`
+6. Push to branch: `git push origin feature/your-feature`
+7. Submit a pull request
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed contribution guidelines.
 
 ## 📝 License
 
@@ -396,9 +439,22 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 - React team for comprehensive documentation
 - Vite team for blazing-fast development experience
 - Docker community for containerization best practices
+- Testing Library for accessible testing utilities
 
 ---
 
 **Version**: 1.0.0  
 **Last Updated**: 2024  
 **Status**: ✅ Production Ready
+
+---
+
+### 🚀 Ready to Get Started?
+
+1. **New to the project?** Start with the [Quick Start](#-quick-start) guide
+2. **Want to develop?** Read [DEVELOPMENT.md](DEVELOPMENT.md)
+3. **Need to test?** Check [TESTING.md](TESTING.md)
+4. **Found a bug?** Open an [issue](https://github.com/nadavyeramazon/ab-sdlc-agent-ai-backend/issues)
+5. **Want to contribute?** Follow the [Contributing](#-contributing) guidelines
+
+**Happy coding! 🎉**
