@@ -15,9 +15,8 @@ app = FastAPI(
 )
 
 # Configure CORS to allow frontend communication
-# Supports both Docker service name and localhost for development
+# Only localhost origins - browsers cannot resolve Docker service names
 origins = [
-    "http://frontend:3000",
     "http://localhost:3000",
     "http://localhost:5173",  # Vite dev server default port
 ]
