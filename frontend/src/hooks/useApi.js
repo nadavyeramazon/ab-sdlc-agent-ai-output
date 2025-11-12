@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 
+// Ensure exact API endpoint matches specification
 const API_BASE_URL = 'http://localhost:8000'
 
 /**
@@ -47,9 +48,14 @@ export const useApi = () => {
         return await response.text()
       }
     } catch (err) {
-      const errorMessage = err.name === 'TypeError' && err.message.includes('fetch')
-        ? 'Unable to connect to the server. Please check if the backend is running.'
-        : err.message
+      let errorMessage = err.message
+      
+      // Enhanced error handling for better user experience
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        errorMessage = 'Unable to connect to the backend server at http://localhost:8000. Please ensure the backend is running and accessible.'
+      } else if (err.message.includes('NetworkError') || err.message.includes('Failed to fetch')) {
+        errorMessage = 'Network connection failed. Please check your internet connection and try again.'
+      }
       
       setError(errorMessage)
       throw err

@@ -12,6 +12,7 @@ const HelloWorld = () => {
 
   const handleGetMessage = async () => {
     try {
+      // Ensure exact API endpoint matches specification: http://localhost:8000/api/hello
       const response = await fetchData('/api/hello')
       setMessage(response.message || 'Hello from backend!')
       // Set timestamp when message is received
@@ -47,6 +48,7 @@ const HelloWorld = () => {
             disabled={loading}
             type="button"
             aria-describedby={error ? 'error-message' : undefined}
+            aria-label="Fetch message from backend API at http://localhost:8000/api/hello"
           >
             {loading ? (
               <>
