@@ -15,15 +15,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Green Hello World API",
-    description="A simple hello world API with green theme support and timestamp tracking",
+    title="Green Theme Backend API",
+    description="Backend API for Green Theme Hello World Fullstack Application",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
 )
 
 # Configure CORS to allow frontend to communicate with backend
-# In production, specify exact origins for security
+# AC-010: CORS properly configured to allow frontend communication
 allowed_origins = [
     "http://localhost:3000",    # React development server
     "http://127.0.0.1:3000",   # Alternative localhost
@@ -40,86 +40,86 @@ app.add_middleware(
 
 
 class HelloResponse(BaseModel):
-    """Response model for hello endpoint."""
+    """Response model for hello endpoint - AC-007 specification."""
     message: str = Field(..., description="The hello message")
     timestamp: str = Field(..., description="ISO 8601 formatted timestamp")
-    status: str = Field(default="success", description="Response status")
-    theme: str = Field(default="green", description="Application theme")
+    status: str = Field(..., description="Response status")
 
 
 class HealthResponse(BaseModel):
-    """Response model for health check endpoint."""
+    """Response model for health check endpoint - AC-008 specification."""
     status: str = Field(..., description="Service health status")
+    timestamp: str = Field(..., description="ISO 8601 formatted timestamp")
     service: str = Field(..., description="Service name")
-    version: str = Field(..., description="Service version")
-    timestamp: str = Field(..., description="ISO 8601 formatted timestamp")
-    theme: str = Field(default="green", description="Application theme")
-
-
-class RootResponse(BaseModel):
-    """Response model for root endpoint."""
-    message: str = Field(..., description="Welcome message")
-    docs: str = Field(..., description="Documentation URL")
-    health: str = Field(..., description="Health check URL")
-    hello: str = Field(..., description="Hello endpoint URL")
-    theme: str = Field(default="green", description="Application theme")
-    timestamp: str = Field(..., description="ISO 8601 formatted timestamp")
 
 
 def get_current_timestamp() -> str:
-    """Get current timestamp in ISO 8601 format with UTC timezone."""
+    """Get current timestamp in ISO 8601 format with UTC timezone.
+    
+    Optimized for fast execution to meet AC-012 response time requirement.
+    """
     return datetime.now(timezone.utc).isoformat()
 
 
-@app.get("/", response_model=RootResponse, tags=["Root"])
-async def root() -> RootResponse:
+@app.get("/", tags=["Root"])
+async def root() -> Dict[str, str]:
     """Root endpoint providing API information.
     
     Returns:
-        RootResponse: API information and navigation links
+        Dict: API information and navigation links
     """
     logger.info("Root endpoint accessed")
-    return RootResponse(
-        message="Welcome to Green Hello World API",
-        docs="/docs",
-        health="/health",
-        hello="/api/hello",
-        theme="green",
-        timestamp=get_current_timestamp()
-    )
+    return {
+        "message": "Green Theme Backend API",
+        "docs": "/docs",
+        "health": "/health",
+        "hello": "/api/hello",
+        "timestamp": get_current_timestamp()
+    }
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health_check() -> HealthResponse:
-    """Health check endpoint to verify service is running.
+    """Health check endpoint - AC-008: Returns health status as 'healthy'.
+    
+    Returns exactly the format specified in requirements:
+    {
+        "status": "healthy",
+        "timestamp": "2024-01-15T10:30:00Z",
+        "service": "green-theme-backend"
+    }
     
     Returns:
-        HealthResponse: Service health status information with timestamp
+        HealthResponse: Service health status with exact specification format
     """
     logger.info("Health check requested")
     return HealthResponse(
         status="healthy",
-        service="green-hello-world-api",
-        version="1.0.0",
         timestamp=get_current_timestamp(),
-        theme="green"
+        service="green-theme-backend"
     )
 
 
 @app.get("/api/hello", response_model=HelloResponse, tags=["Hello"])
 async def hello_world() -> HelloResponse:
-    """Hello World endpoint that returns a green-themed greeting with timestamp.
+    """Hello World endpoint - AC-007: Returns exact specified message.
+    
+    Returns exactly the format specified in requirements:
+    {
+        "message": "Hello World from Backend!",
+        "timestamp": "2024-01-15T10:30:00Z",
+        "status": "success"
+    }
     
     Returns:
-        HelloResponse: Hello world message with green theme and current timestamp
+        HelloResponse: Hello world message with exact specification format
     """
     logger.info("Hello world endpoint accessed")
     
     return HelloResponse(
-        message="Hello World! 🌱 Welcome to our beautiful green-themed fullstack application! Built with React, Vite, and FastAPI. 🚀",
+        message="Hello World from Backend!",
         timestamp=get_current_timestamp(),
-        status="success",
-        theme="green"
+        status="success"
     )
 
 
@@ -156,29 +156,29 @@ async def hello_user(name: str) -> HelloResponse:
     logger.info(f"Personalized hello for: {clean_name}")
     
     return HelloResponse(
-        message=f"Hello, {clean_name}! 🌱 Welcome to our green-themed fullstack application! 🚀",
+        message=f"Hello, {clean_name}! Welcome from Backend!",
         timestamp=get_current_timestamp(),
-        status="success",
-        theme="green"
+        status="success"
     )
 
 
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
-    """Custom 404 error handler."""
+    """Custom 404 error handler - AC-011: Proper HTTP status codes."""
     logger.warning(f"404 error for path: {request.url.path}")
     return {"detail": "Endpoint not found"}
 
 
 @app.exception_handler(500)
 async def internal_server_error_handler(request, exc):
-    """Custom 500 error handler."""
+    """Custom 500 error handler - AC-011: Proper HTTP status codes."""
     logger.error(f"Internal server error for path: {request.url.path}: {exc}")
     return {"detail": "Internal server error"}
 
 
 if __name__ == "__main__":
     import uvicorn
+    # AC-009: Backend service runs on port 8000 and accepts HTTP requests
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
