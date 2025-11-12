@@ -38,7 +38,20 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Run backend tests
+    - name: Run existing endpoint tests (Regression)
+      working-directory: ./backend
+      run: |
+        echo "Running regression tests for existing endpoints..."
+        pytest tests/test_routes.py -v --tb=short
+        pytest tests/test_main.py -v --tb=short
+    
+    - name: Run new greet endpoint tests
+      working-directory: ./backend
+      run: |
+        echo "Running tests for new greet endpoint..."
+        pytest tests/test_greet_endpoint.py -v --tb=short
+    
+    - name: Run all backend tests
       working-directory: ./backend
       run: |
         pytest tests/ -v --tb=short
@@ -147,15 +160,49 @@ jobs:
       run: |
         curl -f http://localhost:8000/health || exit 1
     
-    - name: Test backend API endpoint
+    - name: Test existing API endpoint (Regression)
       run: |
+        echo "Testing existing /api/hello endpoint..."
         RESPONSE=$(curl -s http://localhost:8000/api/hello)
         echo "Response: $RESPONSE"
         echo $RESPONSE | grep -q "Hello World from Backend!" || exit 1
     
+    - name: Test new greet API endpoint
+      run: |
+        echo "Testing new /api/greet endpoint..."
+        RESPONSE=$(curl -s -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name": "Integration Test"}')
+        echo "Response: $RESPONSE"
+        echo $RESPONSE | grep -q "Welcome to our purple-themed app" || exit 1
+        echo $RESPONSE | grep -q "Integration Test" || exit 1
+    
+    - name: Test greet endpoint validation
+      run: |
+        echo "Testing greet endpoint validation with empty name..."
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name": ""}')
+        echo "Status code: $STATUS"
+        if [ "$STATUS" != "422" ] && [ "$STATUS" != "400" ]; then
+          echo "Expected 422 or 400 for empty name, got $STATUS"
+          exit 1
+        fi
+    
     - name: Check frontend accessibility
       run: |
         curl -f http://localhost:3000 || exit 1
+    
+    - name: Test both features work together
+      run: |
+        echo "Testing that both old and new features are accessible..."
+        # Test existing endpoint
+        curl -f http://localhost:8000/api/hello || exit 1
+        # Test new endpoint
+        curl -f -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name": "Combined Test"}' || exit 1
+        echo "✅ Both features working together!"
     
     - name: Show service logs on failure
       if: failure()
@@ -181,7 +228,8 @@ jobs:
     - name: Quality gate passed
       run: |
         echo "✅ All quality gates passed!"
-        echo "✅ Backend tests passed"
-        echo "✅ Frontend tests passed"
+        echo "✅ Backend tests passed (existing + new endpoints)"
+        echo "✅ Frontend tests passed (existing + new components)"
         echo "✅ Docker builds successful"
-        echo "✅ Integration tests passed"
+        echo "✅ Integration tests passed (backward compatibility verified)"
+        echo "✅ Purple theme enhancement successfully integrated!"

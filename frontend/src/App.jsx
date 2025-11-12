@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 import HelloButton from './components/HelloButton'
+import GreetingForm from './components/GreetingForm'
 import { useApi } from './hooks/useApi'
 
 function App() {
@@ -21,7 +22,7 @@ function App() {
       <div className="container">
         <header className="header">
           <h1 className="title">Hello World</h1>
-          <p className="subtitle">Green Theme Fullstack Application</p>
+          <p className="subtitle">Purple Theme Fullstack Application</p>
         </header>
 
         <main className="main-content">
@@ -46,6 +47,9 @@ function App() {
               )}
             </div>
           )}
+
+          {/* New Greeting Form Component */}
+          <GreetingForm />
         </main>
 
         <footer className="footer">

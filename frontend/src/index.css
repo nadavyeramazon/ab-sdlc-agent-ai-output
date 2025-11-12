@@ -1,9 +1,9 @@
 /* Global Styles */
 :root {
-  --primary-green: #2ecc71;
-  --secondary-green: #27ae60;
-  --dark-green: #1e8449;
-  --light-green: #58d68d;
+  --primary-purple: #9b59b6;
+  --secondary-purple: #8e44ad;
+  --dark-purple: #7d3c98;
+  --light-purple: #bb8fce;
   --white: #ffffff;
   --error-red: #e74c3c;
   --text-dark: #2c3e50;
@@ -22,7 +22,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, var(--primary-green) 0%, var(--secondary-green) 100%);
+  background: linear-gradient(135deg, var(--primary-purple) 0%, var(--secondary-purple) 100%);
   min-height: 100vh;
   font-size: 16px;
   line-height: 1.6;
@@ -35,7 +35,7 @@ code {
 
 /* Focus styles for accessibility */
 *:focus {
-  outline: 2px solid var(--light-green);
+  outline: 2px solid var(--light-purple);
   outline-offset: 2px;
 }
 
