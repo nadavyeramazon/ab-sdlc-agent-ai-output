@@ -276,9 +276,9 @@ describe('App Component', () => {
       
       fireEvent.click(button)
 
+      // Wait for alert to appear and verify its attributes
       await waitFor(() => {
         const alert = screen.getByRole('alert')
-        expect(alert).toBeInTheDocument()
         expect(alert).toHaveAttribute('aria-live', 'assertive')
       })
     })
