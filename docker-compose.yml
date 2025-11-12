@@ -12,8 +12,12 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - ENVIRONMENT=development
+      - PYTHONDONTWRITEBYTECODE=1
     volumes:
+      # Mount source code for hot reload in development
       - ./backend:/app
+      # Preserve Python cache for faster reloads
+      - backend-pycache:/app/__pycache__
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -23,20 +27,26 @@ services:
     networks:
       - app-network
     restart: unless-stopped
+    # Use watchfiles for hot reload (uvicorn --reload uses this)
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
-  # Frontend React + Vite service (development)
-  frontend-dev:
+  # Frontend React + Vite service (development with hot reload)
+  frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
-    container_name: green-hello-world-frontend-dev
+    container_name: green-hello-world-frontend
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - VITE_API_URL=http://backend:8000
+      - VITE_API_URL=http://localhost:8000
+      # Enable Vite HMR (Hot Module Replacement)
+      - CHOKIDAR_USEPOLLING=true
     volumes:
+      # Mount source code for hot reload
       - ./frontend:/app
+      # Use anonymous volume for node_modules to avoid conflicts
       - /app/node_modules
     depends_on:
       backend:
@@ -44,17 +54,18 @@ services:
     networks:
       - app-network
     restart: unless-stopped
-    profiles:
-      - dev
+    # Vite dev server with HMR
+    stdin_open: true
+    tty: true
 
-  # Frontend React + Vite service (production)
-  frontend:
+  # Frontend Production Build (optional, use with --profile prod)
+  frontend-prod:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: green-hello-world-frontend
+    container_name: green-hello-world-frontend-prod
     ports:
-      - "3000:3000"
+      - "3001:80"
     environment:
       - NODE_ENV=production
     depends_on:
@@ -69,6 +80,8 @@ services:
 networks:
   app-network:
     driver: bridge
+    name: green-hello-world-network
 
 volumes:
-  node_modules:
+  backend-pycache:
+    name: green-hello-world-backend-pycache

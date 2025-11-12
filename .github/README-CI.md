@@ -1,1 +1,298 @@
-# CI/CD Pipeline Documentation\n\n## 🚀 Green Theme Hello World Fullstack - CI/CD Setup\n\nThis document describes the continuous integration and continuous deployment (CI/CD) pipeline for the Green Theme Hello World Fullstack Application.\n\n## 📋 Pipeline Overview\n\nThe CI/CD pipeline consists of multiple workflows that ensure code quality, security, and deployment readiness:\n\n### 1. Main CI Pipeline (`.github/workflows/ci.yml`)\n\nTriggered on:\n- Push to `main` and `develop` branches\n- Pull requests to `main` and `develop` branches\n- Manual workflow dispatch\n\n**Jobs:**\n- `frontend-tests`: React + Vitest testing with coverage\n- `backend-tests`: FastAPI + pytest testing with coverage\n- `integration-tests`: Docker Compose full-stack testing\n- `security-checks`: Vulnerability scanning and security audits\n- `deployment-readiness`: Final validation and artifact verification\n- `notify`: Success/failure notifications\n\n### 2. PR Quick Checks (`.github/workflows/pr-checks.yml`)\n\nTriggered on:\n- Pull request events (opened, synchronize, reopened)\n\n**Jobs:**\n- `quick-checks`: Fast syntax and build validation\n- `dependency-security`: Security scanning for dependencies\n\n## 🧪 Testing Strategy\n\n### Frontend Testing\n- **Framework**: Vitest + React Testing Library\n- **Coverage**: Comprehensive unit and integration tests\n- **Linting**: ESLint with React-specific rules\n- **Build Validation**: Production build verification\n\n**Commands:**\n```bash\ncd frontend\nnpm run test          # Run all tests\nnpm run test:coverage # Run tests with coverage\nnpm run lint          # Run ESLint\nnpm run build         # Production build\n```\n\n### Backend Testing\n- **Framework**: pytest + FastAPI TestClient\n- **Coverage**: Unit tests for all API endpoints\n- **Async Testing**: pytest-asyncio for async endpoints\n- **Mocking**: pytest-mock for external dependencies\n\n**Commands:**\n```bash\ncd backend\npytest --cov=. --cov-report=html -v  # Run tests with coverage\npython -m pytest -x                   # Stop on first failure\npytest --tb=short                     # Short traceback format\n```\n\n### Integration Testing\n- **Docker Compose**: Full-stack service orchestration\n- **Health Checks**: Service availability validation\n- **API Testing**: End-to-end API connectivity\n- **Frontend-Backend Integration**: Complete user workflow validation\n\n## 🔒 Security & Quality Checks\n\n### Vulnerability Scanning\n- **Trivy**: Filesystem and dependency vulnerability scanning\n- **Safety**: Python package security checking\n- **npm audit**: Node.js dependency security audit\n- **SARIF Upload**: Security findings integration with GitHub Security tab\n\n### Code Quality\n- **ESLint**: JavaScript code quality and consistency\n- **Python syntax validation**: Import and syntax checking\n- **Build validation**: Successful compilation verification\n\n## 📊 Coverage Reporting\n\n- **Frontend Coverage**: Vitest coverage with lcov format\n- **Backend Coverage**: pytest-cov with XML and HTML reports\n- **Codecov Integration**: Automated coverage report uploads\n- **Coverage Artifacts**: HTML reports stored as workflow artifacts\n\n## 🐳 Docker Configuration\n\n### Development\n```bash\ndocker-compose up -d              # Start development services\ndocker-compose --profile dev up   # Start with development frontend\n```\n\n### CI Testing\n```bash\ndocker-compose -f docker-compose.ci.yml up -d  # CI-optimized setup\n```\n\n### Production\n```bash\ndocker-compose --profile prod up  # Production build\n```\n\n## 🏗️ Caching Strategy\n\nThe pipeline implements aggressive caching to minimize build times:\n\n### Node.js Dependencies\n- **Cache Key**: `package-lock.json` hash\n- **Paths**: `node_modules`, npm cache\n- **Restoration**: Multi-level fallback strategy\n\n### Python Dependencies\n- **Cache Key**: `requirements.txt` hash\n- **Paths**: `~/.cache/pip`\n- **Restoration**: Pip cache directory\n\n### Docker Layers\n- **BuildKit**: Advanced Docker layer caching\n- **Registry Caching**: Layer reuse between builds\n- **Multi-stage**: Optimized image building\n\n## 📈 Workflow Optimization\n\n### Parallel Execution\n- Frontend and backend tests run in parallel\n- Independent job execution where possible\n- Dependency-based job ordering\n\n### Fast Feedback\n- PR quick checks provide immediate validation\n- Syntax and build errors caught early\n- Security issues identified before full pipeline\n\n### Resource Efficiency\n- Conditional job execution based on triggers\n- Artifact cleanup and retention policies\n- Docker layer cleanup after builds\n\n## 🔧 Configuration Files\n\n### Frontend\n- `package.json`: Scripts and dependencies\n- `vitest.config.js`: Test configuration\n- `.eslintrc.cjs`: Linting rules\n- `vite.config.js`: Build configuration\n\n### Backend\n- `requirements.txt`: Python dependencies\n- `pytest.ini`: Test configuration\n- `Makefile`: Development commands\n\n### CI/CD\n- `.github/workflows/ci.yml`: Main CI pipeline\n- `.github/workflows/pr-checks.yml`: PR validation\n- `docker-compose.ci.yml`: CI-specific Docker setup\n\n## 🚨 Troubleshooting\n\n### Common Issues\n\n#### Frontend Build Failures\n```bash\n# Check Node.js version compatibility\nnode --version  # Should be 18.x\n\n# Clear npm cache\nnpm cache clean --force\n\n# Reinstall dependencies\nrm -rf node_modules package-lock.json\nnpm install\n```\n\n#### Backend Test Failures\n```bash\n# Check Python version\npython --version  # Should be 3.11.x\n\n# Reinstall dependencies\npip install --upgrade pip\npip install -r requirements.txt\n\n# Run specific test\npytest tests/test_main.py::test_specific_function -v\n```\n\n#### Docker Issues\n```bash\n# Clean Docker environment\ndocker system prune -f\ndocker-compose down -v\n\n# Rebuild images\ndocker-compose build --no-cache\n\n# Check service logs\ndocker-compose logs backend\ndocker-compose logs frontend\n```\n\n### Debugging CI Failures\n\n1. **Check Workflow Logs**: GitHub Actions → Workflow run → Job details\n2. **Artifact Downloads**: Test reports and coverage data\n3. **Security Findings**: GitHub Security tab for vulnerability reports\n4. **Coverage Reports**: Codecov dashboard for coverage trends\n\n## 🎯 Success Metrics\n\n### Pipeline Health\n- ✅ All tests passing\n- 🔒 No security vulnerabilities\n- 📊 Coverage targets met\n- 🐳 Docker images building successfully\n- ⚡ Build time < 10 minutes\n\n### Quality Gates\n- **Frontend**: ESLint passing, build successful, tests > 80% coverage\n- **Backend**: All tests passing, coverage > 85%\n- **Integration**: Services healthy, API connectivity verified\n- **Security**: No high/critical vulnerabilities\n\n## 🔄 Maintenance\n\n### Regular Updates\n- **Dependencies**: Monthly security updates\n- **Actions**: Quarterly GitHub Actions version updates\n- **Docker Images**: Base image updates for security patches\n- **Tools**: Keep testing and linting tools current\n\n### Monitoring\n- **Workflow Success Rate**: > 95%\n- **Build Duration**: Track and optimize\n- **Cache Hit Rate**: Monitor caching effectiveness\n- **Security Scan Results**: Weekly review\n\n---\n\n## 📞 Support\n\nFor CI/CD pipeline issues:\n1. Check this documentation\n2. Review workflow logs in GitHub Actions\n3. Consult troubleshooting section\n4. Contact DevOps team for complex issues\n\n**Pipeline Status**: \n[![CI Pipeline](https://github.com/nadavyeramazon/ab-sdlc-agent-ai-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/nadavyeramazon/ab-sdlc-agent-ai-backend/actions/workflows/ci.yml)\n[![PR Checks](https://github.com/nadavyeramazon/ab-sdlc-agent-ai-backend/actions/workflows/pr-checks.yml/badge.svg)](https://github.com/nadavyeramazon/ab-sdlc-agent-ai-backend/actions/workflows/pr-checks.yml)
+# CI/CD Pipeline - Green Theme Hello World Fullstack
+
+## 🚀 Overview
+
+Comprehensive GitHub Actions CI/CD pipeline for the Green Theme Hello World Fullstack Application, featuring parallel testing, comprehensive validation, and deployment readiness checks.
+
+## 📋 Workflow Structure
+
+### Trigger Events
+- **Push**: `main`, `develop`, `feature/**` branches
+- **Pull Request**: targeting `main` or `develop`
+- **Manual**: `workflow_dispatch` for manual runs
+
+### Concurrency Control
+Automatically cancels in-progress runs for the same workflow and branch to save resources.
+
+## 🔧 Jobs
+
+### 1. Backend Tests (Python 3.11 + FastAPI + pytest)
+**Duration:** ~5-10 minutes
+
+**Steps:**
+- ✅ Checkout code
+- ✅ Setup Python 3.11 with pip caching
+- ✅ Install dependencies from `backend/requirements.txt`
+- ✅ Run pytest with coverage
+- ✅ Upload coverage to Codecov
+- ✅ Generate test artifacts
+
+**Key Features:**
+- Uses pip caching for faster dependency installation
+- Comprehensive test coverage reporting
+- JUnit XML test results for GitHub Actions
+- HTML coverage reports as artifacts
+
+**Commands:**
+```bash
+cd backend
+pip install -r requirements.txt
+pytest -v --cov=. --cov-report=xml --cov-report=html
+```
+
+### 2. Frontend Tests (Node 18 + React + Vitest)
+**Duration:** ~5-10 minutes
+
+**Steps:**
+- ✅ Checkout code
+- ✅ Setup Node.js 18 with npm caching
+- ✅ Install dependencies from `frontend/package.json`
+- ✅ Run ESLint for code quality
+- ✅ Run Vitest with coverage
+- ✅ Build production bundle
+- ✅ Upload artifacts
+
+**Key Features:**
+- npm dependency caching for speed
+- ESLint validation (must pass)
+- Vitest test runner with coverage
+- Production build verification
+
+**Commands:**
+```bash
+cd frontend
+npm ci
+npm run lint
+npm run test:coverage
+npm run build
+```
+
+### 3. Integration Tests (Docker Compose)
+**Duration:** ~10-15 minutes
+
+**Dependencies:** Requires `backend-tests` and `frontend-tests` to pass
+
+**Steps:**
+- ✅ Build Docker images for backend and frontend
+- ✅ Start services with `docker-compose up`
+- ✅ Wait for backend health check (port 8000)
+- ✅ Wait for frontend to be ready (port 3000)
+- ✅ Test backend endpoints:
+  - `/health` - Health check
+  - `/` - Root endpoint
+  - `/api/hello` - API endpoint
+- ✅ Test frontend accessibility
+- ✅ Collect logs on failure
+
+**Key Features:**
+- Full stack integration testing
+- Health check validation with timeouts
+- Comprehensive API endpoint testing
+- Automatic log collection on failure
+- Resource cleanup
+
+### 4. Security & Quality Checks
+**Duration:** ~5-10 minutes
+
+**Runs in Parallel:** Doesn't block other tests
+
+**Steps:**
+- ✅ Trivy filesystem vulnerability scanner
+- ✅ Python Safety dependency checker
+- ✅ npm audit for Node.js packages
+- ✅ Upload results to GitHub Security
+
+**Key Features:**
+- Identifies CRITICAL and HIGH severity vulnerabilities
+- Integrates with GitHub Security tab
+- Non-blocking (continue-on-error for warnings)
+
+### 5. Deployment Readiness
+**Duration:** ~2-3 minutes
+
+**Dependencies:** Requires all previous jobs to pass
+
+**Steps:**
+- ✅ Download build artifacts
+- ✅ Verify essential files exist
+- ✅ Generate deployment summary
+- ✅ Create status badge
+
+**Key Features:**
+- Validates production build artifacts
+- Comprehensive deployment summary
+- GitHub Actions summary dashboard
+
+### 6. Notifications
+**Duration:** ~1 minute
+
+**Triggers:**
+- Success notification on `main` branch
+- Failure notification on any branch
+
+## 🎯 Test Coverage
+
+### Backend Coverage
+- **Framework:** pytest with pytest-cov
+- **Reports:** XML (Codecov), HTML (artifacts), Terminal
+- **Location:** `backend/htmlcov/index.html`
+
+### Frontend Coverage
+- **Framework:** Vitest with @vitest/coverage-v8
+- **Reports:** lcov (Codecov), HTML (artifacts)
+- **Location:** `frontend/coverage/index.html`
+
+## 🐳 Docker Compose Configuration
+
+### Development Mode (Default)
+```bash
+docker-compose up
+```
+
+**Features:**
+- **Backend:** Hot reload with `--reload` flag
+- **Frontend:** Vite HMR (Hot Module Replacement)
+- **Volumes:** Source code mounted for live updates
+- **Ports:** Backend (8000), Frontend (3000)
+
+### Production Mode
+```bash
+docker-compose --profile prod up
+```
+
+**Features:**
+- Optimized production builds
+- Nginx serving static frontend
+- No source code volumes
+- Port 3001 for production frontend
+
+## 📊 Artifacts
+
+### Backend Test Results
+- Path: `backend/htmlcov/`
+- Retention: 7 days
+- Files: Coverage HTML reports, XML, JUnit reports
+
+### Frontend Build
+- Path: `frontend/dist/`
+- Retention: 7 days
+- Files: Production-ready static assets
+
+## ⚡ Performance Optimizations
+
+### Caching Strategy
+1. **pip cache:** Python dependencies (~200MB)
+2. **npm cache:** Node.js dependencies (~500MB)
+3. **Docker layer cache:** Build optimization
+
+### Parallel Execution
+- Frontend and Backend tests run simultaneously
+- Security checks run in parallel
+- Reduces total CI time by ~50%
+
+### Timeouts
+- Backend tests: 15 minutes
+- Frontend tests: 15 minutes
+- Integration tests: 20 minutes
+- Security checks: 10 minutes
+
+## 🔍 Debugging Failed Builds
+
+### Backend Test Failures
+```bash
+# Local testing
+cd backend
+pytest -v --tb=short
+```
+
+### Frontend Test Failures
+```bash
+# Local testing
+cd frontend
+npm run test
+```
+
+### Integration Test Failures
+```bash
+# Check logs
+docker-compose logs backend
+docker-compose logs frontend
+
+# Test services locally
+docker-compose up
+curl http://localhost:8000/health
+curl http://localhost:3000
+```
+
+## 🎨 Status Badges
+
+Add to your README:
+
+```markdown
+![CI Pipeline](https://github.com/nadavyeramazon/ab-sdlc-agent-ai-backend/workflows/CI%20Pipeline%20-%20Green%20Theme%20Hello%20World%20Fullstack/badge.svg)
+```
+
+## 🚀 Deployment Pipeline
+
+### Success Criteria
+All jobs must pass:
+- ✅ Backend tests pass (100% of tests)
+- ✅ Frontend tests pass (100% of tests)
+- ✅ Integration tests pass
+- ✅ Security scans complete
+- ✅ Build artifacts verified
+
+### Next Steps After CI Success
+1. Merge PR to main branch
+2. Automatic deployment triggers (if configured)
+3. Production deployment
+
+## 📝 Environment Variables
+
+### CI Environment
+```yaml
+PYTHON_VERSION: '3.11'
+NODE_VERSION: '18'
+BACKEND_PORT: 8000
+FRONTEND_PORT: 3000
+```
+
+### Local Development
+See `backend/.env.example` for backend configuration
+
+## 🛠️ Maintenance
+
+### Updating Dependencies
+
+**Backend:**
+```bash
+cd backend
+pip install --upgrade -r requirements.txt
+pip freeze > requirements.txt
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm update
+npm audit fix
+```
+
+### Updating GitHub Actions
+- Actions are pinned to major versions (v4, v5)
+- Check for updates quarterly
+- Test in feature branch before updating
+
+## 📞 Support
+
+For issues with the CI pipeline:
+1. Check GitHub Actions logs
+2. Review this documentation
+3. Test locally with Docker Compose
+4. Contact DevOps team
+
+---
+
+**Last Updated:** 2024
+**Pipeline Version:** 1.0
+**Status:** ✅ Production Ready
