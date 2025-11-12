@@ -1,0 +1,33 @@
+# Git
+.git
+.gitignore
+
+# CI/CD
+.github
+
+# Documentation
+README.md
+*.md
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Testing
+__pycache__
+*.pyc
+.pytest_cache
+coverage
+.coverage
+
+# Dependencies (will be installed in container)
+node_modules

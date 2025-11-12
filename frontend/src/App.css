@@ -1,0 +1,177 @@
+/* CSS Reset and Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Root styles with green theme */
+:root {
+  --primary-green: #2ecc71;
+  --secondary-green: #27ae60;
+  --text-color: #2c3e50;
+  --background-color: #ecf0f1;
+  --error-red: #e74c3c;
+  --white: #ffffff;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--text-color);
+}
+
+/* Main app container with green background */
+.app {
+  min-height: 100vh;
+  background-color: var(--primary-green);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+/* Content container */
+.container {
+  text-align: center;
+  background-color: var(--white);
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  width: 100%;
+}
+
+/* Main heading */
+.title {
+  font-size: 3rem;
+  color: var(--primary-green);
+  margin-bottom: 30px;
+  font-weight: 700;
+}
+
+/* Fetch button styling */
+.fetch-button {
+  background-color: var(--primary-green);
+  color: var(--white);
+  border: none;
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.fetch-button:hover:not(:disabled) {
+  background-color: var(--secondary-green);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.fetch-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.fetch-button:focus {
+  outline: 3px solid var(--secondary-green);
+  outline-offset: 2px;
+}
+
+.fetch-button:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Response container */
+.response {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: var(--background-color);
+  border-radius: 8px;
+  border-left: 4px solid var(--primary-green);
+}
+
+.response .message {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 10px;
+}
+
+.response .timestamp {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+  font-family: 'Courier New', monospace;
+}
+
+/* Error message styling */
+.error {
+  margin-top: 30px;
+  padding: 15px;
+  background-color: #fadbd8;
+  border-radius: 8px;
+  border-left: 4px solid var(--error-red);
+}
+
+.error p {
+  color: var(--error-red);
+  font-weight: 600;
+}
+
+/* Responsive design for mobile devices */
+@media (max-width: 768px) {
+  .container {
+    padding: 30px 20px;
+  }
+
+  .title {
+    font-size: 2.5rem;
+  }
+
+  .fetch-button {
+    padding: 12px 24px;
+    font-size: 1rem;
+  }
+
+  .response .message {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 25px 15px;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .fetch-button {
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    width: 100%;
+  }
+
+  .response .message {
+    font-size: 1rem;
+  }
+}
+
+/* Minimum viewport support (320px) */
+@media (max-width: 320px) {
+  .container {
+    padding: 20px 10px;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+}
