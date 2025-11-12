@@ -94,10 +94,14 @@ describe('HelloWorld Component', () => {
     expect(errorElement).toHaveTextContent(errorMessage)
   })
 
-  it('displays message when API call succeeds', async () => {
+  it('displays message with timestamp when API call succeeds', async () => {
     const user = userEvent.setup()
     const mockMessage = 'Hello from the backend!'
-    mockFetchData.mockResolvedValueOnce({ message: mockMessage })
+    const mockTimestamp = '2023-12-01T10:00:00Z'
+    mockFetchData.mockResolvedValueOnce({ 
+      message: mockMessage,
+      timestamp: mockTimestamp
+    })
     
     render(<HelloWorld />)
     
@@ -108,6 +112,7 @@ describe('HelloWorld Component', () => {
       const messageDisplay = screen.getByRole('region', { name: /message from backend/i })
       expect(messageDisplay).toBeInTheDocument()
       expect(messageDisplay).toHaveTextContent(mockMessage)
+      expect(messageDisplay).toHaveTextContent('Received at:')
     })
   })
 
@@ -124,6 +129,26 @@ describe('HelloWorld Component', () => {
       const messageDisplay = screen.getByRole('region', { name: /message from backend/i })
       expect(messageDisplay).toBeInTheDocument()
       expect(messageDisplay).toHaveTextContent('Hello from backend!')
+      expect(messageDisplay).toHaveTextContent('Received at:')
+    })
+  })
+
+  it('handles API response without timestamp property', async () => {
+    const user = userEvent.setup()
+    const mockMessage = 'Hello from the backend!'
+    mockFetchData.mockResolvedValueOnce({ message: mockMessage })
+    
+    render(<HelloWorld />)
+    
+    const button = screen.getByRole('button', { name: /get message from backend/i })
+    await user.click(button)
+    
+    await waitFor(() => {
+      const messageDisplay = screen.getByRole('region', { name: /message from backend/i })
+      expect(messageDisplay).toBeInTheDocument()
+      expect(messageDisplay).toHaveTextContent(mockMessage)
+      // Should still show timestamp even if not provided by backend
+      expect(messageDisplay).toHaveTextContent('Received at:')
     })
   })
 
@@ -163,4 +188,44 @@ describe('HelloWorld Component', () => {
     
     consoleSpy.mockRestore()
   })
-})
+
+  it('clears previous message when making new request', async () => {
+    const user = userEvent.setup()
+    
+    // First successful request
+    mockFetchData.mockResolvedValueOnce({ 
+      message: 'First message',
+      timestamp: '2023-12-01T10:00:00Z'
+    })
+    
+    render(<HelloWorld />)
+    
+    const button = screen.getByRole('button', { name: /get message from backend/i })
+    await user.click(button)
+    
+    await waitFor(() => {
+      expect(screen.getByText('First message')).toBeInTheDocument()
+    })
+    
+    // Second request with loading state
+    useApiModule.useApi.mockReturnValue({
+      loading: true,
+      error: null,
+      fetchData: mockFetchData,
+      clearError: mockClearError
+    })
+    
+    // Re-render to simulate loading state
+    render(<HelloWorld />)
+    
+    // Should not show previous message during loading
+    expect(screen.queryByText('First message')).not.toBeInTheDocument()
+  })
+
+  it('displays message only when not loading and no error', () => {
+    render(<HelloWorld />)
+    
+    // Initially no message should be displayed
+    expect(screen.queryByRole('region', { name: /message from backend/i })).not.toBeInTheDocument()
+  })
+}

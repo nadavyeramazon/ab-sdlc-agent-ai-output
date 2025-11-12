@@ -1,7 +1,6 @@
-// Test setup for Vitest and React Testing Library
 import '@testing-library/jest-dom'
 
-// Mock environment variables for tests
+// Mock matchMedia for responsive tests
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation(query => ({
@@ -16,13 +15,29 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 })
 
+// Mock IntersectionObserver
+global.IntersectionObserver = class IntersectionObserver {
+  constructor() {}
+  disconnect() {}
+  observe() {}
+  unobserve() {}
+}
+
+// Mock ResizeObserver
+global.ResizeObserver = class ResizeObserver {
+  constructor() {}
+  disconnect() {}
+  observe() {}
+  unobserve() {}
+}
+
+// Mock scrollIntoView
+Element.prototype.scrollIntoView = vi.fn()
+
 // Mock fetch for API tests
 global.fetch = vi.fn()
 
-// Setup test environment variables
-process.env.VITE_API_URL = 'http://localhost:8000'
-
-// Clean up after each test
-afterEach(() => {
+// Setup for cleanup after each test
+beforeEach(() => {
   vi.clearAllMocks()
 })

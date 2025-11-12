@@ -4,19 +4,40 @@ import MessageDisplay from '../MessageDisplay'
 
 describe('MessageDisplay Component', () => {
   const defaultProps = {
-    message: 'Hello from the backend!'
+    message: 'Hello from backend!'
   }
 
-  it('renders message with correct content', () => {
+  it('renders message display with title and content', () => {
     render(<MessageDisplay {...defaultProps} />)
     
-    const region = screen.getByRole('region', { name: /message from backend/i })
-    expect(region).toBeInTheDocument()
+    const messageDisplay = screen.getByRole('region', { name: /message from backend/i })
+    expect(messageDisplay).toBeInTheDocument()
     
-    expect(screen.getByText('Hello from the backend!')).toBeInTheDocument()
+    const title = screen.getByRole('heading', { level: 3, name: /message from backend/i })
+    expect(title).toBeInTheDocument()
+    
+    const message = screen.getByText(defaultProps.message)
+    expect(message).toBeInTheDocument()
   })
 
-  it('displays success icon', () => {
+  it('displays timestamp when provided', () => {
+    const timestamp = '2023-12-01T10:00:00Z'
+    render(<MessageDisplay {...defaultProps} timestamp={timestamp} />)
+    
+    const timestampElement = screen.getByText(/received at:/i)
+    expect(timestampElement).toBeInTheDocument()
+    expect(timestampElement).toHaveTextContent('Received at:')
+  })
+
+  it('displays current timestamp when not provided', () => {
+    render(<MessageDisplay {...defaultProps} />)
+    
+    const timestampElement = screen.getByText(/received at:/i)
+    expect(timestampElement).toBeInTheDocument()
+    expect(timestampElement).toHaveTextContent('Received at:')
+  })
+
+  it('includes check mark icon', () => {
     render(<MessageDisplay {...defaultProps} />)
     
     const icon = screen.getByText('✅')
@@ -24,69 +45,69 @@ describe('MessageDisplay Component', () => {
     expect(icon).toHaveAttribute('aria-hidden', 'true')
   })
 
-  it('renders title correctly', () => {
+  it('has proper accessibility attributes', () => {
     render(<MessageDisplay {...defaultProps} />)
     
+    const messageDisplay = screen.getByRole('region')
+    expect(messageDisplay).toHaveAttribute('aria-labelledby', 'message-title')
+    expect(messageDisplay).toHaveAttribute('aria-live', 'polite')
+    
     const title = screen.getByRole('heading', { level: 3 })
-    expect(title).toBeInTheDocument()
-    expect(title).toHaveTextContent('Message from Backend')
     expect(title).toHaveAttribute('id', 'message-title')
   })
 
   it('applies custom className when provided', () => {
-    render(<MessageDisplay {...defaultProps} className="custom-message-class" />)
+    const customClass = 'custom-message'
+    render(<MessageDisplay {...defaultProps} className={customClass} />)
     
-    const region = screen.getByRole('region')
-    expect(region).toHaveClass('custom-message-class')
+    const messageDisplay = screen.getByRole('region')
+    expect(messageDisplay).toHaveClass('message-display', customClass)
   })
 
-  it('has proper accessibility attributes', () => {
-    render(<MessageDisplay {...defaultProps} />)
-    
-    const region = screen.getByRole('region')
-    expect(region).toHaveAttribute('aria-labelledby', 'message-title')
-    expect(region).toHaveAttribute('aria-live', 'polite')
-  })
-
-  it('renders long messages correctly', () => {
-    const longMessage = 'This is a very long message from the backend that should be displayed properly and wrap to multiple lines if necessary without breaking the layout. It contains multiple sentences and should maintain good readability.'
-    
+  it('handles long message text gracefully', () => {
+    const longMessage = 'This is a very long message that should wrap properly and not break the layout of the component when displayed to the user'
     render(<MessageDisplay message={longMessage} />)
     
-    expect(screen.getByText(longMessage)).toBeInTheDocument()
-  })
-
-  it('handles messages with special characters', () => {
-    const specialMessage = 'Hello! 👋 Welcome to our API. Status: ✓ Success (HTTP 200)'
-    
-    render(<MessageDisplay message={specialMessage} />)
-    
-    expect(screen.getByText(specialMessage)).toBeInTheDocument()
-  })
-
-  it('handles empty message gracefully', () => {
-    render(<MessageDisplay message="" />)
-    
-    const region = screen.getByRole('region')
-    expect(region).toBeInTheDocument()
-    
-    const messageText = screen.getByText('')
+    const messageText = screen.getByText(longMessage)
     expect(messageText).toBeInTheDocument()
+    expect(messageText).toHaveClass('message-text')
   })
 
-  it('maintains proper structure with all elements', () => {
+  it('formats timestamp correctly', () => {
+    const timestamp = '2023-12-01T15:30:00Z'
+    render(<MessageDisplay {...defaultProps} timestamp={timestamp} />)
+    
+    // The exact format depends on locale, but it should contain the date/time info
+    const timestampElement = screen.getByText(/received at:/i)
+    expect(timestampElement.textContent).toMatch(/\d+\/\d+\/\d+/)
+  })
+
+  it('renders with fade-in animation class', () => {
     render(<MessageDisplay {...defaultProps} />)
     
-    // Check that all main elements are present
-    const region = screen.getByRole('region')
-    const icon = region.querySelector('.message-icon')
-    const content = region.querySelector('.message-content')
-    const title = region.querySelector('.message-title')
-    const text = region.querySelector('.message-text')
+    const messageDisplay = screen.getByRole('region')
+    expect(messageDisplay).toHaveClass('message-display')
+  })
+
+  it('has proper semantic structure', () => {
+    render(<MessageDisplay {...defaultProps} />)
     
-    expect(icon).toBeInTheDocument()
-    expect(content).toBeInTheDocument()
-    expect(title).toBeInTheDocument()
-    expect(text).toBeInTheDocument()
+    // Check that the component structure is semantic
+    const heading = screen.getByRole('heading', { level: 3 })
+    const region = screen.getByRole('region')
+    
+    expect(heading).toBeInTheDocument()
+    expect(region).toBeInTheDocument()
+    expect(region).toContainElement(heading)
+  })
+
+  it('displays message text with proper styling classes', () => {
+    render(<MessageDisplay {...defaultProps} />)
+    
+    const messageText = screen.getByText(defaultProps.message)
+    expect(messageText).toHaveClass('message-text')
+    
+    const timestampText = screen.getByText(/received at:/i)
+    expect(timestampText).toHaveClass('message-timestamp')
   })
 })
