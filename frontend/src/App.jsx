@@ -6,7 +6,9 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  // Frontend runs in browser, browser connects to localhost ports exposed by Docker
+  // NEVER use Docker service names (like 'backend') - browser cannot resolve them
+  const API_URL = 'http://localhost:8000';
 
   const fetchMessageFromBackend = async () => {
     setLoading(true);

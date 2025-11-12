@@ -7,10 +7,9 @@ services:
       dockerfile: Dockerfile
     container_name: green-hello-backend
     ports:
-      - "8000:8000"
+      - "8000:8000"  # Expose backend on localhost:8000
     environment:
       - PORT=8000
-      - NODE_ENV=production
     networks:
       - app-network
     healthcheck:
@@ -26,9 +25,7 @@ services:
       dockerfile: Dockerfile
     container_name: green-hello-frontend
     ports:
-      - "80:80"
-    environment:
-      - VITE_API_URL=http://backend:8000
+      - "3000:80"  # Expose frontend on localhost:3000 (maps to nginx port 80 inside container)
     depends_on:
       backend:
         condition: service_healthy

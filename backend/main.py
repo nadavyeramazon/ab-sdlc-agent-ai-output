@@ -63,13 +63,13 @@ app = FastAPI(
 )
 
 # Configure CORS middleware
+# Frontend runs in browser and connects to localhost, not Docker service names
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",  # Vite dev server
-        "http://localhost:5173",  # Alternative Vite port
-        "http://localhost:80",    # Docker frontend
-        "http://frontend:80",     # Docker network
+        "http://localhost:3000",  # Frontend on Docker (port 3000)
+        "http://localhost:5173",  # Vite dev server alternative port
+        "http://localhost:80",    # Alternative frontend port
     ],
     allow_credentials=True,
     allow_methods=["*"],
