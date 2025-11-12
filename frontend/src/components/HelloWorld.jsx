@@ -7,12 +7,15 @@ import './HelloWorld.css'
 
 const HelloWorld = () => {
   const [message, setMessage] = useState('')
+  const [timestamp, setTimestamp] = useState('')
   const { loading, error, fetchData } = useApi()
 
   const handleGetMessage = async () => {
     try {
       const response = await fetchData('/api/hello')
       setMessage(response.message || 'Hello from backend!')
+      // Set timestamp when message is received
+      setTimestamp(response.timestamp || new Date().toISOString())
     } catch (err) {
       console.error('Failed to fetch message:', err)
     }
@@ -64,7 +67,10 @@ const HelloWorld = () => {
           )}
 
           {message && !loading && !error && (
-            <MessageDisplay message={message} />
+            <MessageDisplay 
+              message={message} 
+              timestamp={timestamp}
+            />
           )}
         </section>
 

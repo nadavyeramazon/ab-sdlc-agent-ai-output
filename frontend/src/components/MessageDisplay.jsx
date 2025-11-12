@@ -1,7 +1,12 @@
 import PropTypes from 'prop-types'
 import './MessageDisplay.css'
 
-const MessageDisplay = ({ message, className = '' }) => {
+const MessageDisplay = ({ message, timestamp, className = '' }) => {
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return new Date().toLocaleString()
+    return new Date(timestamp).toLocaleString()
+  }
+
   return (
     <div 
       className={`message-display ${className}`}
@@ -17,6 +22,9 @@ const MessageDisplay = ({ message, className = '' }) => {
           Message from Backend
         </h3>
         <p className="message-text">{message}</p>
+        <p className="message-timestamp">
+          Received at: {formatTimestamp(timestamp)}
+        </p>
       </div>
     </div>
   )
@@ -24,6 +32,7 @@ const MessageDisplay = ({ message, className = '' }) => {
 
 MessageDisplay.propTypes = {
   message: PropTypes.string.isRequired,
+  timestamp: PropTypes.string,
   className: PropTypes.string
 }
 
