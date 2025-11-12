@@ -1,0 +1,111 @@
+.loading-spinner {
+  display: inline-block;
+  position: relative;
+}
+
+.spinner-ring {
+  display: inline-block;
+  position: relative;
+}
+
+.spinner-ring div {
+  box-sizing: border-box;
+  display: block;
+  position: absolute;
+  border-radius: 50%;
+  animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  border-style: solid;
+}
+
+.spinner-ring div:nth-child(1) {
+  animation-delay: -0.45s;
+}
+
+.spinner-ring div:nth-child(2) {
+  animation-delay: -0.3s;
+}
+
+.spinner-ring div:nth-child(3) {
+  animation-delay: -0.15s;
+}
+
+/* Size variants */
+.loading-spinner--xs .spinner-ring {
+  width: 16px;
+  height: 16px;
+}
+
+.loading-spinner--xs .spinner-ring div {
+  width: 12.8px;
+  height: 12.8px;
+  margin: 1.6px;
+  border-width: 1.6px;
+}
+
+.loading-spinner--sm .spinner-ring {
+  width: 20px;
+  height: 20px;
+}
+
+.loading-spinner--sm .spinner-ring div {
+  width: 16px;
+  height: 16px;
+  margin: 2px;
+  border-width: 2px;
+}
+
+.loading-spinner--md .spinner-ring {
+  width: 32px;
+  height: 32px;
+}
+
+.loading-spinner--md .spinner-ring div {
+  width: 25.6px;
+  height: 25.6px;
+  margin: 3.2px;
+  border-width: 3.2px;
+}
+
+.loading-spinner--lg .spinner-ring {
+  width: 48px;
+  height: 48px;
+}
+
+.loading-spinner--lg .spinner-ring div {
+  width: 38.4px;
+  height: 38.4px;
+  margin: 4.8px;
+  border-width: 4.8px;
+}
+
+.loading-spinner--xl .spinner-ring {
+  width: 64px;
+  height: 64px;
+}
+
+.loading-spinner--xl .spinner-ring div {
+  width: 51.2px;
+  height: 51.2px;
+  margin: 6.4px;
+  border-width: 6.4px;
+}
+
+/* Color variants */
+.loading-spinner--primary .spinner-ring div {
+  border-color: var(--color-primary) transparent transparent transparent;
+}
+
+.loading-spinner--secondary .spinner-ring div {
+  border-color: var(--color-secondary) transparent transparent transparent;
+}
+
+.loading-spinner--white .spinner-ring div {
+  border-color: var(--color-white) transparent transparent transparent;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .spinner-ring div {
+    animation-duration: 2s;
+  }
+}
