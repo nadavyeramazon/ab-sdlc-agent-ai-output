@@ -101,11 +101,14 @@ describe('App Component', () => {
       
       fireEvent.click(button)
 
-      // Check that button shows "Loading..."
-      expect(screen.getByRole('button', { name: /loading/i })).toBeInTheDocument()
+      // Wait for button text to update to "Loading..."
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /loading/i })).toBeInTheDocument()
+      })
       
       // Check that button is disabled during loading
-      expect(button).toBeDisabled()
+      const loadingButton = screen.getByRole('button', { name: /loading/i })
+      expect(loadingButton).toBeDisabled()
 
       // Wait for loading to complete
       await waitFor(() => {
@@ -113,7 +116,8 @@ describe('App Component', () => {
       })
 
       // Button should be enabled again
-      expect(button).toBeEnabled()
+      const enabledButton = screen.getByRole('button', { name: /get message from backend/i })
+      expect(enabledButton).toBeEnabled()
     })
   })
 
