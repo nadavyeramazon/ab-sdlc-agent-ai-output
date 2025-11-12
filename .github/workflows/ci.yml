@@ -71,13 +71,13 @@ jobs:
       uses: actions/cache@v3
       with:
         path: frontend/node_modules
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
         restore-keys: |
           ${{ runner.os }}-node-
     
     - name: Install dependencies
       working-directory: ./frontend
-      run: npm ci
+      run: npm install
     
     - name: Run frontend tests
       working-directory: ./frontend
