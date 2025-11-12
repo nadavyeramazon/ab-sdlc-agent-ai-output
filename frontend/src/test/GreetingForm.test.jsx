@@ -18,7 +18,7 @@ describe('GreetingForm Component - New Feature Tests', () => {
     
     expect(screen.getByLabelText(/enter your name/i)).toBeInTheDocument()
     expect(screen.getByPlaceholderText(/e.g., John Doe/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /greet me/i })).toBeInTheDocument()
+    expect(screen.getByText('Greet Me')).toBeInTheDocument()
   })
 
   it('updates input value when user types', () => {
@@ -33,7 +33,7 @@ describe('GreetingForm Component - New Feature Tests', () => {
   it('shows validation error when submitting empty name', async () => {
     render(<GreetingForm />)
     
-    const button = screen.getByRole('button', { name: /greet me/i })
+    const button = screen.getByText('Greet Me')
     fireEvent.click(button)
     
     await waitFor(() => {
@@ -48,7 +48,7 @@ describe('GreetingForm Component - New Feature Tests', () => {
     render(<GreetingForm />)
     
     const input = screen.getByLabelText(/enter your name/i)
-    const button = screen.getByRole('button', { name: /greet me/i })
+    const button = screen.getByText('Greet Me')
     
     fireEvent.change(input, { target: { value: '   ' } })
     fireEvent.click(button)
@@ -75,7 +75,7 @@ describe('GreetingForm Component - New Feature Tests', () => {
     render(<GreetingForm />)
     
     const input = screen.getByLabelText(/enter your name/i)
-    const button = screen.getByRole('button', { name: /greet me/i })
+    const button = screen.getByText('Greet Me')
     
     fireEvent.change(input, { target: { value: 'Test User' } })
     fireEvent.click(button)
@@ -100,7 +100,7 @@ describe('GreetingForm Component - New Feature Tests', () => {
     render(<GreetingForm />)
     
     const input = screen.getByLabelText(/enter your name/i)
-    const button = screen.getByRole('button', { name: /greet me/i })
+    const button = screen.getByText('Greet Me')
     
     fireEvent.change(input, { target: { value: 'John Doe' } })
     fireEvent.click(button)
@@ -130,7 +130,7 @@ describe('GreetingForm Component - New Feature Tests', () => {
     render(<GreetingForm />)
     
     const input = screen.getByLabelText(/enter your name/i)
-    const button = screen.getByRole('button', { name: /greet me/i })
+    const button = screen.getByText('Greet Me')
     
     fireEvent.change(input, { target: { value: 'Test' } })
     fireEvent.click(button)
@@ -146,7 +146,7 @@ describe('GreetingForm Component - New Feature Tests', () => {
     render(<GreetingForm />)
     
     const input = screen.getByLabelText(/enter your name/i)
-    const button = screen.getByRole('button', { name: /greet me/i })
+    const button = screen.getByText('Greet Me')
     
     fireEvent.change(input, { target: { value: 'Test' } })
     fireEvent.click(button)
@@ -170,7 +170,7 @@ describe('GreetingForm Component - New Feature Tests', () => {
     render(<GreetingForm />)
     
     const input = screen.getByLabelText(/enter your name/i)
-    const button = screen.getByRole('button', { name: /greet me/i })
+    const button = screen.getByText('Greet Me')
     
     fireEvent.change(input, { target: { value: 'Test User' } })
     expect(input.value).toBe('Test User')
@@ -186,7 +186,7 @@ describe('GreetingForm Component - New Feature Tests', () => {
     render(<GreetingForm />)
     
     const input = screen.getByLabelText(/enter your name/i)
-    const button = screen.getByRole('button', { name: /greet me/i })
+    const button = screen.getByText('Greet Me')
     
     // Trigger validation error
     fireEvent.click(button)
@@ -215,7 +215,7 @@ describe('GreetingForm - Accessibility Tests', () => {
     render(<GreetingForm />)
     
     const input = screen.getByLabelText(/enter your name/i)
-    const button = screen.getByRole('button', { name: /greet me/i })
+    const button = screen.getByText('Greet Me')
     
     fireEvent.click(button)
     

@@ -29,7 +29,7 @@ describe('App Component', () => {
 
   it('displays the subtitle', () => {
     render(<App />)
-    expect(screen.getByText('Green Theme Fullstack Application')).toBeInTheDocument()
+    expect(screen.getByText('Purple Theme Fullstack Application')).toBeInTheDocument()
   })
 
   it('displays the button with correct text', () => {
