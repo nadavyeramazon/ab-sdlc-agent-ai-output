@@ -263,6 +263,7 @@ describe('App Component', () => {
 
       await waitFor(() => {
         const response = screen.getByRole('status')
+        expect(response).toBeInTheDocument()
         expect(response).toHaveAttribute('aria-live', 'polite')
       })
     })
@@ -277,6 +278,7 @@ describe('App Component', () => {
 
       await waitFor(() => {
         const alert = screen.getByRole('alert')
+        expect(alert).toBeInTheDocument()
         expect(alert).toHaveAttribute('aria-live', 'assertive')
       })
     })
@@ -284,6 +286,7 @@ describe('App Component', () => {
     it('button has proper aria-label', () => {
       render(<App />)
       const button = screen.getByRole('button', { name: /get message from backend/i })
+      expect(button).toBeInTheDocument()
       expect(button).toHaveAttribute('aria-label', 'Get message from backend')
     })
   })
