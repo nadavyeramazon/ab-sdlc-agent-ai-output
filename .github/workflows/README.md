@@ -1,234 +1,380 @@
 # GitHub Actions CI/CD Workflows
 
-## 📋 Overview
+This directory contains the GitHub Actions workflow configurations for the Green Theme Hello World Fullstack Application.
 
-This directory contains GitHub Actions workflows for the Green Theme Hello World Fullstack Application.
+## 📋 Table of Contents
 
-## 🚀 Workflows
+- [Available Workflows](#available-workflows)
+- [CI Workflow Details](#ci-workflow-details)
+- [Job Dependencies](#job-dependencies)
+- [Caching Strategy](#caching-strategy)
+- [Environment Variables](#environment-variables)
+- [Troubleshooting](#troubleshooting)
 
-### CI/CD Pipeline (`ci.yml`)
+## 🚀 Available Workflows
+
+### CI Workflow (`ci.yml`)
 
 **Triggers:**
-- Push to `main` branch
-- Push to `feature/**` branches
-- Pull requests targeting `main` branch
+- Pull requests to `main`, `develop`, and `feature/**` branches
+- Pushes to `main` and `develop` branches
+- Manual workflow dispatch
 
-**Jobs:**
+**Purpose:** Comprehensive continuous integration testing for frontend, backend, and Docker builds with integration testing.
 
-#### 1. Frontend CI (`frontend-ci`)
-- **Runtime:** Ubuntu Latest with Node.js 18.x
-- **Timeout:** 15 minutes
-- **Steps:**
-  - ✅ Checkout code
-  - ✅ Setup Node.js with npm caching
-  - ✅ Install dependencies (`npm ci`)
-  - ✅ Run linting (if available)
-  - ✅ Run tests with coverage (`npm run test:coverage`)
-  - ✅ Check coverage threshold (80%)
-  - ✅ Build application (`npm run build`)
-  - ✅ Upload coverage and build artifacts
+## 🔄 CI Workflow Details
 
-#### 2. Backend CI (`backend-ci`)
-- **Runtime:** Ubuntu Latest with Python 3.11
-- **Timeout:** 15 minutes
-- **Steps:**
-  - ✅ Checkout code
-  - ✅ Setup Python with pip caching
-  - ✅ Install dependencies
-  - ✅ Run flake8 linting
-  - ✅ Run mypy type checking
-  - ✅ Run pytest with coverage
-  - ✅ Check coverage threshold (80%)
-  - ✅ Run code quality checks (isort, black)
-  - ✅ Upload coverage artifacts
+The CI workflow consists of 5 parallel and sequential jobs:
 
-#### 3. Docker Build & Integration Test (`docker-build`)
-- **Runtime:** Ubuntu Latest with Docker
-- **Timeout:** 20 minutes
-- **Dependencies:** Runs after `frontend-ci` and `backend-ci` complete
-- **Steps:**
-  - ✅ Checkout code
-  - ✅ Setup Docker Buildx
-  - ✅ Build frontend Docker image
-  - ✅ Build backend Docker image
-  - ✅ Start services with docker-compose
-  - ✅ Wait for health checks
-  - ✅ Test backend API endpoints
-  - ✅ Test frontend accessibility
-  - ✅ Test inter-service communication
-  - ✅ Display service status
-  - ✅ Cleanup containers
+### 1️⃣ Frontend CI (`frontend-ci`)
 
-#### 4. CI Status Report (`ci-status`)
-- **Runtime:** Ubuntu Latest
-- **Dependencies:** Runs after all jobs complete
-- **Steps:**
-  - ✅ Generate comprehensive CI summary
-  - ✅ Display job status table
-  - ✅ Fail pipeline if any job failed
+**Runs on:** Ubuntu Latest  
+**Timeout:** 15 minutes  
+**Working Directory:** `./frontend`
 
-## 🎯 Success Criteria
+**Steps:**
+1. **Checkout code** - Get latest code from repository
+2. **Setup Node.js 18.x** - Install Node.js with npm cache
+3. **Cache node_modules** - Cache dependencies for faster builds
+4. **Install dependencies** - Run `npm ci` if cache miss
+5. **Run linting** - Execute linter if configured (optional)
+6. **Run tests with coverage** - Execute `npm run test:coverage` (Vitest)
+7. **Check coverage threshold** - Verify coverage meets 80% threshold
+8. **Upload coverage reports** - Save coverage artifacts (30 days retention)
+9. **Build application** - Run `npm run build` for production
+10. **Check build size** - Display build output size
+11. **Upload build artifacts** - Save build files (7 days retention)
 
-✅ **Frontend:**
-- All tests pass
-- Code coverage ≥ 80%
-- Build succeeds
-- Artifacts uploaded
+**Key Features:**
+- ✅ 30+ React component tests using React Testing Library
+- ✅ Vitest test runner with coverage reporting
+- ✅ Dependency caching for faster subsequent runs
+- ✅ Build artifact preservation
+- ✅ Automatic coverage threshold checking
 
-✅ **Backend:**
-- All tests pass
-- Code coverage ≥ 80%
-- Linting passes (flake8)
-- Type checking passes (mypy)
-- Code quality checks pass
-- Artifacts uploaded
+**Technologies:**
+- React 18.2
+- Vite 5.x
+- Vitest with coverage
+- React Testing Library
 
-✅ **Docker:**
-- Frontend image builds successfully
-- Backend image builds successfully
-- Both services start and become healthy
-- API endpoints respond correctly
-- Frontend is accessible
-- Inter-service communication works
+### 2️⃣ Backend CI (`backend-ci`)
 
-## 🚀 Optimization Features
+**Runs on:** Ubuntu Latest  
+**Timeout:** 15 minutes  
+**Working Directory:** `./backend`
 
-### Caching Strategy
-- **npm packages:** Cached using `actions/setup-node@v4` with `cache: 'npm'`
-- **pip packages:** Cached using `actions/setup-python@v5` with `cache: 'pip'`
+**Steps:**
+1. **Checkout code** - Get latest code from repository
+2. **Setup Python 3.11** - Install Python with pip cache
+3. **Cache pip packages** - Cache dependencies for faster builds
+4. **Install dependencies** - Install from requirements.txt
+5. **Run flake8 linting** - Check code style and errors
+6. **Run mypy type checking** - Verify type hints
+7. **Run tests with coverage** - Execute pytest with multiple coverage formats
+8. **Check coverage threshold** - Verify coverage meets 80% threshold
+9. **Upload coverage reports** - Save coverage artifacts (30 days retention)
+10. **Run code quality checks** - Check isort and black formatting
 
-### Parallel Execution
-- Frontend and Backend CI jobs run in parallel
-- Docker build waits for both CI jobs to complete
-- Reduces total pipeline time
+**Key Features:**
+- ✅ Comprehensive FastAPI endpoint testing
+- ✅ pytest with coverage reporting (XML, HTML, JSON)
+- ✅ Code quality checks (flake8, mypy, isort, black)
+- ✅ Dependency caching for faster subsequent runs
+- ✅ Automatic coverage threshold checking
 
-### Timeout Limits
-- Frontend CI: 15 minutes
-- Backend CI: 15 minutes
-- Docker Build: 20 minutes
-- Prevents hanging jobs from consuming resources
+**Technologies:**
+- Python 3.11
+- FastAPI 0.104
+- pytest with coverage
+- Code quality tools (flake8, mypy, isort, black)
 
-### Artifact Management
-- **Coverage reports:** Retained for 30 days
-- **Build artifacts:** Retained for 7 days
-- Automatic cleanup after retention period
+### 3️⃣ Docker Build Verification (`docker-build`)
 
-## 📊 Coverage Reports
+**Runs on:** Ubuntu Latest  
+**Timeout:** 20 minutes  
+**Depends on:** `frontend-ci`, `backend-ci`
 
-Coverage reports are uploaded as artifacts and can be downloaded from the workflow run:
+**Steps:**
+1. **Checkout code** - Get latest code from repository
+2. **Set up Docker Buildx** - Enable advanced Docker build features
+3. **Cache Docker layers - Frontend** - Cache frontend image layers
+4. **Cache Docker layers - Backend** - Cache backend image layers
+5. **Build frontend Docker image** - Build with layer caching
+6. **Build backend Docker image** - Build with layer caching
+7. **Verify Docker Compose configuration** - Validate docker-compose.yml
+8. **Verify required services** - Check for backend and frontend services
+9. **Display built images** - Show image sizes
+10. **Optimize Docker cache** - Clean up old cache layers
 
-1. Navigate to Actions tab
-2. Select the workflow run
-3. Scroll to "Artifacts" section
-4. Download:
-   - `frontend-coverage` - Frontend test coverage
-   - `backend-coverage` - Backend test coverage
-   - `frontend-build` - Production build
+**Key Features:**
+- ✅ Parallel Docker builds after CI passes
+- ✅ Layer caching for faster builds
+- ✅ Configuration validation
+- ✅ Service verification
+- ✅ Multi-stage build optimization
 
-## 🔍 Monitoring & Debugging
+**Docker Configuration:**
+- Frontend: Nginx-based production build
+- Backend: Python FastAPI application
+- Network: Bridge network (app-network)
+- Health checks: Built-in for both services
 
-### View Workflow Status
-```bash
-gh workflow view "CI/CD Pipeline - Green Theme Hello World"
+### 4️⃣ Integration Tests (`integration-test`)
+
+**Runs on:** Ubuntu Latest  
+**Timeout:** 20 minutes  
+**Depends on:** `docker-build`
+
+**Steps:**
+1. **Checkout code** - Get latest code from repository
+2. **Start services with docker-compose** - Launch full stack
+3. **Wait for backend health check** - Ensure backend is ready (120s timeout)
+4. **Wait for frontend health check** - Ensure frontend is ready (90s timeout)
+5. **Display service status** - Show running containers
+6. **Test backend health endpoint** - Verify `/health` endpoint
+7. **Test backend API endpoint** - Verify `/api/hello` endpoint
+8. **Test frontend accessibility** - Verify HTTP 200 response
+9. **Test inter-service communication** - Verify Docker network connectivity
+10. **Integration test summary** - Display results
+11. **Show service logs on failure** - Debug information if tests fail
+12. **Cleanup** - Stop and remove containers
+
+**Key Features:**
+- ✅ Full stack integration testing
+- ✅ Service health verification
+- ✅ API endpoint testing
+- ✅ Inter-service communication verification
+- ✅ Docker network validation
+- ✅ Automatic cleanup
+
+**Tests Performed:**
+- Backend health check (port 8000)
+- Frontend accessibility (port 80)
+- API endpoint functionality
+- Container-to-container communication
+- Network configuration
+
+### 5️⃣ CI Summary (`ci-summary`)
+
+**Runs on:** Ubuntu Latest  
+**Depends on:** `frontend-ci`, `backend-ci`, `docker-build`, `integration-test`  
+**Always runs:** Yes (even if previous jobs fail)
+
+**Steps:**
+1. **Generate comprehensive CI summary** - Create detailed status report
+
+**Key Features:**
+- ✅ Consolidated status report
+- ✅ Detailed job results table
+- ✅ Success/failure indicators
+- ✅ Testing coverage summary
+- ✅ Fails if any required job fails
+
+## 📊 Job Dependencies
+
+```
+frontend-ci ────┐
+                ├──> docker-build ──> integration-test ──> ci-summary
+backend-ci ─────┘
 ```
 
-### View Recent Runs
-```bash
-gh run list --workflow=ci.yml
-```
+**Execution Flow:**
+1. `frontend-ci` and `backend-ci` run in **parallel** (fastest)
+2. `docker-build` runs after both CI jobs succeed
+3. `integration-test` runs after Docker build succeeds
+4. `ci-summary` runs after all jobs complete (always)
 
-### View Specific Run Details
-```bash
-gh run view <run-id>
-```
+## 💾 Caching Strategy
 
-### Download Artifacts
-```bash
-gh run download <run-id>
-```
+### Frontend Caching
+- **npm cache**: Automatic via `setup-node` action
+- **node_modules**: Manual cache with package-lock.json hash key
+- **Restoration**: Falls back to latest cache if exact match not found
 
-### Re-run Failed Jobs
-```bash
-gh run rerun <run-id> --failed
-```
+### Backend Caching
+- **pip cache**: Automatic via `setup-python` action
+- **~/.cache/pip**: Manual cache with requirements.txt hash key
+- **Restoration**: Falls back to latest cache if exact match not found
+
+### Docker Caching
+- **Frontend layers**: Cached to `/tmp/.buildx-cache-frontend`
+- **Backend layers**: Cached to `/tmp/.buildx-cache-backend`
+- **Cache strategy**: `mode=max` for maximum layer caching
+- **Optimization**: Old caches cleaned up after each build
+
+**Cache Benefits:**
+- ⚡ **Faster builds**: 50-80% faster on cache hits
+- 💰 **Cost savings**: Reduced GitHub Actions minutes
+- 🔄 **Efficiency**: Parallel job execution with cached dependencies
+
+## 🔧 Environment Variables
+
+Global environment variables used across all jobs:
+
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `NODE_VERSION` | `18.x` | Node.js version for frontend |
+| `PYTHON_VERSION` | `3.11` | Python version for backend |
+| `COVERAGE_THRESHOLD` | `80` | Minimum code coverage percentage |
+
+### Job-Specific Environment Variables
+
+**Frontend CI:**
+- `CI=true` - Enables CI mode for testing
+- `NODE_ENV=production` - Production build mode
+
+**Backend CI:**
+- No additional environment variables
+
+**Integration Tests:**
+- Inherits from docker-compose.yml:
+  - `PORT=8000` (backend)
+  - `NODE_ENV=production` (backend)
+  - `VITE_API_URL=http://backend:8000` (frontend)
 
 ## 🐛 Troubleshooting
 
 ### Frontend Tests Failing
-1. Check test logs in the workflow output
-2. Verify all dependencies are installed correctly
-3. Ensure test scripts are properly configured in `package.json`
-4. Check if environment variables are needed
+
+**Check:**
+1. Verify all tests pass locally: `npm run test`
+2. Check test coverage: `npm run test:coverage`
+3. Review frontend CI job logs
+4. Verify Node.js version matches (18.x)
+
+**Common Issues:**
+- Missing dependencies: Clear cache and re-run
+- Test timeout: Increase test timeout in vitest.config.js
+- Import errors: Check file paths and imports
 
 ### Backend Tests Failing
-1. Check pytest output in the workflow logs
-2. Verify Python version compatibility
-3. Ensure all requirements are installed
-4. Check for missing environment variables
+
+**Check:**
+1. Verify all tests pass locally: `pytest`
+2. Check test coverage: `pytest --cov=.`
+3. Review backend CI job logs
+4. Verify Python version matches (3.11)
+
+**Common Issues:**
+- Import errors: Check PYTHONPATH
+- Async test issues: Verify pytest-asyncio configuration
+- Coverage threshold: Review coverage reports
 
 ### Docker Build Failing
-1. Review Docker build logs
-2. Check Dockerfile syntax
-3. Verify base images are accessible
-4. Ensure all required files are present in build context
 
-### Health Checks Timeout
-1. Check service logs in the workflow output
-2. Verify health check endpoints are correct
-3. Increase timeout values if services need more startup time
-4. Check for port conflicts or networking issues
+**Check:**
+1. Verify Dockerfiles exist in frontend/ and backend/
+2. Build images locally: `docker-compose build`
+3. Review docker-build job logs
+4. Check Dockerfile syntax
 
-### Coverage Below Threshold
-1. Review uncovered code in coverage reports
-2. Add tests for missing coverage
-3. Adjust threshold if needed (in workflow file)
+**Common Issues:**
+- Layer cache corruption: Clear cache and rebuild
+- Build context issues: Verify COPY paths
+- Base image issues: Check internet connectivity
 
-## 🔧 Configuration
+### Integration Tests Failing
 
-### Environment Variables
-Defined at the workflow level:
-```yaml
-env:
-  NODE_VERSION: '18.x'      # Node.js version for frontend
-  PYTHON_VERSION: '3.11'    # Python version for backend
-  COVERAGE_THRESHOLD: 80    # Minimum code coverage percentage
-```
+**Check:**
+1. Verify docker-compose works locally: `docker-compose up`
+2. Check service health: `docker-compose ps`
+3. Review integration-test job logs
+4. Verify network configuration
 
-### Modifying Coverage Threshold
-Edit the `COVERAGE_THRESHOLD` value in `.github/workflows/ci.yml`:
-```yaml
-env:
-  COVERAGE_THRESHOLD: 85  # Change to desired percentage
-```
+**Common Issues:**
+- Health check timeout: Services take too long to start
+- Port conflicts: Check port availability
+- Network issues: Verify Docker network configuration
+- API endpoint changes: Update test assertions
 
-### Adding New Test Commands
-Add steps in the respective CI job:
-```yaml
-- name: 🧪 Run integration tests
-  run: npm run test:integration
-```
+### Cache Issues
 
-## 📚 Resources
+**Solution:**
+1. **Clear GitHub Actions cache**:
+   - Go to repository Settings → Actions → Caches
+   - Delete all caches or specific cache keys
+
+2. **Force rebuild without cache**:
+   - Trigger workflow dispatch manually
+   - Or update cache keys in workflow file
+
+### Viewing Detailed Logs
+
+1. **Navigate to Actions tab** in GitHub repository
+2. **Select the workflow run** you want to investigate
+3. **Click on failed job** to see detailed logs
+4. **Expand steps** to see command output
+5. **Download artifacts** (coverage reports, build files) for local analysis
+
+## 📈 Optimization Tips
+
+### Reducing CI Time
+
+1. **Use caching**: Already implemented for npm, pip, and Docker layers
+2. **Parallel execution**: Frontend and backend CI run simultaneously
+3. **Fail fast**: Jobs fail quickly on first error
+4. **Conditional steps**: Lint only if script exists
+
+### Improving Test Performance
+
+1. **Frontend**: Use `--watchAll=false` in CI (already set)
+2. **Backend**: Use pytest-xdist for parallel test execution
+3. **Docker**: Multi-stage builds to reduce image size
+
+### Monitoring Coverage
+
+- Coverage reports uploaded to artifacts (30 days retention)
+- Download from workflow run page
+- View HTML reports locally for detailed analysis
+
+## 🔐 Security Considerations
+
+### Secrets Management
+
+- **No secrets required** for current workflow
+- If adding deployment: Use GitHub Secrets
+- Never commit credentials to repository
+
+### Dependency Security
+
+- Regular dependency updates recommended
+- Use dependabot for automated updates
+- Review security advisories
+
+## 📚 Additional Resources
 
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [Node.js Testing with Vitest](https://vitest.dev/)
-- [Python Testing with pytest](https://docs.pytest.org/)
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [GitHub Actions Cache](https://github.com/actions/cache)
+- [React Testing Library](https://testing-library.com/react)
+- [pytest Documentation](https://docs.pytest.org/)
+- [Vitest Documentation](https://vitest.dev/)
 
-## 🎉 Badge
+## 🎯 Success Criteria
 
-Add this badge to your README to show CI status:
+A successful CI run requires:
 
-```markdown
-[![CI/CD Pipeline](https://github.com/nadavyeramazon/ab-sdlc-agent-ai-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/nadavyeramazon/ab-sdlc-agent-ai-backend/actions/workflows/ci.yml)
-```
+- ✅ All frontend tests pass (30+ tests)
+- ✅ Frontend build completes successfully
+- ✅ All backend tests pass with coverage
+- ✅ Backend linting and type checking pass
+- ✅ Frontend Docker image builds
+- ✅ Backend Docker image builds
+- ✅ docker-compose.yml is valid
+- ✅ Services start and pass health checks
+- ✅ API endpoints respond correctly
+- ✅ Inter-service communication works
 
-## 🤝 Contributing
+## 📞 Support
 
-When modifying workflows:
-1. Test changes in a feature branch
-2. Verify all jobs complete successfully
-3. Check artifact uploads work correctly
-4. Update this README if adding new features
-5. Document any new environment variables or secrets
+For CI/CD issues:
+1. Check this documentation first
+2. Review workflow logs in Actions tab
+3. Check for similar issues in repository discussions
+4. Create an issue with detailed error logs
+
+---
+
+**Last Updated:** 2025-11-12  
+**Workflow Version:** 2.0  
+**Maintained by:** DevOps Team
