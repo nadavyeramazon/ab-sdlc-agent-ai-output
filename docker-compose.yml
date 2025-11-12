@@ -35,7 +35,7 @@ services:
       - "3000:3000"
     environment:
       # CRITICAL: Use backend service name, not localhost
-      - VITE_API_URL=http://backend:8000
+      - VITE_API_URL=http://localhost:8000
     volumes:
       - ./frontend:/app
       - /app/node_modules
