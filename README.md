@@ -1,20 +1,22 @@
-# Green Theme Hello World Fullstack Application
+# Purple Theme Hello World Fullstack Application
 
-A simple fullstack "Hello World" application with a green-themed React frontend and Python FastAPI backend, orchestrated with Docker Compose.
+A simple fullstack "Hello World" application with a purple-themed React frontend and Python FastAPI backend, orchestrated with Docker Compose.
 
 ## 🎨 Features
 
 ### Frontend (React)
-- **Green-themed UI** with modern, responsive design
+- **Purple-themed UI** with modern, responsive design
 - **React 18+** with functional components and hooks
 - **Vite** for fast development and hot module replacement (HMR)
 - **Interactive button** to fetch data from backend
+- **User greeting feature** with personalized messages
 - **Loading states** and error handling
 - **Accessible** with proper ARIA labels
 
 ### Backend (FastAPI)
-- **FastAPI** REST API with two endpoints:
+- **FastAPI** REST API with three endpoints:
   - `GET /api/hello` - Returns hello message with timestamp
+  - `POST /api/greet` - Returns personalized greeting with user's name
   - `GET /health` - Health check endpoint
 - **CORS enabled** for frontend communication
 - **Fast response times** (<100ms)
@@ -104,7 +106,7 @@ project-root/
 ├── frontend/
 │   ├── src/
 │   │   ├── App.jsx           # Main React component
-│   │   ├── App.css           # Green theme styles
+│   │   ├── App.css           # Purple theme styles
 │   │   ├── App.test.jsx      # Component tests
 │   │   ├── main.jsx          # React entry point
 │   │   ├── index.css         # Global styles
@@ -140,6 +142,31 @@ Returns a hello message with timestamp.
 }
 ```
 
+### POST /api/greet
+Returns a personalized greeting with the user's name.
+
+**Request:**
+```json
+{
+  "name": "John"
+}
+```
+
+**Response:**
+```json
+{
+  "greeting": "Hello, John! Welcome to our purple-themed app!",
+  "timestamp": "2024-01-01T12:00:00.000000"
+}
+```
+
+**Error Response (400):**
+```json
+{
+  "detail": "Name cannot be empty"
+}
+```
+
 ### GET /health
 Health check endpoint.
 
@@ -153,11 +180,12 @@ Health check endpoint.
 ## 🎨 Design
 
 ### Color Theme
-- **Primary Green:** `#2ecc71`
-- **Secondary Green:** `#27ae60`
-- **Background:** Linear gradient from primary to secondary
+- **Primary Purple:** `#9b59b6`
+- **Secondary Purple:** `#8e44ad`
+- **Hover State Purple:** `#7d3c98`
+- **Background:** Linear gradient from primary to secondary purple
 - **Card Background:** White with shadow
-- **Success Messages:** Light green background
+- **Success Messages:** Light purple background
 - **Error Messages:** Light red background
 
 ### Responsive Design
