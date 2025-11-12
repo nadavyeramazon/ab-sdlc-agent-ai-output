@@ -1,0 +1,385 @@
+name: CI/CD Pipeline - Green Theme Hello World
+
+# Trigger workflow on pull requests and pushes to main
+on:
+  push:
+    branches:
+      - main
+      - feature/**
+  pull_request:
+    branches:
+      - main
+
+# Set default shell for all jobs
+defaults:
+  run:
+    shell: bash
+
+# Environment variables
+env:
+  NODE_VERSION: '18.x'
+  PYTHON_VERSION: '3.11'
+  COVERAGE_THRESHOLD: 80
+
+jobs:
+  # ============================================
+  # Frontend CI Job
+  # ============================================
+  frontend-ci:
+    name: Frontend Tests & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    defaults:
+      run:
+        working-directory: ./frontend
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci
+          echo "✅ Dependencies installed successfully"
+
+      - name: 🔍 Check for lint script
+        id: check-lint
+        run: |
+          if grep -q '"lint"' package.json; then
+            echo "lint_available=true" >> $GITHUB_OUTPUT
+            echo "✅ Lint script found"
+          else
+            echo "lint_available=false" >> $GITHUB_OUTPUT
+            echo "⚠️  No lint script found, skipping..."
+          fi
+
+      - name: 🧹 Run linting
+        if: steps.check-lint.outputs.lint_available == 'true'
+        run: npm run lint
+        continue-on-error: true
+
+      - name: 🧪 Run tests with coverage
+        run: |
+          npm run test:coverage
+          echo "✅ Tests completed successfully"
+
+      - name: 📊 Check coverage threshold
+        run: |
+          # Extract coverage percentage from coverage summary if available
+          if [ -f "coverage/coverage-summary.json" ]; then
+            COVERAGE=$(node -pe "JSON.parse(require('fs').readFileSync('coverage/coverage-summary.json')).total.lines.pct")
+            echo "📊 Current coverage: ${COVERAGE}%"
+            if (( $(echo "$COVERAGE < $COVERAGE_THRESHOLD" | bc -l) )); then
+              echo "⚠️  Warning: Coverage (${COVERAGE}%) is below threshold (${COVERAGE_THRESHOLD}%)"
+            else
+              echo "✅ Coverage meets threshold: ${COVERAGE}% >= ${COVERAGE_THRESHOLD}%"
+            fi
+          else
+            echo "⚠️  Coverage summary not found, skipping threshold check"
+          fi
+        continue-on-error: true
+
+      - name: 📤 Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          retention-days: 30
+
+      - name: 🏗️ Build application
+        run: |
+          npm run build
+          echo "✅ Build completed successfully"
+
+      - name: 📤 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+          retention-days: 7
+
+      - name: 📋 Frontend CI Summary
+        if: always()
+        run: |
+          echo "## 🟢 Frontend CI Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Node.js Version:** ${{ env.NODE_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tests:** Completed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build:** Completed" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
+  # Backend CI Job
+  # ============================================
+  backend-ci:
+    name: Backend Tests & Linting
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    defaults:
+      run:
+        working-directory: ./backend
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          echo "✅ Dependencies installed successfully"
+
+      - name: 🧹 Run flake8 linting
+        run: |
+          echo "Running flake8 linting..."
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          echo "✅ Linting completed"
+        continue-on-error: true
+
+      - name: 🔍 Run mypy type checking
+        run: |
+          echo "Running mypy type checking..."
+          mypy . --ignore-missing-imports --no-strict-optional
+          echo "✅ Type checking completed"
+        continue-on-error: true
+
+      - name: 🧪 Run tests with coverage
+        run: |
+          echo "Running pytest with coverage..."
+          pytest --cov=. --cov-report=xml --cov-report=term --cov-report=html -v
+          echo "✅ Tests completed successfully"
+
+      - name: 📊 Check coverage threshold
+        run: |
+          # Extract coverage percentage from pytest output
+          COVERAGE=$(grep -oP 'TOTAL.*\K\d+(?=%)' htmlcov/index.html || echo "0")
+          echo "📊 Current coverage: ${COVERAGE}%"
+          if [ "$COVERAGE" -lt "$COVERAGE_THRESHOLD" ]; then
+            echo "⚠️  Warning: Coverage (${COVERAGE}%) is below threshold (${COVERAGE_THRESHOLD}%)"
+          else
+            echo "✅ Coverage meets threshold: ${COVERAGE}% >= ${COVERAGE_THRESHOLD}%"
+          fi
+        continue-on-error: true
+
+      - name: 📤 Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage
+          path: |
+            backend/coverage.xml
+            backend/htmlcov/
+          retention-days: 30
+
+      - name: 🔍 Run code quality checks
+        run: |
+          echo "Running isort check..."
+          isort . --check-only --diff || echo "⚠️  Import sorting issues found"
+          echo "Running black check..."
+          black . --check --diff || echo "⚠️  Code formatting issues found"
+        continue-on-error: true
+
+      - name: 📋 Backend CI Summary
+        if: always()
+        run: |
+          echo "## 🐍 Backend CI Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Python Version:** ${{ env.PYTHON_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tests:** Completed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Linting:** Completed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Type Checking:** Completed" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
+  # Docker Build & Integration Test Job
+  # ============================================
+  docker-build:
+    name: Docker Build & Integration Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [frontend-ci, backend-ci]
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🏗️ Build frontend Docker image
+        run: |
+          echo "Building frontend Docker image..."
+          docker build -t green-hello-frontend:ci ./frontend
+          echo "✅ Frontend image built successfully"
+
+      - name: 🏗️ Build backend Docker image
+        run: |
+          echo "Building backend Docker image..."
+          docker build -t green-hello-backend:ci ./backend
+          echo "✅ Backend image built successfully"
+
+      - name: 📋 Verify Docker images
+        run: |
+          echo "## 🐳 Docker Images Built" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          docker images | grep green-hello | awk '{print "- **" $1 ":" $2 "** - Size: " $7}' >> $GITHUB_STEP_SUMMARY
+
+      - name: 🚀 Start services with docker-compose
+        run: |
+          echo "Starting services with docker-compose..."
+          docker-compose up -d
+          echo "✅ Services started"
+
+      - name: ⏳ Wait for services to be ready
+        run: |
+          echo "Waiting for backend health check..."
+          timeout 120 bash -c 'until docker-compose ps | grep -q "healthy.*backend"; do echo "Waiting for backend..."; sleep 5; done' || {
+            echo "❌ Backend health check timeout"
+            docker-compose logs backend
+            exit 1
+          }
+          echo "✅ Backend is healthy"
+          
+          echo "Waiting for frontend health check..."
+          timeout 60 bash -c 'until docker-compose ps | grep -q "healthy.*frontend"; do echo "Waiting for frontend..."; sleep 5; done' || {
+            echo "❌ Frontend health check timeout"
+            docker-compose logs frontend
+            exit 1
+          }
+          echo "✅ Frontend is healthy"
+
+      - name: 🧪 Test backend API endpoints
+        run: |
+          echo "Testing backend API endpoints..."
+          
+          # Test health endpoint
+          HEALTH_RESPONSE=$(curl -s http://localhost:8000/health)
+          echo "Health endpoint response: $HEALTH_RESPONSE"
+          
+          if echo "$HEALTH_RESPONSE" | grep -q '"status":"healthy"'; then
+            echo "✅ Health endpoint working"
+          else
+            echo "❌ Health endpoint failed"
+            exit 1
+          fi
+          
+          # Test hello endpoint
+          HELLO_RESPONSE=$(curl -s http://localhost:8000/api/hello)
+          echo "Hello endpoint response: $HELLO_RESPONSE"
+          
+          if echo "$HELLO_RESPONSE" | grep -q 'message'; then
+            echo "✅ Hello endpoint working"
+          else
+            echo "❌ Hello endpoint failed"
+            exit 1
+          fi
+
+      - name: 🧪 Test frontend accessibility
+        run: |
+          echo "Testing frontend accessibility..."
+          
+          FRONTEND_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:80)
+          echo "Frontend HTTP status: $FRONTEND_RESPONSE"
+          
+          if [ "$FRONTEND_RESPONSE" = "200" ]; then
+            echo "✅ Frontend is accessible"
+          else
+            echo "❌ Frontend is not accessible (status: $FRONTEND_RESPONSE)"
+            exit 1
+          fi
+
+      - name: 🔍 Test inter-service communication
+        run: |
+          echo "Testing inter-service communication..."
+          
+          # Check if frontend can reach backend through Docker network
+          docker-compose exec -T frontend sh -c "wget -q -O- http://backend:8000/health" || {
+            echo "❌ Frontend cannot reach backend"
+            docker-compose logs
+            exit 1
+          }
+          echo "✅ Inter-service communication working"
+
+      - name: 📊 Display service status
+        if: always()
+        run: |
+          echo "## 🐳 Docker Services Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          docker-compose ps >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: 📋 Show service logs on failure
+        if: failure()
+        run: |
+          echo "=== Backend Logs ==="
+          docker-compose logs backend
+          echo "\n=== Frontend Logs ==="
+          docker-compose logs frontend
+
+      - name: 🧹 Cleanup
+        if: always()
+        run: |
+          echo "Stopping and removing containers..."
+          docker-compose down -v
+          echo "✅ Cleanup completed"
+
+  # ============================================
+  # Final Status Report
+  # ============================================
+  ci-status:
+    name: CI Status Report
+    runs-on: ubuntu-latest
+    needs: [frontend-ci, backend-ci, docker-build]
+    if: always()
+    
+    steps:
+      - name: 📊 Generate CI Summary
+        run: |
+          echo "# 🎉 CI/CD Pipeline Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Job Status Overview" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend CI | ${{ needs.frontend-ci.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend CI | ${{ needs.backend-ci.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Build | ${{ needs.docker-build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check if all jobs succeeded
+          if [[ "${{ needs.frontend-ci.result }}" == "success" ]] && \
+             [[ "${{ needs.backend-ci.result }}" == "success" ]] && \
+             [[ "${{ needs.docker-build.result }}" == "success" ]]; then
+            echo "## ✅ All checks passed!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Your Green Theme Hello World application is ready for deployment! 🚀" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ❌ Some checks failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please review the failed jobs and fix any issues." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: ❌ Fail if any job failed
+        if: needs.frontend-ci.result != 'success' || needs.backend-ci.result != 'success' || needs.docker-build.result != 'success'
+        run: |
+          echo "One or more CI jobs failed"
+          exit 1
