@@ -1,0 +1,124 @@
+name: PR Checks - Quick Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main, develop]
+
+jobs:
+  # Quick validation job for faster feedback on PRs
+  quick-checks:
+    name: Quick PR Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Cache Dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            frontend/node_modules
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json', '**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-
+
+      # Frontend quick checks
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Frontend Lint Check
+        working-directory: ./frontend
+        run: npm run lint
+
+      - name: Frontend Build Check
+        working-directory: ./frontend
+        run: npm run build
+
+      # Backend quick checks
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Python Syntax Check
+        working-directory: ./backend
+        run: |
+          python -m py_compile main.py
+          python -c "import main; print('✅ Python syntax check passed')"
+
+      # Quick smoke tests
+      - name: Backend Smoke Test
+        working-directory: ./backend
+        run: |
+          python -c "
+          import sys
+          sys.path.append('.')
+          from main import app
+          print('✅ FastAPI app can be imported successfully')
+          "
+
+      - name: PR Summary
+        run: |
+          echo "## 🔍 PR Quick Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Completed Checks" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend lint check: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend build check: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend syntax check: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend import check: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "Full CI pipeline will run after PR approval or when merged." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**PR is ready for review! 🎉**" >> $GITHUB_STEP_SUMMARY
+
+  # Dependency security check for PRs
+  dependency-security:
+    name: Dependency Security Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Security Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install safety
+
+      - name: Check Python Dependencies for Vulnerabilities
+        working-directory: ./backend
+        run: |
+          safety check -r requirements.txt --short-report
+
+      - name: Check Node.js Dependencies for Vulnerabilities
+        working-directory: ./frontend
+        run: |
+          npm audit --audit-level=high
