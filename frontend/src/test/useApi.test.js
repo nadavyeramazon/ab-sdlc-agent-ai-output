@@ -35,7 +35,10 @@ describe('useApi Hook', () => {
 
     const { result } = renderHook(() => useApi())
     
-    const data = await result.current.fetchData('/api/hello')
+    let data
+    await waitFor(async () => {
+      data = await result.current.fetchData('/api/hello')
+    })
     
     expect(data).toEqual(mockData)
     expect(result.current.loading).toBe(false)
@@ -50,11 +53,16 @@ describe('useApi Hook', () => {
 
     const { result } = renderHook(() => useApi())
     
-    const data = await result.current.fetchData('/api/hello')
+    let data
+    await waitFor(async () => {
+      data = await result.current.fetchData('/api/hello')
+    })
     
     expect(data).toBe(null)
-    expect(result.current.loading).toBe(false)
-    expect(result.current.error).toBeTruthy()
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+      expect(result.current.error).toBeTruthy()
+    })
   })
 
   it('handles network error', async () => {
@@ -62,10 +70,15 @@ describe('useApi Hook', () => {
 
     const { result } = renderHook(() => useApi())
     
-    const data = await result.current.fetchData('/api/hello')
+    let data
+    await waitFor(async () => {
+      data = await result.current.fetchData('/api/hello')
+    })
     
     expect(data).toBe(null)
-    expect(result.current.loading).toBe(false)
-    expect(result.current.error).toBe('Network error')
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+      expect(result.current.error).toBe('Network error')
+    })
   })
 })
