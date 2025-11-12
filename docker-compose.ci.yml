@@ -1,0 +1,79 @@
+version: '3.8'
+
+# CI-specific Docker Compose configuration
+# Optimized for GitHub Actions testing environment
+
+services:
+  # Backend FastAPI service for CI
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ci-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ENVIRONMENT=ci
+      - LOG_LEVEL=DEBUG
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - ci-network
+
+  # Frontend React service for CI
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ci-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - ci-network
+
+  # Test runner service for integration tests
+  test-runner:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ci-test-runner
+    command: pytest -v --tb=short
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ENVIRONMENT=ci
+      - API_BASE_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    networks:
+      - ci-network
+    profiles:
+      - testing
+
+networks:
+  ci-network:
+    driver: bridge
+
+volumes:
+  ci-data:
