@@ -1,0 +1,51 @@
+# Docker Compose configuration for Green Theme Hello World application
+# Use 'docker compose up' to start (note: no hyphen in 'docker compose')
+
+version: '3.8'
+
+services:
+  # Backend service - FastAPI
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hello-world-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend:/app
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Frontend service - React with Vite
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: hello-world-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # CRITICAL: Use backend service name, not localhost
+      - VITE_API_URL=http://backend:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - app-network
+    depends_on:
+      - backend
+    stdin_open: true
+    tty: true
+
+networks:
+  app-network:
+    driver: bridge
