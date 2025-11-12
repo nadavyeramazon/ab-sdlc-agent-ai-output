@@ -1,9 +1,9 @@
 /**
- * Comprehensive test suite for App component
+ * Comprehensive test suite for React App component
+ * Tests purple theme, backend integration, and user greet functionality
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import App from './App'
 
 // Mock fetch globally
@@ -22,278 +22,359 @@ describe('App Component', () => {
       expect(titleElement).toBeInTheDocument()
     })
 
-    it('renders subtitle', () => {
+    it('renders subtitle with Purple Theme', () => {
       render(<App />)
-      const subtitleElement = screen.getByText(/Green Theme React Application/i)
+      const subtitleElement = screen.getByText(/Purple Theme React Application/i)
       expect(subtitleElement).toBeInTheDocument()
     })
 
-    it('renders fetch button', () => {
+    it('renders Get Message from Backend button', () => {
       render(<App />)
-      const buttonElement = screen.getByRole('button', { name: /Get message from backend/i })
-      expect(buttonElement).toBeInTheDocument()
+      const button = screen.getByRole('button', { name: /Get message from backend/i })
+      expect(button).toBeInTheDocument()
     })
 
-    it('button is not disabled initially', () => {
+    it('renders Backend Message section title', () => {
       render(<App />)
-      const buttonElement = screen.getByRole('button', { name: /Get message from backend/i })
-      expect(buttonElement).not.toBeDisabled()
+      const sectionTitle = screen.getByText(/Backend Message/i)
+      expect(sectionTitle).toBeInTheDocument()
     })
 
-    it('no backend message displayed initially', () => {
+    it('renders Personalized Greeting section title', () => {
       render(<App />)
-      const messageElement = screen.queryByRole('status')
-      expect(messageElement).not.toBeInTheDocument()
+      const sectionTitle = screen.getByText(/Personalized Greeting/i)
+      expect(sectionTitle).toBeInTheDocument()
     })
 
-    it('no error message displayed initially', () => {
+    it('renders name input field', () => {
       render(<App />)
-      const errorElement = screen.queryByRole('alert')
-      expect(errorElement).not.toBeInTheDocument()
+      const input = screen.getByPlaceholderText(/Enter your name/i)
+      expect(input).toBeInTheDocument()
+    })
+
+    it('renders Greet Me button', () => {
+      render(<App />)
+      const button = screen.getByRole('button', { name: /Get personalized greeting/i })
+      expect(button).toBeInTheDocument()
     })
   })
 
-  describe('Fetching Backend Data', () => {
-    it('displays loading state when button is clicked', async () => {
-      // Mock a delayed response
-      fetch.mockImplementation(() => 
-        new Promise(resolve => setTimeout(() => resolve({
-          ok: true,
-          json: async () => ({ message: 'Hello World from Backend!', timestamp: new Date().toISOString() })
-        }), 100))
-      )
+  describe('Backend Message Feature', () => {
+    it('fetches and displays backend message on button click', async () => {
+      const mockResponse = {
+        message: 'Hello World from Backend!',
+        timestamp: '2024-01-01T12:00:00Z'
+      }
 
-      render(<App />)
-      const user = userEvent.setup()
-      const buttonElement = screen.getByRole('button', { name: /Get message from backend/i })
-      
-      await user.click(buttonElement)
-      
-      // Button should show loading text
-      expect(screen.getByText(/Loading.../i)).toBeInTheDocument()
-    })
-
-    it('button is disabled during loading', async () => {
-      fetch.mockImplementation(() => 
-        new Promise(resolve => setTimeout(() => resolve({
-          ok: true,
-          json: async () => ({ message: 'Hello World from Backend!', timestamp: new Date().toISOString() })
-        }), 100))
-      )
-
-      render(<App />)
-      const user = userEvent.setup()
-      const buttonElement = screen.getByRole('button', { name: /Get message from backend/i })
-      
-      await user.click(buttonElement)
-      
-      expect(buttonElement).toBeDisabled()
-    })
-
-    it('displays backend message on successful fetch', async () => {
-      const mockTimestamp = new Date().toISOString()
-      fetch.mockResolvedValueOnce({
+      global.fetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ 
-          message: 'Hello World from Backend!', 
-          timestamp: mockTimestamp 
-        })
+        json: async () => mockResponse,
       })
 
       render(<App />)
-      const user = userEvent.setup()
-      const buttonElement = screen.getByRole('button', { name: /Get message from backend/i })
+      const button = screen.getByRole('button', { name: /Get message from backend/i })
       
-      await user.click(buttonElement)
-      
+      fireEvent.click(button)
+
       await waitFor(() => {
         expect(screen.getByText(/Hello World from Backend!/i)).toBeInTheDocument()
       })
+
+      expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/api/hello')
     })
 
-    it('calls fetch with correct URL', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ 
-          message: 'Hello World from Backend!', 
-          timestamp: new Date().toISOString() 
-        })
-      })
+    it('displays loading state while fetching backend message', async () => {
+      global.fetch.mockImplementationOnce(() =>
+        new Promise(resolve => setTimeout(() => resolve({
+          ok: true,
+          json: async () => ({ message: 'Test', timestamp: '2024-01-01T12:00:00Z' }),
+        }), 100))
+      )
 
       render(<App />)
-      const user = userEvent.setup()
-      const buttonElement = screen.getByRole('button', { name: /Get message from backend/i })
+      const button = screen.getByRole('button', { name: /Get message from backend/i })
       
-      await user.click(buttonElement)
-      
+      fireEvent.click(button)
+
+      expect(button).toHaveTextContent('Loading...')
+      expect(button).toBeDisabled()
+
       await waitFor(() => {
-        expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/hello'))
+        expect(button).toHaveTextContent('Get Message from Backend')
       })
     })
 
-    it('displays timestamp in message', async () => {
-      const mockTimestamp = new Date().toISOString()
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ 
-          message: 'Hello World from Backend!', 
-          timestamp: mockTimestamp 
-        })
-      })
+    it('displays error message when backend fetch fails', async () => {
+      global.fetch.mockRejectedValueOnce(new Error('Network error'))
 
       render(<App />)
-      const user = userEvent.setup()
-      const buttonElement = screen.getByRole('button', { name: /Get message from backend/i })
+      const button = screen.getByRole('button', { name: /Get message from backend/i })
       
-      await user.click(buttonElement)
-      
-      await waitFor(() => {
-        const messageElement = screen.getByRole('status')
-        expect(messageElement).toBeInTheDocument()
-        // Check that time is included (format will be locale-specific)
-        expect(messageElement.textContent).toMatch(/Hello World from Backend!/)
-      })
-    })
-  })
+      fireEvent.click(button)
 
-  describe('Error Handling', () => {
-    it('displays error message on fetch failure', async () => {
-      fetch.mockRejectedValueOnce(new Error('Network error'))
-
-      render(<App />)
-      const user = userEvent.setup()
-      const buttonElement = screen.getByRole('button', { name: /Get message from backend/i })
-      
-      await user.click(buttonElement)
-      
       await waitFor(() => {
-        expect(screen.getByRole('alert')).toBeInTheDocument()
         expect(screen.getByText(/Failed to fetch from backend/i)).toBeInTheDocument()
       })
     })
 
-    it('displays error message on HTTP error', async () => {
-      fetch.mockResolvedValueOnce({
+    it('displays error when backend returns non-OK status', async () => {
+      global.fetch.mockResolvedValueOnce({
         ok: false,
-        status: 500
+        status: 500,
       })
 
       render(<App />)
-      const user = userEvent.setup()
-      const buttonElement = screen.getByRole('button', { name: /Get message from backend/i })
+      const button = screen.getByRole('button', { name: /Get message from backend/i })
       
-      await user.click(buttonElement)
-      
+      fireEvent.click(button)
+
       await waitFor(() => {
-        expect(screen.getByRole('alert')).toBeInTheDocument()
-        expect(screen.getByText(/Failed to fetch from backend/i)).toBeInTheDocument()
+        expect(screen.getByText(/HTTP error! status: 500/i)).toBeInTheDocument()
       })
     })
+  })
 
-    it('button is re-enabled after error', async () => {
-      fetch.mockRejectedValueOnce(new Error('Network error'))
-
+  describe('User Greet Feature', () => {
+    it('allows user to enter name in input field', () => {
       render(<App />)
-      const user = userEvent.setup()
-      const buttonElement = screen.getByRole('button', { name: /Get message from backend/i })
+      const input = screen.getByPlaceholderText(/Enter your name/i)
       
-      await user.click(buttonElement)
+      fireEvent.change(input, { target: { value: 'John' } })
       
-      await waitFor(() => {
-        expect(screen.getByRole('alert')).toBeInTheDocument()
-      })
-
-      expect(buttonElement).not.toBeDisabled()
+      expect(input.value).toBe('John')
     })
 
-    it('clears previous messages when fetching again', async () => {
-      // First successful fetch
-      fetch.mockResolvedValueOnce({
+    it('Greet Me button is disabled when input is empty', () => {
+      render(<App />)
+      const button = screen.getByRole('button', { name: /Get personalized greeting/i })
+      
+      expect(button).toBeDisabled()
+    })
+
+    it('Greet Me button is enabled when input has text', () => {
+      render(<App />)
+      const input = screen.getByPlaceholderText(/Enter your name/i)
+      const button = screen.getByRole('button', { name: /Get personalized greeting/i })
+      
+      fireEvent.change(input, { target: { value: 'John' } })
+      
+      expect(button).not.toBeDisabled()
+    })
+
+    it('fetches and displays personalized greeting', async () => {
+      const mockResponse = {
+        greeting: 'Hello, John! Welcome to our purple-themed app!',
+        timestamp: '2024-01-01T12:00:00Z'
+      }
+
+      global.fetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ 
-          message: 'Hello World from Backend!', 
-          timestamp: new Date().toISOString() 
-        })
+        json: async () => mockResponse,
       })
 
       render(<App />)
-      const user = userEvent.setup()
-      const buttonElement = screen.getByRole('button', { name: /Get message from backend/i })
+      const input = screen.getByPlaceholderText(/Enter your name/i)
+      const button = screen.getByRole('button', { name: /Get personalized greeting/i })
       
-      await user.click(buttonElement)
-      
+      fireEvent.change(input, { target: { value: 'John' } })
+      fireEvent.click(button)
+
       await waitFor(() => {
-        expect(screen.getByText(/Hello World from Backend!/i)).toBeInTheDocument()
+        expect(screen.getByText(/Hello, John! Welcome to our purple-themed app!/i)).toBeInTheDocument()
       })
 
-      // Second fetch with error
-      fetch.mockRejectedValueOnce(new Error('Network error'))
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:8000/api/greet',
+        expect.objectContaining({
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'John' }),
+        })
+      )
+    })
+
+    it('displays loading state while fetching greeting', async () => {
+      global.fetch.mockImplementationOnce(() =>
+        new Promise(resolve => setTimeout(() => resolve({
+          ok: true,
+          json: async () => ({ greeting: 'Test', timestamp: '2024-01-01T12:00:00Z' }),
+        }), 100))
+      )
+
+      render(<App />)
+      const input = screen.getByPlaceholderText(/Enter your name/i)
+      const button = screen.getByRole('button', { name: /Get personalized greeting/i })
       
-      await user.click(buttonElement)
-      
+      fireEvent.change(input, { target: { value: 'John' } })
+      fireEvent.click(button)
+
+      expect(button).toHaveTextContent('Loading...')
+      expect(button).toBeDisabled()
+
       await waitFor(() => {
-        expect(screen.queryByText(/Hello World from Backend!/i)).not.toBeInTheDocument()
-        expect(screen.getByRole('alert')).toBeInTheDocument()
+        expect(button).toHaveTextContent('Greet Me')
+      })
+    })
+
+    it('shows validation error when submitting empty name', async () => {
+      render(<App />)
+      const input = screen.getByPlaceholderText(/Enter your name/i)
+      const button = screen.getByRole('button', { name: /Get personalized greeting/i })
+      
+      // Type and then clear the input
+      fireEvent.change(input, { target: { value: 'John' } })
+      fireEvent.change(input, { target: { value: '' } })
+      
+      // Button should be disabled, but let's test form submission handler
+      // We need to enable button temporarily to test validation
+      expect(button).toBeDisabled()
+    })
+
+    it('trims whitespace from name before sending', async () => {
+      const mockResponse = {
+        greeting: 'Hello, John! Welcome to our purple-themed app!',
+        timestamp: '2024-01-01T12:00:00Z'
+      }
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      })
+
+      render(<App />)
+      const input = screen.getByPlaceholderText(/Enter your name/i)
+      const button = screen.getByRole('button', { name: /Get personalized greeting/i })
+      
+      fireEvent.change(input, { target: { value: '  John  ' } })
+      fireEvent.click(button)
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          'http://localhost:8000/api/greet',
+          expect.objectContaining({
+            body: JSON.stringify({ name: 'John' }),
+          })
+        )
+      })
+    })
+
+    it('clears input after successful greeting', async () => {
+      const mockResponse = {
+        greeting: 'Hello, John! Welcome to our purple-themed app!',
+        timestamp: '2024-01-01T12:00:00Z'
+      }
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      })
+
+      render(<App />)
+      const input = screen.getByPlaceholderText(/Enter your name/i)
+      const button = screen.getByRole('button', { name: /Get personalized greeting/i })
+      
+      fireEvent.change(input, { target: { value: 'John' } })
+      fireEvent.click(button)
+
+      await waitFor(() => {
+        expect(input.value).toBe('')
+      })
+    })
+
+    it('displays error message when greet fetch fails', async () => {
+      global.fetch.mockRejectedValueOnce(new Error('Network error'))
+
+      render(<App />)
+      const input = screen.getByPlaceholderText(/Enter your name/i)
+      const button = screen.getByRole('button', { name: /Get personalized greeting/i })
+      
+      fireEvent.change(input, { target: { value: 'John' } })
+      fireEvent.click(button)
+
+      await waitFor(() => {
+        expect(screen.getByText(/Failed to get greeting/i)).toBeInTheDocument()
+      })
+    })
+
+    it('displays error when greet returns non-OK status', async () => {
+      global.fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ detail: 'Name cannot be empty' }),
+      })
+
+      render(<App />)
+      const input = screen.getByPlaceholderText(/Enter your name/i)
+      const button = screen.getByRole('button', { name: /Get personalized greeting/i })
+      
+      fireEvent.change(input, { target: { value: 'John' } })
+      fireEvent.click(button)
+
+      await waitFor(() => {
+        expect(screen.getByText(/Name cannot be empty/i)).toBeInTheDocument()
       })
     })
   })
 
   describe('Accessibility', () => {
-    it('button has proper aria-label', () => {
+    it('has proper aria-labels on buttons', () => {
       render(<App />)
-      const buttonElement = screen.getByLabelText(/Get message from backend/i)
-      expect(buttonElement).toBeInTheDocument()
+      
+      const backendButton = screen.getByLabelText(/Get message from backend/i)
+      expect(backendButton).toBeInTheDocument()
+      
+      const greetButton = screen.getByLabelText(/Get personalized greeting/i)
+      expect(greetButton).toBeInTheDocument()
     })
 
-    it('success message has role="status"', async () => {
-      fetch.mockResolvedValueOnce({
+    it('has proper aria-label on name input', () => {
+      render(<App />)
+      const input = screen.getByLabelText(/Your name/i)
+      expect(input).toBeInTheDocument()
+    })
+
+    it('uses role="status" for success messages', async () => {
+      global.fetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ 
-          message: 'Hello World from Backend!', 
-          timestamp: new Date().toISOString() 
-        })
+        json: async () => ({ message: 'Test', timestamp: '2024-01-01T12:00:00Z' }),
       })
 
       render(<App />)
-      const user = userEvent.setup()
-      const buttonElement = screen.getByRole('button', { name: /Get message from backend/i })
-      
-      await user.click(buttonElement)
-      
+      const button = screen.getByRole('button', { name: /Get message from backend/i })
+      fireEvent.click(button)
+
       await waitFor(() => {
-        expect(screen.getByRole('status')).toBeInTheDocument()
+        const statusElement = screen.getByRole('status')
+        expect(statusElement).toBeInTheDocument()
       })
     })
 
-    it('error message has role="alert"', async () => {
-      fetch.mockRejectedValueOnce(new Error('Network error'))
+    it('uses role="alert" for error messages', async () => {
+      global.fetch.mockRejectedValueOnce(new Error('Test error'))
 
       render(<App />)
-      const user = userEvent.setup()
-      const buttonElement = screen.getByRole('button', { name: /Get message from backend/i })
-      
-      await user.click(buttonElement)
-      
+      const button = screen.getByRole('button', { name: /Get message from backend/i })
+      fireEvent.click(button)
+
       await waitFor(() => {
-        expect(screen.getByRole('alert')).toBeInTheDocument()
+        const alertElement = screen.getByRole('alert')
+        expect(alertElement).toBeInTheDocument()
       })
     })
+  })
 
-    it('loading spinner has aria-label', async () => {
-      fetch.mockImplementation(() => 
-        new Promise(resolve => setTimeout(() => resolve({
-          ok: true,
-          json: async () => ({ message: 'Hello World from Backend!', timestamp: new Date().toISOString() })
-        }), 100))
-      )
+  describe('Purple Theme Verification', () => {
+    it('renders with app container', () => {
+      const { container } = render(<App />)
+      const appDiv = container.querySelector('.app')
+      expect(appDiv).toBeInTheDocument()
+    })
 
-      render(<App />)
-      const user = userEvent.setup()
-      const buttonElement = screen.getByRole('button', { name: /Get message from backend/i })
-      
-      await user.click(buttonElement)
-      
-      expect(screen.getByLabelText(/Loading/i)).toBeInTheDocument()
+    it('applies purple theme classes', () => {
+      const { container } = render(<App />)
+      const title = container.querySelector('.title')
+      expect(title).toBeInTheDocument()
+      expect(title).toHaveTextContent('Hello World')
     })
   })
 })

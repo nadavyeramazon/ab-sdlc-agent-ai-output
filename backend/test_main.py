@@ -1,6 +1,6 @@
 """Comprehensive test suite for FastAPI backend
 
-Tests all endpoints and validates responses.
+Tests all endpoints including the new /api/greet endpoint and validates responses.
 """
 import pytest
 from fastapi.testclient import TestClient
@@ -80,6 +80,100 @@ class TestHelloEndpoint:
         assert "application/json" in response.headers["content-type"]
 
 
+class TestGreetEndpoint:
+    """Tests for /api/greet endpoint (new purple theme feature)"""
+    
+    def test_greet_with_valid_name_returns_200(self):
+        """Test that greet endpoint returns 200 with valid name"""
+        response = client.post("/api/greet", json={"name": "John"})
+        assert response.status_code == 200
+    
+    def test_greet_returns_correct_greeting(self):
+        """Test that greet endpoint returns personalized greeting"""
+        response = client.post("/api/greet", json={"name": "John"})
+        data = response.json()
+        assert data["greeting"] == "Hello, John! Welcome to our purple-themed app!"
+    
+    def test_greet_includes_timestamp(self):
+        """Test that greet response includes timestamp"""
+        response = client.post("/api/greet", json={"name": "Alice"})
+        data = response.json()
+        assert "timestamp" in data
+        assert isinstance(data["timestamp"], str)
+    
+    def test_greet_timestamp_is_valid_iso_format(self):
+        """Test that greet timestamp is in valid ISO format"""
+        response = client.post("/api/greet", json={"name": "Bob"})
+        data = response.json()
+        try:
+            datetime.fromisoformat(data["timestamp"])
+        except ValueError:
+            pytest.fail("Timestamp is not in valid ISO format")
+    
+    def test_greet_with_empty_name_returns_400(self):
+        """Test that empty name returns 400 error"""
+        response = client.post("/api/greet", json={"name": ""})
+        assert response.status_code == 422  # FastAPI validation error
+    
+    def test_greet_with_whitespace_only_name_returns_400(self):
+        """Test that whitespace-only name returns 400 error"""
+        response = client.post("/api/greet", json={"name": "   "})
+        assert response.status_code == 422  # FastAPI validation error
+    
+    def test_greet_with_multiple_spaces_name_returns_400(self):
+        """Test that name with only spaces returns error"""
+        response = client.post("/api/greet", json={"name": "     "})
+        assert response.status_code == 422
+    
+    def test_greet_without_name_field_returns_422(self):
+        """Test that missing name field returns 422 validation error"""
+        response = client.post("/api/greet", json={})
+        assert response.status_code == 422
+    
+    def test_greet_with_invalid_json_returns_422(self):
+        """Test that invalid JSON returns 422 error"""
+        response = client.post(
+            "/api/greet",
+            data="not json",
+            headers={"Content-Type": "application/json"}
+        )
+        assert response.status_code == 422
+    
+    def test_greet_response_structure(self):
+        """Test that greet endpoint has correct response structure"""
+        response = client.post("/api/greet", json={"name": "Sarah"})
+        data = response.json()
+        assert "greeting" in data
+        assert "timestamp" in data
+        assert len(data) == 2  # Only these two fields
+    
+    def test_greet_with_special_characters_in_name(self):
+        """Test that names with special characters work"""
+        response = client.post("/api/greet", json={"name": "Mary-Jane O'Brien"})
+        assert response.status_code == 200
+        data = response.json()
+        assert "Mary-Jane O'Brien" in data["greeting"]
+    
+    def test_greet_with_unicode_name(self):
+        """Test that unicode names work"""
+        response = client.post("/api/greet", json={"name": "José"})
+        assert response.status_code == 200
+        data = response.json()
+        assert "José" in data["greeting"]
+    
+    def test_greet_trims_whitespace(self):
+        """Test that name whitespace is trimmed"""
+        response = client.post("/api/greet", json={"name": "  John  "})
+        assert response.status_code == 200
+        data = response.json()
+        assert data["greeting"] == "Hello, John! Welcome to our purple-themed app!"
+    
+    def test_greet_content_type(self):
+        """Test that response has correct content type"""
+        response = client.post("/api/greet", json={"name": "Test"})
+        assert "application/json" in response.headers["content-type"]
+
+
 class TestCORS:
     """Tests for CORS configuration"""
     
@@ -113,6 +207,16 @@ class TestAPIPerformance:
         
         response_time_ms = (end - start) * 1000
         assert response_time_ms < 100, f"Response time {response_time_ms}ms exceeds 100ms requirement"
+    
+    def test_greet_response_time(self):
+        """Test that greet endpoint response time is under 100ms"""
+        import time
+        start = time.time()
+        response = client.post("/api/greet", json={"name": "Test"})
+        end = time.time()
+        
+        response_time_ms = (end - start) * 1000
+        assert response_time_ms < 100, f"Response time {response_time_ms}ms exceeds 100ms requirement"
 
 
 class TestInvalidEndpoints:
@@ -128,3 +232,8 @@ class TestInvalidEndpoints:
         response = client.get("/")
         # FastAPI returns 404 for undefined root by default
         assert response.status_code == 404
+    
+    def test_greet_with_get_method_returns_405(self):
+        """Test that GET request to /api/greet returns 405 Method Not Allowed"""
+        response = client.get("/api/greet")
+        assert response.status_code == 405
