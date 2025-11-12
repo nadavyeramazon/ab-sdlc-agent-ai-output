@@ -89,11 +89,12 @@ describe('App Component', () => {
 
   describe('Loading States', () => {
     it('shows loading indicator during API call', async () => {
+      // Increased delay to 500ms to ensure loading state is reliably captured
       global.fetch.mockImplementationOnce(
         () => new Promise(resolve => setTimeout(() => resolve({
           ok: true,
           json: async () => ({ message: 'Test', timestamp: '2024-01-15T10:30:45.123Z' }),
-        }), 100))
+        }), 500))
       )
 
       render(<App />)
