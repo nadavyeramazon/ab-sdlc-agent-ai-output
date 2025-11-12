@@ -89,27 +89,34 @@ describe('App Component', () => {
 
   describe('Loading States', () => {
     it('shows loading indicator during API call', async () => {
-      // Increased delay to 500ms to ensure loading state is reliably captured
-      global.fetch.mockImplementationOnce(
-        () => new Promise(resolve => setTimeout(() => resolve({
-          ok: true,
-          json: async () => ({ message: 'Test', timestamp: '2024-01-15T10:30:45.123Z' }),
-        }), 500))
-      )
+      // Create a promise that we can control
+      let resolvePromise
+      const promise = new Promise(resolve => {
+        resolvePromise = resolve
+      })
+
+      global.fetch.mockImplementationOnce(() => promise)
 
       render(<App />)
       const button = screen.getByRole('button', { name: /get message from backend/i })
       
       fireEvent.click(button)
 
-      // Wait for button text to update to "Loading..."
+      // Wait for loading state to be reflected in the UI
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /loading/i })).toBeInTheDocument()
-      })
+        const loadingButton = screen.queryByRole('button', { name: /loading/i })
+        expect(loadingButton).toBeInTheDocument()
+      }, { timeout: 1000 })
       
       // Check that button is disabled during loading
       const loadingButton = screen.getByRole('button', { name: /loading/i })
       expect(loadingButton).toBeDisabled()
+
+      // Resolve the promise to complete the request
+      resolvePromise({
+        ok: true,
+        json: async () => ({ message: 'Test', timestamp: '2024-01-15T10:30:45.123Z' }),
+      })
 
       // Wait for loading to complete
       await waitFor(() => {
