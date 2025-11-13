@@ -11,9 +11,15 @@ export default defineConfig({
       usePolling: true,
     },
   },
+  // Define environment variable prefix (default is VITE_)
+  envPrefix: 'VITE_',
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/setupTests.js',
+    // Make environment variables available in tests
+    env: {
+      VITE_API_URL: process.env.VITE_API_URL || 'http://localhost:8000/api'
+    }
   },
 })

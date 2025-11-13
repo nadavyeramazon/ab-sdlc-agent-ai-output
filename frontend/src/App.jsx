@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import './App.css'
 
+// Get API URL from environment variable or use relative path for Nginx proxy
+const API_URL = import.meta.env.VITE_API_URL || '/api'
+
 function App() {
   // State management using React hooks
   const [message, setMessage] = useState('')
@@ -17,8 +20,8 @@ function App() {
     setLoading(true)
 
     try {
-      // Call backend API endpoint
-      const response = await fetch('http://localhost:8000/api/hello')
+      // Call backend API endpoint using environment-configured URL
+      const response = await fetch(`${API_URL}/hello`)
       
       // Check if response is successful
       if (!response.ok) {

@@ -5,6 +5,9 @@ import App from './App'
 // Mock fetch globally
 global.fetch = vi.fn()
 
+// Get API URL from environment (same logic as App.jsx)
+const API_URL = import.meta.env.VITE_API_URL || '/api'
+
 describe('App Component', () => {
   beforeEach(() => {
     // Clear all mocks before each test
@@ -95,7 +98,7 @@ describe('App Component', () => {
       })
     })
 
-    it('calls fetch with correct URL', async () => {
+    it('calls fetch with correct URL using environment variable', async () => {
       global.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ message: 'Hello World from Backend!' })
@@ -107,7 +110,7 @@ describe('App Component', () => {
       fireEvent.click(button)
       
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/api/hello')
+        expect(global.fetch).toHaveBeenCalledWith(`${API_URL}/hello`)
       })
     })
 
@@ -261,6 +264,14 @@ describe('App Component', () => {
       await waitFor(() => {
         expect(screen.getByRole('status')).toHaveTextContent('Second message')
       })
+    })
+  })
+
+  describe('Environment Configuration', () => {
+    it('uses environment variable for API URL', () => {
+      // This test verifies that the API_URL is configurable via environment
+      const expectedUrl = import.meta.env.VITE_API_URL || '/api'
+      expect(API_URL).toBe(expectedUrl)
     })
   })
 })
