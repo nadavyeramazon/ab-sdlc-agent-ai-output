@@ -27,9 +27,8 @@ services:
       dockerfile: Dockerfile
       args:
         # Pass API URL as build argument
-        # In Docker production, use /api (Nginx proxy)
-        # For local dev (docker compose), can override with http://localhost:8000/api
-        API_URL: /api
+        # For localhost demo, use direct backend access
+        API_URL: http://localhost:8000/api
     ports:
       - "3000:80"
     depends_on:
