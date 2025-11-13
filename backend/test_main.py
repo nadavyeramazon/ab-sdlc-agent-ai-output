@@ -81,7 +81,11 @@ class TestCORSHeaders:
     
     def test_cors_headers_present_on_hello_endpoint(self):
         """Test that CORS headers are present on /api/hello"""
-        response = client.get("/api/hello")
+        # CORS middleware requires Origin header to be present in request
+        response = client.get(
+            "/api/hello",
+            headers={"Origin": "http://localhost:3000"}
+        )
         assert "access-control-allow-origin" in response.headers
     
     def test_cors_allows_frontend_origin(self):
