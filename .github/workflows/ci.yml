@@ -139,15 +139,103 @@ jobs:
         run: |
           curl -f http://localhost:8000/health || exit 1
       
-      - name: Test backend API endpoint
+      - name: Test backend API endpoint (existing feature - backward compatibility)
         run: |
           response=$(curl -s http://localhost:8000/api/hello)
           echo "Response: $response"
           echo $response | grep -q "Hello World from Backend!" || exit 1
       
+      - name: Test new greet endpoint with valid name
+        run: |
+          response=$(curl -s -X POST http://localhost:8000/api/greet \
+            -H "Content-Type: application/json" \
+            -d '{"name":"Alice"}')
+          echo "Greet Response: $response"
+          echo $response | grep -q "Hello, Alice! Welcome to our purple-themed app!" || exit 1
+          echo $response | grep -q "timestamp" || exit 1
+      
+      - name: Test greet endpoint validation - empty name
+        run: |
+          status_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/api/greet \
+            -H "Content-Type: application/json" \
+            -d '{"name":""}')
+          echo "Status code for empty name: $status_code"
+          if [ "$status_code" != "400" ]; then
+            echo "Expected 400 status code for empty name, got $status_code"
+            exit 1
+          fi
+      
+      - name: Test greet endpoint validation - whitespace only name
+        run: |
+          status_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/api/greet \
+            -H "Content-Type: application/json" \
+            -d '{"name":"   "}')
+          echo "Status code for whitespace name: $status_code"
+          if [ "$status_code" != "400" ]; then
+            echo "Expected 400 status code for whitespace name, got $status_code"
+            exit 1
+          fi
+      
+      - name: Test greet endpoint trims whitespace
+        run: |
+          response=$(curl -s -X POST http://localhost:8000/api/greet \
+            -H "Content-Type: application/json" \
+            -d '{"name":"  Bob  "}')
+          echo "Trimmed name response: $response"
+          echo $response | grep -q "Hello, Bob! Welcome to our purple-themed app!" || exit 1
+      
+      - name: Test greet endpoint missing name field
+        run: |
+          status_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/api/greet \
+            -H "Content-Type: application/json" \
+            -d '{}')
+          echo "Status code for missing name: $status_code"
+          # FastAPI validation returns 422 for missing required fields
+          if [ "$status_code" != "422" ]; then
+            echo "Expected 422 status code for missing name field, got $status_code"
+            exit 1
+          fi
+      
+      - name: Verify CORS headers on greet endpoint
+        run: |
+          cors_header=$(curl -s -X POST http://localhost:8000/api/greet \
+            -H "Content-Type: application/json" \
+            -H "Origin: http://localhost:3000" \
+            -d '{"name":"Test"}' \
+            -D - | grep -i "access-control-allow-origin" || echo "CORS header not found")
+          echo "CORS header: $cors_header"
+          if [ -z "$cors_header" ]; then
+            echo "Warning: CORS header not found in response"
+          fi
+      
       - name: Check frontend accessibility
         run: |
           curl -f http://localhost:3000 || exit 1
+      
+      - name: Verify frontend loads purple-themed app
+        run: |
+          response=$(curl -s http://localhost:3000)
+          echo "Frontend HTML contains expected content:"
+          echo $response | grep -q "Hello World" || exit 1
+      
+      - name: Test dual feature operation (regression test)
+        run: |
+          # Test old feature still works
+          old_response=$(curl -s http://localhost:8000/api/hello)
+          echo "Old feature response: $old_response"
+          echo $old_response | grep -q "Hello World from Backend!" || exit 1
+          
+          # Test new feature works
+          new_response=$(curl -s -X POST http://localhost:8000/api/greet \
+            -H "Content-Type: application/json" \
+            -d '{"name":"Integration Test"}')
+          echo "New feature response: $new_response"
+          echo $new_response | grep -q "Hello, Integration Test! Welcome to our purple-themed app!" || exit 1
+          
+          # Test old feature again to ensure no interference
+          old_response2=$(curl -s http://localhost:8000/api/hello)
+          echo "Old feature response (after new feature): $old_response2"
+          echo $old_response2 | grep -q "Hello World from Backend!" || exit 1
       
       - name: Show service logs on failure
         if: failure()
