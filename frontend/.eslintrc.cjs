@@ -18,4 +18,15 @@ module.exports = {
     ],
     'react/prop-types': 'off',
   },
+  overrides: [
+    {
+      // Test files configuration
+      files: ['**/*.test.js', '**/*.test.jsx', '**/*.spec.js', '**/*.spec.jsx', '**/setupTests.js'],
+      env: {
+        browser: true,
+        es2020: true,
+        node: true, // Enable Node.js globals like 'global' for test files
+      },
+    },
+  ],
 }
