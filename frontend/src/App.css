@@ -1,17 +1,17 @@
-/* Green theme color variables */
+/* Purple theme color variables */
 :root {
-  --primary-green: #2ecc71;
-  --secondary-green: #27ae60;
-  --light-green: #a8e6cf;
-  --dark-green: #1e8449;
+  --primary-purple: #9b59b6;
+  --secondary-purple: #8e44ad;
+  --light-purple: #c39bd3;
+  --dark-purple: #7d3c98;
   --white: #ffffff;
   --error-red: #e74c3c;
 }
 
-/* Main app container with green gradient background */
+/* Main app container with purple gradient background */
 .App {
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--primary-green) 0%, var(--secondary-green) 100%);
+  background: linear-gradient(135deg, var(--primary-purple) 0%, var(--secondary-purple) 100%);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -42,7 +42,7 @@
 
 /* Button styling with hover effects */
 .fetch-button {
-  background-color: var(--secondary-green);
+  background-color: var(--secondary-purple);
   color: var(--white);
   border: none;
   padding: 15px 30px;
@@ -56,7 +56,7 @@
 }
 
 .fetch-button:hover:not(:disabled) {
-  background-color: var(--dark-green);
+  background-color: var(--dark-purple);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
@@ -67,7 +67,7 @@
 }
 
 .fetch-button:disabled {
-  background-color: var(--light-green);
+  background-color: var(--light-purple);
   cursor: not-allowed;
   opacity: 0.7;
 }
@@ -77,7 +77,7 @@
   margin-top: 2rem;
   padding: 20px;
   background-color: rgba(255, 255, 255, 0.9);
-  color: var(--dark-green);
+  color: var(--dark-purple);
   border-radius: 10px;
   font-size: 1.2rem;
   font-weight: 500;
@@ -93,6 +93,82 @@
   color: var(--white);
   border-radius: 10px;
   font-size: 1.1rem;
+  font-weight: 500;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.5s ease-in;
+}
+
+/* Greeting section separator */
+.greeting-section {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Input field styling */
+.greeting-input {
+  width: 100%;
+  max-width: 400px;
+  padding: 15px 20px;
+  font-size: 1.1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50px;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: var(--dark-purple);
+  outline: none;
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+}
+
+.greeting-input::placeholder {
+  color: var(--light-purple);
+}
+
+.greeting-input:focus {
+  border-color: var(--secondary-purple);
+  box-shadow: 0 0 10px rgba(142, 68, 173, 0.3);
+}
+
+/* Greet button styling */
+.greet-button {
+  background-color: var(--secondary-purple);
+  color: var(--white);
+  border: none;
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  min-width: 200px;
+}
+
+.greet-button:hover:not(:disabled) {
+  background-color: var(--dark-purple);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.greet-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.greet-button:disabled {
+  background-color: var(--light-purple);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Greeting display styling */
+.greeting-message {
+  margin-top: 2rem;
+  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: var(--dark-purple);
+  border-radius: 10px;
+  font-size: 1.2rem;
   font-weight: 500;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   animation: fadeIn 0.5s ease-in;
@@ -120,16 +196,23 @@
     padding: 30px 20px;
   }
 
-  .fetch-button {
+  .fetch-button,
+  .greet-button {
     font-size: 1rem;
     padding: 12px 25px;
     min-width: 200px;
   }
 
   .message,
+  .greeting-message,
   .error {
     font-size: 1rem;
     padding: 15px;
+  }
+
+  .greeting-input {
+    font-size: 1rem;
+    padding: 12px 18px;
   }
 }
 
@@ -138,8 +221,13 @@
     font-size: 1.5rem;
   }
 
-  .fetch-button {
+  .fetch-button,
+  .greet-button {
     font-size: 0.9rem;
     min-width: 180px;
+  }
+
+  .greeting-input {
+    font-size: 0.9rem;
   }
 }
