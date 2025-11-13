@@ -28,5 +28,13 @@ module.exports = {
         node: true, // Enable Node.js globals like 'global' for test files
       },
     },
+    {
+      // Config files run in Node.js environment
+      files: ['vite.config.js', '*.config.js'],
+      env: {
+        node: true, // Enable Node.js globals like 'process' for config files
+        es2020: true,
+      },
+    },
   ],
 }
