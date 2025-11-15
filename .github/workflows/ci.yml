@@ -1,0 +1,203 @@
+name: CI Pipeline
+
+# Trigger on push and pull requests to main and feature branches
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # Backend testing job
+  backend-tests:
+    name: Backend Tests (Python)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run backend tests with pytest
+        working-directory: ./backend
+        run: |
+          pytest -v --tb=short --color=yes
+      
+      - name: Test backend health endpoint
+        working-directory: ./backend
+        run: |
+          # Start backend in background
+          python main.py &
+          BACKEND_PID=$!
+          
+          # Wait for backend to start
+          sleep 5
+          
+          # Test health endpoint
+          curl -f http://localhost:8000/health || exit 1
+          
+          # Kill backend
+          kill $BACKEND_PID
+
+  # Frontend testing job
+  frontend-tests:
+    name: Frontend Tests (React)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      - name: Run frontend tests
+        working-directory: ./frontend
+        run: npm test
+      
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+
+  # Docker build verification job
+  docker-build:
+    name: Docker Build Verification
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build backend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          tags: hello-world-backend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Build frontend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: false
+          tags: hello-world-frontend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Integration testing with Docker Compose
+  integration-tests:
+    name: Integration Tests (Docker Compose)
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Start services with Docker Compose
+        run: |
+          docker compose up -d --build
+      
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for backend..."
+          timeout 60 bash -c 'until curl -f http://localhost:8000/health; do sleep 2; done'
+          
+          echo "Waiting for frontend..."
+          timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
+      
+      - name: Test backend API endpoints
+        run: |
+          # Test health endpoint
+          echo "Testing /health endpoint..."
+          curl -f http://localhost:8000/health | jq -e '.status == "healthy"'
+          
+          # Test hello endpoint
+          echo "Testing /api/hello endpoint..."
+          RESPONSE=$(curl -f http://localhost:8000/api/hello)
+          echo "$RESPONSE" | jq -e '.message == "Hello World from Backend!"'
+          echo "$RESPONSE" | jq -e '.timestamp != null'
+      
+      - name: Test CORS headers
+        run: |
+          curl -H "Origin: http://localhost:3000" \
+               -H "Access-Control-Request-Method: GET" \
+               -H "Access-Control-Request-Headers: Content-Type" \
+               -X OPTIONS \
+               http://localhost:8000/api/hello \
+               -v 2>&1 | grep -i "access-control-allow-origin"
+      
+      - name: Test frontend is accessible
+        run: |
+          curl -f http://localhost:3000 | grep -q "Hello World"
+      
+      - name: Show Docker Compose logs on failure
+        if: failure()
+        run: |
+          docker compose logs
+      
+      - name: Stop services
+        if: always()
+        run: |
+          docker compose down -v
+
+  # Code quality checks
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check for sensitive data
+        run: |
+          # Check for common patterns of sensitive data
+          ! grep -r "password.*=.*['\"]" --include="*.py" --include="*.js" --include="*.jsx" . || exit 1
+          ! grep -r "api_key.*=.*['\"]" --include="*.py" --include="*.js" --include="*.jsx" . || exit 1
+          ! grep -r "secret.*=.*['\"]" --include="*.py" --include="*.js" --include="*.jsx" . || exit 1
+      
+      - name: Verify required files exist
+        run: |
+          test -f backend/main.py
+          test -f backend/requirements.txt
+          test -f backend/Dockerfile
+          test -f frontend/package.json
+          test -f frontend/Dockerfile
+          test -f docker-compose.yml
+          test -f README.md
+      
+      - name: Check Dockerfile best practices
+        run: |
+          # Check for .dockerignore files
+          test -f backend/.dockerignore
+          test -f frontend/.dockerignore
