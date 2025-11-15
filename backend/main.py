@@ -8,7 +8,7 @@ Provides two main endpoints:
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 # Configure logging
@@ -54,7 +54,7 @@ async def get_hello() -> HelloResponse:
     logger.info("GET /api/hello endpoint called")
     return HelloResponse(
         message="Hello World from Backend!",
-        timestamp=datetime.utcnow().isoformat() + "Z"
+        timestamp=datetime.now(timezone.utc).isoformat() + "Z"
     )
 
 

@@ -11,6 +11,9 @@
 import { useState } from 'react'
 import './App.css'
 
+// Get API base URL from environment variable with fallback for local development
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+
 function App() {
   // State management using React hooks
   const [message, setMessage] = useState('')
@@ -27,8 +30,8 @@ function App() {
     setMessage('')
 
     try {
-      // Make GET request to backend /api/hello endpoint
-      const response = await fetch('http://localhost:8000/api/hello')
+      // Make GET request to backend /api/hello endpoint using env variable
+      const response = await fetch(`${API_BASE_URL}/api/hello`)
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
