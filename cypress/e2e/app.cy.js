@@ -29,13 +29,15 @@ describe('Green Theme Hello World Application', () => {
 
   describe('Backend Integration', () => {
     it('fetches and displays message from backend', () => {
-      // Intercept the API call using wildcard pattern to match any hostname
-      // This works in both local dev (localhost) and CI (Docker internal hostname)
-      cy.intercept('GET', '**/api/hello', (req) => {
-        req.continue((res) => {
-          // Add delay to ensure loading state is visible
-          res.delay = 200
-        })
+      // Stub the API call with a mock response
+      // This avoids Cypress trying to resolve Docker internal hostnames like 'backend'
+      cy.intercept('GET', '**/api/hello', {
+        statusCode: 200,
+        body: {
+          message: 'Hello World from Backend!',
+          timestamp: new Date().toISOString()
+        },
+        delay: 200
       }).as('getHello')
 
       // Click the button
@@ -52,11 +54,14 @@ describe('Green Theme Hello World Application', () => {
     })
 
     it('can fetch message multiple times', () => {
-      // Intercept the API call using wildcard pattern
-      cy.intercept('GET', '**/api/hello', (req) => {
-        req.continue((res) => {
-          res.delay = 200
-        })
+      // Stub the API call with a mock response
+      cy.intercept('GET', '**/api/hello', {
+        statusCode: 200,
+        body: {
+          message: 'Hello World from Backend!',
+          timestamp: new Date().toISOString()
+        },
+        delay: 200
       }).as('getHello')
 
       // First click
@@ -73,11 +78,14 @@ describe('Green Theme Hello World Application', () => {
     })
 
     it('button is disabled during loading', () => {
-      // Intercept the API call using wildcard pattern
-      cy.intercept('GET', '**/api/hello', (req) => {
-        req.continue((res) => {
-          res.delay = 200
-        })
+      // Stub the API call with a mock response
+      cy.intercept('GET', '**/api/hello', {
+        statusCode: 200,
+        body: {
+          message: 'Hello World from Backend!',
+          timestamp: new Date().toISOString()
+        },
+        delay: 200
       }).as('getHello')
 
       cy.get('button').click()
@@ -90,8 +98,8 @@ describe('Green Theme Hello World Application', () => {
 
   describe('Error Handling', () => {
     it('displays error message when backend is unavailable', () => {
-      // Intercept the API call using wildcard pattern and force it to fail
-      // Using wildcard pattern ensures this works in both local and Docker environments
+      // Stub the API call to return an error
+      // No need to use req.continue() which would try to proxy to 'backend' hostname
       cy.intercept('GET', '**/api/hello', {
         statusCode: 500,
         body: { error: 'Internal Server Error' },
