@@ -1,42 +1,26 @@
 # Frontend Dockerfile for Green Theme Hello World Application
-# Multi-stage build for optimized production image
+# Development build using Vite dev server for HMR and hot reload
 
-# Build stage
-FROM node:18-alpine as build
+FROM node:18-alpine
 
 WORKDIR /app
+
+# Install wget for healthcheck
+RUN apk add --no-cache wget
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (using npm install instead of npm ci due to incomplete lock file)
+# Install dependencies
 RUN npm install
 
 # Copy source code
 COPY . .
 
-# Build production bundle
-RUN npm run build
-
-# Production stage
-FROM nginx:alpine
-
-# Copy built assets from build stage
-COPY --from=build /app/dist /usr/share/nginx/html
-
-# Copy nginx configuration for SPA routing
-RUN echo 'server { \n\
-    listen 3000; \n\
-    server_name localhost; \n\
-    root /usr/share/nginx/html; \n\
-    index index.html; \n\
-    location / { \n\
-        try_files $uri $uri/ /index.html; \n\
-    } \n\
-}' > /etc/nginx/conf.d/default.conf
-
 # Expose port
 EXPOSE 3000
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start Vite dev server
+# --host 0.0.0.0 allows access from outside container
+# --port 3000 ensures correct port
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
