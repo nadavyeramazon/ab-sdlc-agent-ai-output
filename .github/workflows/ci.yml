@@ -57,12 +57,12 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        # Removed cache configuration since package-lock.json doesn't exist
-        # For small projects, installing without cache is fast enough
+        # Note: Not using cache since package-lock.json doesn't exist
+        # Using npm install instead of npm ci for this reason
     
     - name: Install frontend dependencies
       working-directory: ./frontend
-      run: npm ci
+      run: npm install
     
     - name: Run frontend tests
       working-directory: ./frontend
