@@ -58,9 +58,12 @@ describe('Green Theme Hello World Application', () => {
 
   describe('Error Handling', () => {
     it('displays error message when backend is unavailable', () => {
-      // Intercept the API call and force it to fail
+      // Intercept the API call and force it to fail with a delay
+      // The delay ensures we can observe the loading state before the error occurs
       cy.intercept('GET', 'http://localhost:8000/api/hello', {
-        forceNetworkError: true
+        statusCode: 500,
+        body: { error: 'Internal Server Error' },
+        delay: 100 // Add a small delay to make loading state observable
       }).as('getHello')
 
       // Click the button
