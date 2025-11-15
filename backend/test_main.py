@@ -123,7 +123,11 @@ class TestCORS:
 
     def test_cors_headers_present_on_hello(self):
         """CORS headers should be present on /api/hello endpoint."""
-        response = client.get("/api/hello")
+        # FastAPI TestClient requires Origin header to trigger CORS middleware
+        response = client.get(
+            "/api/hello",
+            headers={"Origin": "http://localhost:3000"}
+        )
         assert "access-control-allow-origin" in response.headers
 
     def test_cors_allows_localhost_3000(self):
