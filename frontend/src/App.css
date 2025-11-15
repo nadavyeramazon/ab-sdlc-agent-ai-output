@@ -1,0 +1,247 @@
+/**
+ * Green Theme Styles for Hello World Application
+ * 
+ * Design specifications:
+ * - Primary Green: #2ecc71
+ * - Secondary Green: #27ae60
+ * - Text on Green: #ffffff
+ * - Background: #f0f0f0
+ * - Error Text: #e74c3c
+ * 
+ * Responsive design: 320px - 1920px viewport widths
+ */
+
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Main container - US-1 AC2, AC3 */
+.app-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+/* Content wrapper */
+.content-wrapper {
+  background: white;
+  border-radius: 20px;
+  padding: 60px 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  max-width: 600px;
+  width: 100%;
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Main heading - US-1 AC1 */
+.main-heading {
+  color: #2ecc71;
+  font-size: 4rem;
+  font-weight: 700;
+  margin-bottom: 40px;
+  letter-spacing: -1px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Button - US-3 AC2 */
+.fetch-button {
+  background: #27ae60;
+  color: #ffffff;
+  border: none;
+  border-radius: 50px;
+  padding: 16px 40px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+  margin-bottom: 30px;
+}
+
+.fetch-button:hover:not(:disabled) {
+  background: #229954;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+}
+
+.fetch-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Disabled button state - US-3 AC4 */
+.fetch-button:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+  opacity: 0.7;
+  box-shadow: none;
+}
+
+/* Message container */
+.message-container {
+  margin-top: 30px;
+  padding: 25px;
+  background: linear-gradient(135deg, #e8f8f5 0%, #d5f4e6 100%);
+  border-radius: 15px;
+  border-left: 5px solid #2ecc71;
+  animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Backend message - US-3 AC5 */
+.backend-message {
+  color: #27ae60;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+/* Timestamp - US-3 AC6 */
+.timestamp {
+  color: #7f8c8d;
+  font-size: 0.95rem;
+  font-style: italic;
+}
+
+/* Error container */
+.error-container {
+  margin-top: 30px;
+  padding: 20px;
+  background: #fadbd8;
+  border-radius: 15px;
+  border-left: 5px solid #e74c3c;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+/* Error message - US-3 AC7 */
+.error-message {
+  color: #e74c3c;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Responsive design - US-1 AC4 */
+
+/* Tablet and small desktop (768px - 1024px) */
+@media (max-width: 1024px) {
+  .content-wrapper {
+    padding: 50px 35px;
+  }
+  
+  .main-heading {
+    font-size: 3.5rem;
+  }
+}
+
+/* Mobile landscape and small tablets (480px - 767px) */
+@media (max-width: 767px) {
+  .content-wrapper {
+    padding: 40px 30px;
+  }
+  
+  .main-heading {
+    font-size: 3rem;
+    margin-bottom: 30px;
+  }
+  
+  .fetch-button {
+    padding: 14px 35px;
+    font-size: 1rem;
+  }
+  
+  .backend-message {
+    font-size: 1.1rem;
+  }
+}
+
+/* Mobile portrait (320px - 479px) */
+@media (max-width: 479px) {
+  .app-container {
+    padding: 15px;
+  }
+  
+  .content-wrapper {
+    padding: 30px 20px;
+  }
+  
+  .main-heading {
+    font-size: 2.5rem;
+    margin-bottom: 25px;
+  }
+  
+  .fetch-button {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 0.95rem;
+  }
+  
+  .message-container {
+    padding: 20px;
+  }
+  
+  .backend-message {
+    font-size: 1rem;
+  }
+  
+  .timestamp {
+    font-size: 0.85rem;
+  }
+}
+
+/* Large desktop (1920px+) */
+@media (min-width: 1920px) {
+  .content-wrapper {
+    max-width: 700px;
+    padding: 70px 50px;
+  }
+  
+  .main-heading {
+    font-size: 4.5rem;
+  }
+  
+  .fetch-button {
+    font-size: 1.2rem;
+    padding: 18px 45px;
+  }
+}
