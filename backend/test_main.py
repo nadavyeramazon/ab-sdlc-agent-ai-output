@@ -6,7 +6,7 @@ and error handling scenarios.
 
 import pytest
 from fastapi.testclient import TestClient
-from datetime import datetime
+from datetime import datetime, timezone
 import re
 from main import app
 
@@ -45,8 +45,9 @@ class TestHelloEndpoint:
         response = client.get("/api/hello")
         data = response.json()
         timestamp = data["timestamp"]
-        # ISO 8601 format: 2024-01-15T10:30:00.000000Z
-        iso8601_pattern = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?$"
+        # ISO 8601 format with Z suffix: 2024-01-15T10:30:00Z or with microseconds
+        # Pattern matches: YYYY-MM-DDTHH:MM:SS.microsZ or YYYY-MM-DDTHH:MM:SSZ
+        iso8601_pattern = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$"
         assert re.match(iso8601_pattern, timestamp), f"Timestamp {timestamp} is not in ISO 8601 format"
 
     def test_hello_endpoint_timestamp_is_recent(self):
@@ -54,8 +55,10 @@ class TestHelloEndpoint:
         response = client.get("/api/hello")
         data = response.json()
         timestamp_str = data["timestamp"].rstrip("Z")
-        timestamp = datetime.fromisoformat(timestamp_str)
-        now = datetime.utcnow()
+        # Parse timestamp as timezone-aware datetime
+        timestamp = datetime.fromisoformat(timestamp_str).replace(tzinfo=timezone.utc)
+        # Use timezone-aware datetime for comparison
+        now = datetime.now(timezone.utc)
         time_diff = (now - timestamp).total_seconds()
         assert abs(time_diff) < 5, f"Timestamp is not recent: {time_diff} seconds difference"
 

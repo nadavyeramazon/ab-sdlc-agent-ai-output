@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Green Theme Hello World Fullstack Application",
   "private": true,
+  "type": "module",
   "scripts": {
     "cypress:open": "cypress open",
     "cypress:run": "cypress run"

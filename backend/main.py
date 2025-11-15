@@ -52,9 +52,12 @@ async def get_hello() -> HelloResponse:
         HelloResponse: JSON response with message and ISO 8601 timestamp
     """
     logger.info("GET /api/hello endpoint called")
+    # Generate ISO 8601 timestamp with Z suffix (UTC timezone)
+    # Use replace(microsecond=0) for cleaner timestamps, then manually add Z
+    timestamp = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     return HelloResponse(
         message="Hello World from Backend!",
-        timestamp=datetime.now(timezone.utc).isoformat() + "Z"
+        timestamp=timestamp
     )
 
 
