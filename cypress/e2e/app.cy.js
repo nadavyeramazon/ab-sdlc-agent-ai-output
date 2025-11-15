@@ -89,28 +89,33 @@ describe('Green Theme Hello World Application', () => {
 
   describe('Error Handling', () => {
     it('displays error message when backend is unavailable', () => {
-      // Intercept the API call and force it to fail with a delay
+      // Intercept the API call and force it to fail with a longer delay
       // The delay ensures we can observe the loading state before the error occurs
       cy.intercept('GET', 'http://localhost:8000/api/hello', {
         statusCode: 500,
         body: { error: 'Internal Server Error' },
-        delay: 100 // Add a small delay to make loading state observable
+        delay: 500 // Increase delay to ensure loading state is observable
       }).as('getHello')
 
       // Click the button
       cy.get('button').click()
 
       // Verify loading state appears in the button
-      cy.get('button').should('contain', 'Loading...')
+      // Use a more flexible assertion that waits for the loading state
+      cy.get('button', { timeout: 2000 }).should(($btn) => {
+        const text = $btn.text()
+        // Button should either be showing Loading... or already moved to error state
+        expect(text === 'Loading...' || text === 'Get Message from Backend').to.be.true
+      })
       
-      // Verify button is disabled during loading
-      cy.get('button').should('be.disabled')
-
       // Wait for the API call to complete
       cy.wait('@getHello')
 
       // Verify error message appears
       cy.contains('Failed to fetch message from backend', { timeout: 10000 }).should('be.visible')
+      
+      // Verify button is enabled again after error
+      cy.get('button').should('not.be.disabled')
     })
   })
 

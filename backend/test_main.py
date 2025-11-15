@@ -45,7 +45,7 @@ class TestHelloEndpoint:
         response = client.get("/api/hello")
         data = response.json()
         timestamp = data["timestamp"]
-        # ISO 8601 format with Z suffix: 2024-01-15T10:30:00Z or with microseconds
+        # ISO 8601 format with Z suffix: 2024-01-15T10:30:00.microsZ or 2024-01-15T10:30:00Z
         # Pattern matches: YYYY-MM-DDTHH:MM:SS.microsZ or YYYY-MM-DDTHH:MM:SSZ
         iso8601_pattern = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$"
         assert re.match(iso8601_pattern, timestamp), f"Timestamp {timestamp} is not in ISO 8601 format"
@@ -176,12 +176,18 @@ class TestMultipleRequests:
             assert "timestamp" in data
 
     def test_timestamps_are_different_across_requests(self):
-        """Test that timestamps are updated for each request."""
+        """Test that timestamps are updated for each request.
+        
+        Since timestamps now include milliseconds, consecutive requests
+        should have different timestamps even without explicit delays.
+        """
         response1 = client.get("/api/hello")
-        import time
-        time.sleep(0.1)  # Wait 100ms
         response2 = client.get("/api/hello")
         
         timestamp1 = response1.json()["timestamp"]
         timestamp2 = response2.json()["timestamp"]
+        
+        # With millisecond precision, timestamps should be different
+        # even for requests made immediately after each other
+        # However, to be safe, we can still add a tiny sleep if needed
         assert timestamp1 != timestamp2, "Timestamps should be different for different requests"
