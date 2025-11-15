@@ -61,9 +61,11 @@ describe('Purple Theme Hello World Fullstack Application', () => {
       
       cy.contains('button', 'Get Message from Backend').click()
       
-      cy.wait('@getHello').its('response.statusCode').should('eq', 200)
-      cy.wait('@getHello').its('response.body').should('have.property', 'message')
-      cy.wait('@getHello').its('response.body').should('have.property', 'timestamp')
+      cy.wait('@getHello').then((interception) => {
+        expect(interception.response.statusCode).to.eq(200)
+        expect(interception.response.body).to.have.property('message')
+        expect(interception.response.body).to.have.property('timestamp')
+      })
     })
 
     it('should display message with purple theme styling', () => {
@@ -109,10 +111,12 @@ describe('Purple Theme Hello World Fullstack Application', () => {
       cy.get('input[placeholder="Enter your name"]').type('Jane')
       cy.contains('button', 'Greet Me').click()
       
-      cy.wait('@postGreet').its('request.body').should('deep.equal', { name: 'Jane' })
-      cy.wait('@postGreet').its('response.statusCode').should('eq', 200)
-      cy.wait('@postGreet').its('response.body').should('have.property', 'greeting')
-      cy.wait('@postGreet').its('response.body').should('have.property', 'timestamp')
+      cy.wait('@postGreet').then((interception) => {
+        expect(interception.request.body).to.deep.equal({ name: 'Jane' })
+        expect(interception.response.statusCode).to.eq(200)
+        expect(interception.response.body).to.have.property('greeting')
+        expect(interception.response.body).to.have.property('timestamp')
+      })
     })
 
     it('should display greeting with purple gradient styling', () => {
@@ -171,7 +175,9 @@ describe('Purple Theme Hello World Fullstack Application', () => {
       cy.contains('button', 'Greet Me').click()
       
       // Verify trimmed name is sent
-      cy.wait('@postGreet').its('request.body').should('deep.equal', { name: 'Alice' })
+      cy.wait('@postGreet').then((interception) => {
+        expect(interception.request.body).to.deep.equal({ name: 'Alice' })
+      })
     })
 
     it('should not make API call when validation fails', () => {

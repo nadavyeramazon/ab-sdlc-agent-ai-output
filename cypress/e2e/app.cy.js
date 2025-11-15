@@ -115,8 +115,9 @@ describe('Purple Theme Hello World Application', () => {
       // Click the specific button
       cy.contains('button', 'Get Message from Backend').click()
 
-      // Verify loading state appears in the specific button
-      cy.contains('button', 'Get Message from Backend').should('contain', 'Loading...')
+      // Verify loading state appears - button should show Loading... text
+      cy.contains('button', 'Loading...').should('be.visible')
+      cy.contains('button', 'Loading...').should('be.disabled')
       
       // Wait for the API call to complete
       cy.wait('@getHello')
