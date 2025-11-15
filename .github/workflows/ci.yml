@@ -67,6 +67,7 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
       
       - name: Install frontend dependencies
         working-directory: ./frontend
@@ -181,9 +182,9 @@ jobs:
       - name: Check for sensitive data
         run: |
           # Check for common patterns of sensitive data
-          ! grep -r "password.*=.*['\"]", --include="*.py" --include="*.js" --include="*.jsx" . || exit 1
-          ! grep -r "api_key.*=.*['\"]", --include="*.py" --include="*.js" --include="*.jsx" . || exit 1
-          ! grep -r "secret.*=.*['\"]", --include="*.py" --include="*.js" --include="*.jsx" . || exit 1
+          ! grep -r "password.*=.*['\"]" --include="*.py" --include="*.js" --include="*.jsx" . || exit 1
+          ! grep -r "api_key.*=.*['\"]" --include="*.py" --include="*.js" --include="*.jsx" . || exit 1
+          ! grep -r "secret.*=.*['\"]" --include="*.py" --include="*.js" --include="*.jsx" . || exit 1
       
       - name: Verify required files exist
         run: |
