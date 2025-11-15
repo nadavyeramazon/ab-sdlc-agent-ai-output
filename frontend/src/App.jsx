@@ -51,21 +51,15 @@ function App() {
         {/* Main heading with green theme */}
         <h1 className="heading">Hello World</h1>
         
-        {/* Button to trigger API call */}
+        {/* Button to trigger API call - shows loading state */}
         <button 
           className="button" 
           onClick={fetchMessage}
           disabled={loading}
+          role={loading ? 'status' : undefined}
         >
           {loading ? 'Loading...' : 'Get Message from Backend'}
         </button>
-
-        {/* Display loading state */}
-        {loading && (
-          <div className="loading" role="status">
-            Loading...
-          </div>
-        )}
 
         {/* Display backend message on success */}
         {message && !loading && (

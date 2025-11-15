@@ -1,0 +1,16 @@
+{
+  "name": "green-theme-hello-world-e2e",
+  "version": "1.0.0",
+  "description": "E2E testing setup for Green Theme Hello World fullstack app",
+  "type": "module",
+  "scripts": {
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run"
+  },
+  "devDependencies": {
+    "cypress": "^13.0.0"
+  },
+  "keywords": ["e2e", "testing", "cypress"],
+  "author": "",
+  "license": "MIT"
+}
