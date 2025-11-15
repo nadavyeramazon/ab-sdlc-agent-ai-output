@@ -1,7 +1,7 @@
 """Comprehensive test suite for FastAPI backend.
 
 Tests all endpoints, response formats, CORS configuration,
-and error handling scenarios.
+and error handling scenarios including the new /api/greet endpoint.
 """
 
 import pytest
@@ -72,6 +72,91 @@ class TestHelloEndpoint:
         assert isinstance(data["timestamp"], str)
 
 
+class TestGreetEndpoint:
+    """Test suite for /api/greet endpoint."""
+
+    def test_greet_endpoint_returns_200_with_valid_name(self):
+        """Test that /api/greet returns 200 status code with valid name."""
+        response = client.post("/api/greet", json={"name": "John"})
+        assert response.status_code == 200
+
+    def test_greet_endpoint_returns_json(self):
+        """Test that /api/greet returns JSON content type."""
+        response = client.post("/api/greet", json={"name": "John"})
+        assert "application/json" in response.headers["content-type"]
+
+    def test_greet_endpoint_returns_personalized_greeting(self):
+        """Test that response contains personalized greeting."""
+        response = client.post("/api/greet", json={"name": "John"})
+        data = response.json()
+        assert "greeting" in data
+        assert data["greeting"] == "Hello, John! Welcome to our purple-themed app!"
+
+    def test_greet_endpoint_has_timestamp_field(self):
+        """Test that response contains timestamp field."""
+        response = client.post("/api/greet", json={"name": "Jane"})
+        data = response.json()
+        assert "timestamp" in data
+
+    def test_greet_endpoint_timestamp_is_iso8601(self):
+        """Test that timestamp is in ISO 8601 format."""
+        response = client.post("/api/greet", json={"name": "Test"})
+        data = response.json()
+        timestamp = data["timestamp"]
+        iso8601_pattern = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$"
+        assert re.match(iso8601_pattern, timestamp), f"Timestamp {timestamp} is not in ISO 8601 format"
+
+    def test_greet_endpoint_rejects_empty_name(self):
+        """Test that endpoint returns 400 for empty name."""
+        response = client.post("/api/greet", json={"name": ""})
+        assert response.status_code == 422  # Pydantic validation error
+        data = response.json()
+        assert "detail" in data
+
+    def test_greet_endpoint_rejects_whitespace_name(self):
+        """Test that endpoint returns 400 for whitespace-only name."""
+        response = client.post("/api/greet", json={"name": "   "})
+        assert response.status_code == 422  # Pydantic validation error
+        data = response.json()
+        assert "detail" in data
+
+    def test_greet_endpoint_trims_name(self):
+        """Test that endpoint trims whitespace from name."""
+        response = client.post("/api/greet", json={"name": "  Alice  "})
+        assert response.status_code == 200
+        data = response.json()
+        assert data["greeting"] == "Hello, Alice! Welcome to our purple-themed app!"
+
+    def test_greet_endpoint_response_structure(self):
+        """Test complete response structure."""
+        response = client.post("/api/greet", json={"name": "Bob"})
+        data = response.json()
+        assert isinstance(data, dict)
+        assert len(data) == 2  # Should have exactly 2 fields
+        assert isinstance(data["greeting"], str)
+        assert isinstance(data["timestamp"], str)
+
+    def test_greet_endpoint_response_time(self):
+        """Test that /api/greet responds within 100ms."""
+        import time
+        start = time.time()
+        response = client.post("/api/greet", json={"name": "Test"})
+        end = time.time()
+        response_time_ms = (end - start) * 1000
+        assert response.status_code == 200
+        assert response_time_ms < 100, f"Response time {response_time_ms}ms exceeds 100ms"
+
+    def test_greet_endpoint_handles_multiple_requests(self):
+        """Test that endpoint can handle multiple consecutive requests."""
+        names = ["Alice", "Bob", "Charlie", "Diana", "Eve"]
+        for name in names:
+            response = client.post("/api/greet", json={"name": name})
+            assert response.status_code == 200
+            data = response.json()
+            assert data["greeting"] == f"Hello, {name}! Welcome to our purple-themed app!"
+            assert "timestamp" in data
+
+
 class TestHealthEndpoint:
     """Test suite for /health endpoint."""
 
@@ -124,6 +209,18 @@ class TestCORSConfiguration:
         )
         assert "access-control-allow-origin" in response.headers
 
+    def test_cors_allows_post_requests(self):
+        """Test that CORS allows POST requests for greet endpoint."""
+        response = client.options(
+            "/api/greet",
+            headers={
+                "Origin": "http://localhost:3000",
+                "Access-Control-Request-Method": "POST"
+            }
+        )
+        assert response.status_code == 200
+        assert "access-control-allow-origin" in response.headers
+
 
 class TestErrorHandling:
     """Test suite for error handling."""
@@ -133,10 +230,29 @@ class TestErrorHandling:
         response = client.get("/api/nonexistent")
         assert response.status_code == 404
 
-    def test_wrong_method_returns_405(self):
+    def test_wrong_method_on_hello_returns_405(self):
         """Test that wrong HTTP methods return 405."""
         response = client.post("/api/hello")
         assert response.status_code == 405
+
+    def test_wrong_method_on_greet_returns_405(self):
+        """Test that GET method on greet endpoint returns 405."""
+        response = client.get("/api/greet")
+        assert response.status_code == 405
+
+    def test_greet_endpoint_missing_name_field(self):
+        """Test that missing name field returns 422 validation error."""
+        response = client.post("/api/greet", json={})
+        assert response.status_code == 422
+
+    def test_greet_endpoint_invalid_json(self):
+        """Test that invalid JSON returns 422 error."""
+        response = client.post(
+            "/api/greet",
+            data="invalid json",
+            headers={"Content-Type": "application/json"}
+        )
+        assert response.status_code == 422
 
 
 class TestPerformance:
