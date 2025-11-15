@@ -29,8 +29,9 @@ describe('Green Theme Hello World Application', () => {
 
   describe('Backend Integration', () => {
     it('fetches and displays message from backend', () => {
-      // Intercept the API call and add a small delay to make loading state observable
-      cy.intercept('GET', 'http://localhost:8000/api/hello', (req) => {
+      // Intercept the API call using wildcard pattern to match any hostname
+      // This works in both local dev (localhost) and CI (Docker internal hostname)
+      cy.intercept('GET', '**/api/hello', (req) => {
         req.continue((res) => {
           // Add delay to ensure loading state is visible
           res.delay = 200
@@ -51,8 +52,8 @@ describe('Green Theme Hello World Application', () => {
     })
 
     it('can fetch message multiple times', () => {
-      // Intercept the API call and add a small delay to make loading state observable
-      cy.intercept('GET', 'http://localhost:8000/api/hello', (req) => {
+      // Intercept the API call using wildcard pattern
+      cy.intercept('GET', '**/api/hello', (req) => {
         req.continue((res) => {
           res.delay = 200
         })
@@ -72,8 +73,8 @@ describe('Green Theme Hello World Application', () => {
     })
 
     it('button is disabled during loading', () => {
-      // Intercept the API call and add a small delay to make loading state observable
-      cy.intercept('GET', 'http://localhost:8000/api/hello', (req) => {
+      // Intercept the API call using wildcard pattern
+      cy.intercept('GET', '**/api/hello', (req) => {
         req.continue((res) => {
           res.delay = 200
         })
@@ -89,24 +90,19 @@ describe('Green Theme Hello World Application', () => {
 
   describe('Error Handling', () => {
     it('displays error message when backend is unavailable', () => {
-      // Intercept the API call and force it to fail with a longer delay
-      // The delay ensures we can observe the loading state before the error occurs
-      cy.intercept('GET', 'http://localhost:8000/api/hello', {
+      // Intercept the API call using wildcard pattern and force it to fail
+      // Using wildcard pattern ensures this works in both local and Docker environments
+      cy.intercept('GET', '**/api/hello', {
         statusCode: 500,
         body: { error: 'Internal Server Error' },
-        delay: 500 // Increase delay to ensure loading state is observable
+        delay: 500
       }).as('getHello')
 
       // Click the button
       cy.get('button').click()
 
       // Verify loading state appears in the button
-      // Use a more flexible assertion that waits for the loading state
-      cy.get('button', { timeout: 2000 }).should(($btn) => {
-        const text = $btn.text()
-        // Button should either be showing Loading... or already moved to error state
-        expect(text === 'Loading...' || text === 'Get Message from Backend').to.be.true
-      })
+      cy.get('button').should('contain', 'Loading...')
       
       // Wait for the API call to complete
       cy.wait('@getHello')
