@@ -139,6 +139,7 @@ function App() {
           className="button" 
           onClick={fetchMessage}
           disabled={loading}
+          data-testid="get-message-button"
           role={loading ? 'status' : undefined}
         >
           {loading ? 'Loading...' : 'Get Message from Backend'}
@@ -146,14 +147,14 @@ function App() {
 
         {/* Display backend message on success */}
         {message && !loading && (
-          <div className="message" role="alert">
+          <div className="message" data-testid="backend-message" role="alert">
             {message}
           </div>
         )}
 
         {/* Display error message on failure */}
         {error && !loading && (
-          <div className="error" role="alert">
+          <div className="error" data-testid="backend-error" role="alert">
             {error}
           </div>
         )}
@@ -171,6 +172,7 @@ function App() {
             onChange={handleNameChange}
             onKeyPress={handleKeyPress}
             disabled={greetLoading}
+            data-testid="name-input"
             aria-label="Enter your name"
             aria-invalid={!!validationError}
             aria-describedby={validationError ? 'validation-error' : undefined}
@@ -178,7 +180,7 @@ function App() {
 
           {/* Display validation error */}
           {validationError && (
-            <div id="validation-error" className="validation-error" role="alert">
+            <div id="validation-error" className="validation-error" data-testid="validation-error" role="alert">
               {validationError}
             </div>
           )}
@@ -188,6 +190,7 @@ function App() {
             className="button" 
             onClick={fetchGreeting}
             disabled={greetLoading}
+            data-testid="greet-button"
             role={greetLoading ? 'status' : undefined}
           >
             {greetLoading ? 'Loading...' : 'Greet Me'}
@@ -195,14 +198,14 @@ function App() {
 
           {/* Display personalized greeting on success */}
           {greeting && !greetLoading && (
-            <div className="greeting" role="alert">
+            <div className="greeting" data-testid="greeting-message" role="alert">
               {greeting}
             </div>
           )}
 
           {/* Display error message on failure */}
           {greetError && !greetLoading && (
-            <div className="error" role="alert">
+            <div className="error" data-testid="greet-error" role="alert">
               {greetError}
             </div>
           )}

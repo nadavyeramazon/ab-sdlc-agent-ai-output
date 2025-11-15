@@ -20,15 +20,17 @@ describe('Purple Theme Hello World Application', () => {
     })
 
     it('displays the Get Message from Backend button', () => {
-      cy.contains('button', 'Get Message from Backend').should('be.visible')
+      cy.get('[data-testid="get-message-button"]').should('be.visible')
+      cy.get('[data-testid="get-message-button"]').should('contain', 'Get Message from Backend')
     })
 
     it('displays the Greet Me button', () => {
-      cy.contains('button', 'Greet Me').should('be.visible')
+      cy.get('[data-testid="greet-button"]').should('be.visible')
+      cy.get('[data-testid="greet-button"]').should('contain', 'Greet Me')
     })
 
     it('button has purple background', () => {
-      cy.contains('button', 'Get Message from Backend')
+      cy.get('[data-testid="get-message-button"]')
         .should('have.css', 'background-color', 'rgb(155, 89, 182)') // #9b59b6
     })
   })
@@ -46,17 +48,20 @@ describe('Purple Theme Hello World Application', () => {
         delay: 200
       }).as('getHello')
 
-      // Click the specific button using text content
-      cy.contains('button', 'Get Message from Backend').click()
+      // Click the specific button using data-testid
+      cy.get('[data-testid="get-message-button"]').click()
 
       // Verify loading state appears in the button
-      cy.contains('button', 'Loading...').should('be.visible')
+      cy.get('[data-testid="get-message-button"]').should('contain', 'Loading...')
+      cy.get('[data-testid="get-message-button"]').should('be.disabled')
 
       // Wait for the API call to complete
       cy.wait('@getHello')
 
       // Wait for and verify the backend message appears
-      cy.contains('Hello World from Backend!', { timeout: 10000 }).should('be.visible')
+      cy.get('[data-testid="backend-message"]', { timeout: 10000 })
+        .should('be.visible')
+        .and('contain', 'Hello World from Backend!')
     })
 
     it('can fetch message multiple times', () => {
@@ -70,17 +75,17 @@ describe('Purple Theme Hello World Application', () => {
         delay: 200
       }).as('getHello')
 
-      // First click - use specific selector
-      cy.contains('button', 'Get Message from Backend').click()
-      cy.contains('button', 'Get Message from Backend').should('contain', 'Loading...')
+      // First click
+      cy.get('[data-testid="get-message-button"]').click()
+      cy.get('[data-testid="get-message-button"]').should('contain', 'Loading...')
       cy.wait('@getHello')
-      cy.contains('Hello World from Backend!', { timeout: 10000 }).should('be.visible')
+      cy.get('[data-testid="backend-message"]', { timeout: 10000 }).should('be.visible')
 
-      // Second click - use specific selector
-      cy.contains('button', 'Get Message from Backend').click()
-      cy.contains('button', 'Get Message from Backend').should('contain', 'Loading...')
+      // Second click
+      cy.get('[data-testid="get-message-button"]').click()
+      cy.get('[data-testid="get-message-button"]').should('contain', 'Loading...')
       cy.wait('@getHello')
-      cy.contains('Hello World from Backend!', { timeout: 10000 }).should('be.visible')
+      cy.get('[data-testid="backend-message"]', { timeout: 10000 }).should('be.visible')
     })
 
     it('button is disabled during loading', () => {
@@ -94,8 +99,8 @@ describe('Purple Theme Hello World Application', () => {
         delay: 200
       }).as('getHello')
 
-      cy.contains('button', 'Get Message from Backend').click()
-      cy.contains('button', 'Get Message from Backend').should('be.disabled')
+      cy.get('[data-testid="get-message-button"]').click()
+      cy.get('[data-testid="get-message-button"]').should('be.disabled')
       
       // Wait for API call to complete
       cy.wait('@getHello')
@@ -105,7 +110,6 @@ describe('Purple Theme Hello World Application', () => {
   describe('Error Handling', () => {
     it('displays error message when backend is unavailable', () => {
       // Stub the API call to return an error
-      // No need to use req.continue() which would try to proxy to 'backend' hostname
       cy.intercept('GET', '**/api/hello', {
         statusCode: 500,
         body: { error: 'Internal Server Error' },
@@ -113,20 +117,22 @@ describe('Purple Theme Hello World Application', () => {
       }).as('getHello')
 
       // Click the specific button
-      cy.contains('button', 'Get Message from Backend').click()
+      cy.get('[data-testid="get-message-button"]').click()
 
       // Verify loading state appears - button should show Loading... text
-      cy.contains('button', 'Loading...').should('be.visible')
-      cy.contains('button', 'Loading...').should('be.disabled')
+      cy.get('[data-testid="get-message-button"]').should('contain', 'Loading...')
+      cy.get('[data-testid="get-message-button"]').should('be.disabled')
       
       // Wait for the API call to complete
       cy.wait('@getHello')
 
       // Verify error message appears
-      cy.contains('Failed to fetch message from backend', { timeout: 10000 }).should('be.visible')
+      cy.get('[data-testid="backend-error"]', { timeout: 10000 })
+        .should('be.visible')
+        .and('contain', 'Failed to fetch message from backend')
       
       // Verify button is enabled again after error
-      cy.contains('button', 'Get Message from Backend').should('not.be.disabled')
+      cy.get('[data-testid="get-message-button"]').should('not.be.disabled')
     })
   })
 
@@ -134,22 +140,22 @@ describe('Purple Theme Hello World Application', () => {
     it('works on mobile viewport', () => {
       cy.viewport('iphone-x')
       cy.get('h1').should('be.visible')
-      cy.contains('button', 'Get Message from Backend').should('be.visible')
-      cy.contains('button', 'Greet Me').should('be.visible')
+      cy.get('[data-testid="get-message-button"]').should('be.visible')
+      cy.get('[data-testid="greet-button"]').should('be.visible')
     })
 
     it('works on tablet viewport', () => {
       cy.viewport('ipad-2')
       cy.get('h1').should('be.visible')
-      cy.contains('button', 'Get Message from Backend').should('be.visible')
-      cy.contains('button', 'Greet Me').should('be.visible')
+      cy.get('[data-testid="get-message-button"]').should('be.visible')
+      cy.get('[data-testid="greet-button"]').should('be.visible')
     })
 
     it('works on desktop viewport', () => {
       cy.viewport(1920, 1080)
       cy.get('h1').should('be.visible')
-      cy.contains('button', 'Get Message from Backend').should('be.visible')
-      cy.contains('button', 'Greet Me').should('be.visible')
+      cy.get('[data-testid="get-message-button"]').should('be.visible')
+      cy.get('[data-testid="greet-button"]').should('be.visible')
     })
   })
 })
