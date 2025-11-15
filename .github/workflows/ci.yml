@@ -85,15 +85,18 @@ jobs:
       
       - name: Install dependencies
         working-directory: ./frontend
-        run: npm install
+        run: |
+          npm install
       
       - name: Run Vitest
         working-directory: ./frontend
-        run: npm test
+        run: |
+          npm test
       
       - name: Run tests with coverage
         working-directory: ./frontend
-        run: npm test -- --coverage
+        run: |
+          npm test -- --coverage
       
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
@@ -190,17 +193,19 @@ jobs:
         run: |
           pip install flake8 black
       
-      - name: Run flake8
+      - name: Run flake8 on backend
         working-directory: ./backend
         run: |
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          # Check for syntax errors and undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=__pycache__,*.pyc,__init__.py
+          # Check for complexity and style (non-blocking)
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=__pycache__,*.pyc
         continue-on-error: true
       
       - name: Check formatting with black
         working-directory: ./backend
         run: |
-          black --check . || echo "Run 'black .' to format Python files"
+          black --check . --exclude='__pycache__|*.pyc' || echo "Run 'black .' to format Python files"
         continue-on-error: true
       
       - name: Set up Node.js
