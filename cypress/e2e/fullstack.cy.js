@@ -34,32 +34,36 @@ describe('Purple Theme Hello World Fullstack Application', () => {
     })
 
     it('should display Get Message from Backend button', () => {
-      cy.contains('button', 'Get Message from Backend').should('be.visible')
+      cy.get('[data-testid="get-message-button"]').should('be.visible')
+      cy.get('[data-testid="get-message-button"]').should('contain', 'Get Message from Backend')
     })
   })
 
   describe('Existing Feature - Get Message from Backend', () => {
     it('should fetch and display message when button is clicked', () => {
       // Click the button
-      cy.contains('button', 'Get Message from Backend').click()
+      cy.get('[data-testid="get-message-button"]').click()
 
       // Wait for loading state
-      cy.contains('button', 'Loading...').should('be.visible')
+      cy.get('[data-testid="get-message-button"]').should('contain', 'Loading...')
+      cy.get('[data-testid="get-message-button"]').should('be.disabled')
 
       // Wait for and verify message appears
-      cy.contains('Hello World from Backend!', { timeout: 10000 }).should('be.visible')
+      cy.get('[data-testid="backend-message"]', { timeout: 10000 })
+        .should('be.visible')
+        .and('contain', 'Hello World from Backend!')
     })
 
     it('should show loading state during API call', () => {
-      cy.contains('button', 'Get Message from Backend').click()
-      cy.contains('button', 'Loading...').should('be.visible')
-      cy.contains('button', 'Loading...').should('be.disabled')
+      cy.get('[data-testid="get-message-button"]').click()
+      cy.get('[data-testid="get-message-button"]').should('contain', 'Loading...')
+      cy.get('[data-testid="get-message-button"]').should('be.disabled')
     })
 
     it('should make correct API call to backend', () => {
       cy.intercept('GET', '**/api/hello').as('getHello')
       
-      cy.contains('button', 'Get Message from Backend').click()
+      cy.get('[data-testid="get-message-button"]').click()
       
       cy.wait('@getHello').then((interception) => {
         expect(interception.response.statusCode).to.eq(200)
@@ -69,47 +73,50 @@ describe('Purple Theme Hello World Fullstack Application', () => {
     })
 
     it('should display message with purple theme styling', () => {
-      cy.contains('button', 'Get Message from Backend').click()
-      cy.contains('Hello World from Backend!', { timeout: 10000 })
+      cy.get('[data-testid="get-message-button"]').click()
+      cy.get('[data-testid="backend-message"]', { timeout: 10000 })
         .should('be.visible')
-        .parent()
-        .should('have.class', 'message')
+        .and('have.class', 'message')
     })
   })
 
   describe('New Feature - Personalized Greeting', () => {
     it('should display name input field', () => {
-      cy.get('input[placeholder="Enter your name"]').should('be.visible')
+      cy.get('[data-testid="name-input"]').should('be.visible')
+      cy.get('[data-testid="name-input"]').should('have.attr', 'placeholder', 'Enter your name')
     })
 
     it('should display Greet Me button', () => {
-      cy.contains('button', 'Greet Me').should('be.visible')
+      cy.get('[data-testid="greet-button"]').should('be.visible')
+      cy.get('[data-testid="greet-button"]').should('contain', 'Greet Me')
     })
 
     it('should have accessible input label', () => {
-      cy.get('input[aria-label="Enter your name"]').should('exist')
+      cy.get('[data-testid="name-input"]').should('have.attr', 'aria-label', 'Enter your name')
     })
 
     it('should fetch and display personalized greeting', () => {
       // Type name in input
-      cy.get('input[placeholder="Enter your name"]').type('John')
+      cy.get('[data-testid="name-input"]').type('John')
 
       // Click Greet Me button
-      cy.contains('button', 'Greet Me').click()
+      cy.get('[data-testid="greet-button"]').click()
 
       // Wait for loading state
-      cy.contains('button', 'Loading...').should('be.visible')
+      cy.get('[data-testid="greet-button"]').should('contain', 'Loading...')
+      cy.get('[data-testid="greet-button"]').should('be.disabled')
 
       // Verify personalized greeting appears
-      cy.contains('Hello, John! Welcome to our purple-themed app!', { timeout: 10000 })
+      cy.get('[data-testid="greeting-message"]', { timeout: 10000 })
         .should('be.visible')
+        .and('contain', 'Hello, John! Welcome to our purple-themed app!')
     })
 
     it('should make correct API call for greeting', () => {
       cy.intercept('POST', '**/api/greet').as('postGreet')
       
-      cy.get('input[placeholder="Enter your name"]').type('Jane')
-      cy.contains('button', 'Greet Me').click()
+      cy.get('[data-testid="name-input"]').type('Jane')
+      cy.get('[data-testid="greet-button"]').click()
       
       cy.wait('@postGreet').then((interception) => {
         expect(interception.request.body).to.deep.equal({ name: 'Jane' })
@@ -120,59 +127,63 @@ describe('Purple Theme Hello World Fullstack Application', () => {
     })
 
     it('should display greeting with purple gradient styling', () => {
-      cy.get('input[placeholder="Enter your name"]').type('Test')
-      cy.contains('button', 'Greet Me').click()
+      cy.get('[data-testid="name-input"]').type('Test')
+      cy.get('[data-testid="greet-button"]').click()
       
-      cy.contains('Hello, Test! Welcome to our purple-themed app!', { timeout: 10000 })
+      cy.get('[data-testid="greeting-message"]', { timeout: 10000 })
         .should('be.visible')
-        .parent()
-        .should('have.class', 'greeting')
+        .and('have.class', 'greeting')
     })
 
     it('should allow submission with Enter key', () => {
-      cy.get('input[placeholder="Enter your name"]').type('Bob{enter}')
+      cy.get('[data-testid="name-input"]').type('Bob{enter}')
       
-      cy.contains('Hello, Bob! Welcome to our purple-themed app!', { timeout: 10000 })
+      cy.get('[data-testid="greeting-message"]', { timeout: 10000 })
         .should('be.visible')
+        .and('contain', 'Hello, Bob! Welcome to our purple-themed app!')
     })
   })
 
   describe('Input Validation', () => {
     it('should show validation error for empty name', () => {
       // Click button without entering name
-      cy.contains('button', 'Greet Me').click()
+      cy.get('[data-testid="greet-button"]').click()
 
       // Verify validation error appears
-      cy.contains('Please enter your name').should('be.visible')
+      cy.get('[data-testid="validation-error"]')
+        .should('be.visible')
+        .and('contain', 'Please enter your name')
     })
 
     it('should show validation error for whitespace-only name', () => {
       // Enter only spaces
-      cy.get('input[placeholder="Enter your name"]').type('     ')
-      cy.contains('button', 'Greet Me').click()
+      cy.get('[data-testid="name-input"]').type('     ')
+      cy.get('[data-testid="greet-button"]').click()
 
       // Verify validation error appears
-      cy.contains('Please enter your name').should('be.visible')
+      cy.get('[data-testid="validation-error"]')
+        .should('be.visible')
+        .and('contain', 'Please enter your name')
     })
 
     it('should clear validation error when user starts typing', () => {
       // Trigger validation error
-      cy.contains('button', 'Greet Me').click()
-      cy.contains('Please enter your name').should('be.visible')
+      cy.get('[data-testid="greet-button"]').click()
+      cy.get('[data-testid="validation-error"]').should('be.visible')
 
       // Start typing
-      cy.get('input[placeholder="Enter your name"]').type('A')
+      cy.get('[data-testid="name-input"]').type('A')
 
       // Validation error should be cleared
-      cy.contains('Please enter your name').should('not.exist')
+      cy.get('[data-testid="validation-error"]').should('not.exist')
     })
 
     it('should trim whitespace from name', () => {
       cy.intercept('POST', '**/api/greet').as('postGreet')
       
       // Enter name with surrounding whitespace
-      cy.get('input[placeholder="Enter your name"]').type('  Alice  ')
-      cy.contains('button', 'Greet Me').click()
+      cy.get('[data-testid="name-input"]').type('  Alice  ')
+      cy.get('[data-testid="greet-button"]').click()
       
       // Verify trimmed name is sent
       cy.wait('@postGreet').then((interception) => {
@@ -184,7 +195,7 @@ describe('Purple Theme Hello World Fullstack Application', () => {
       cy.intercept('POST', '**/api/greet').as('postGreet')
       
       // Try to submit empty name
-      cy.contains('button', 'Greet Me').click()
+      cy.get('[data-testid="greet-button"]').click()
       
       // Wait a moment to ensure no API call is made
       cy.wait(500)
@@ -197,48 +208,56 @@ describe('Purple Theme Hello World Fullstack Application', () => {
   describe('Concurrent Feature Usage', () => {
     it('should allow using both features independently', () => {
       // Use existing feature first
-      cy.contains('button', 'Get Message from Backend').click()
-      cy.contains('Hello World from Backend!', { timeout: 10000 }).should('be.visible')
+      cy.get('[data-testid="get-message-button"]').click()
+      cy.get('[data-testid="backend-message"]', { timeout: 10000 })
+        .should('be.visible')
+        .and('contain', 'Hello World from Backend!')
 
       // Use new feature
-      cy.get('input[placeholder="Enter your name"]').type('Charlie')
-      cy.contains('button', 'Greet Me').click()
-      cy.contains('Hello, Charlie! Welcome to our purple-themed app!', { timeout: 10000 })
+      cy.get('[data-testid="name-input"]').type('Charlie')
+      cy.get('[data-testid="greet-button"]').click()
+      cy.get('[data-testid="greeting-message"]', { timeout: 10000 })
         .should('be.visible')
+        .and('contain', 'Hello, Charlie! Welcome to our purple-themed app!')
 
       // Both messages should still be visible
-      cy.contains('Hello World from Backend!').should('be.visible')
-      cy.contains('Hello, Charlie! Welcome to our purple-themed app!').should('be.visible')
+      cy.get('[data-testid="backend-message"]').should('be.visible')
+      cy.get('[data-testid="greeting-message"]').should('be.visible')
     })
 
     it('should allow using features in reverse order', () => {
       // Use new feature first
-      cy.get('input[placeholder="Enter your name"]').type('Diana')
-      cy.contains('button', 'Greet Me').click()
-      cy.contains('Hello, Diana! Welcome to our purple-themed app!', { timeout: 10000 })
+      cy.get('[data-testid="name-input"]').type('Diana')
+      cy.get('[data-testid="greet-button"]').click()
+      cy.get('[data-testid="greeting-message"]', { timeout: 10000 })
         .should('be.visible')
+        .and('contain', 'Hello, Diana! Welcome to our purple-themed app!')
 
       // Use existing feature
-      cy.contains('button', 'Get Message from Backend').click()
-      cy.contains('Hello World from Backend!', { timeout: 10000 }).should('be.visible')
+      cy.get('[data-testid="get-message-button"]').click()
+      cy.get('[data-testid="backend-message"]', { timeout: 10000 })
+        .should('be.visible')
+        .and('contain', 'Hello World from Backend!')
 
       // Both messages should be visible
-      cy.contains('Hello, Diana! Welcome to our purple-themed app!').should('be.visible')
-      cy.contains('Hello World from Backend!').should('be.visible')
+      cy.get('[data-testid="greeting-message"]').should('be.visible')
+      cy.get('[data-testid="backend-message"]').should('be.visible')
     })
 
     it('should handle multiple greeting submissions', () => {
       // First greeting
-      cy.get('input[placeholder="Enter your name"]').type('Eve')
-      cy.contains('button', 'Greet Me').click()
-      cy.contains('Hello, Eve! Welcome to our purple-themed app!', { timeout: 10000 })
+      cy.get('[data-testid="name-input"]').type('Eve')
+      cy.get('[data-testid="greet-button"]').click()
+      cy.get('[data-testid="greeting-message"]', { timeout: 10000 })
         .should('be.visible')
+        .and('contain', 'Hello, Eve! Welcome to our purple-themed app!')
 
       // Clear input and enter new name
-      cy.get('input[placeholder="Enter your name"]').clear().type('Frank')
-      cy.contains('button', 'Greet Me').click()
-      cy.contains('Hello, Frank! Welcome to our purple-themed app!', { timeout: 10000 })
+      cy.get('[data-testid="name-input"]').clear().type('Frank')
+      cy.get('[data-testid="greet-button"]').click()
+      cy.get('[data-testid="greeting-message"]', { timeout: 10000 })
         .should('be.visible')
+        .and('contain', 'Hello, Frank! Welcome to our purple-themed app!')
     })
   })
 
@@ -274,18 +293,18 @@ describe('Purple Theme Hello World Fullstack Application', () => {
       cy.viewport('iphone-x')
       
       cy.contains('h1', 'Hello World').should('be.visible')
-      cy.contains('button', 'Get Message from Backend').should('be.visible')
-      cy.get('input[placeholder="Enter your name"]').should('be.visible')
-      cy.contains('button', 'Greet Me').should('be.visible')
+      cy.get('[data-testid="get-message-button"]').should('be.visible')
+      cy.get('[data-testid="name-input"]').should('be.visible')
+      cy.get('[data-testid="greet-button"]').should('be.visible')
     })
 
     it('should be responsive on tablet viewport', () => {
       cy.viewport('ipad-2')
       
       cy.contains('h1', 'Hello World').should('be.visible')
-      cy.contains('button', 'Get Message from Backend').should('be.visible')
-      cy.get('input[placeholder="Enter your name"]').should('be.visible')
-      cy.contains('button', 'Greet Me').should('be.visible')
+      cy.get('[data-testid="get-message-button"]').should('be.visible')
+      cy.get('[data-testid="name-input"]').should('be.visible')
+      cy.get('[data-testid="greet-button"]').should('be.visible')
     })
   })
 })
