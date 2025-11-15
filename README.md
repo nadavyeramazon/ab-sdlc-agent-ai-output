@@ -12,6 +12,7 @@ A simple fullstack "Hello World" application demonstrating frontend-backend inte
 - **GitHub Actions CI/CD** pipeline for automated testing
 - **CORS configured** for secure cross-origin requests
 - **Error handling** and loading states for better UX
+- **Configurable API URL** for Docker and local development environments
 
 ## 📋 Prerequisites
 
@@ -41,6 +42,7 @@ This command will:
 - Build Docker images for both frontend and backend
 - Start both services in containers
 - Display logs from both services in your terminal
+- Configure proper networking for inter-container communication
 
 ### 3. Access the Application
 
@@ -191,17 +193,42 @@ Both services support hot reload during development:
 
 ### Environment Variables
 
-You can customize the application using environment variables in `docker-compose.yml`:
+The application uses environment variables for configuration, particularly for Docker container networking:
+
+#### VITE_API_URL (Frontend)
+
+This critical environment variable controls how the frontend communicates with the backend:
+
+**Docker Environment (default in docker-compose.yml):**
+```yaml
+environment:
+  - VITE_API_URL=http://backend:8000
+```
+
+In Docker, containers communicate via service names on the Docker network. The frontend container must use `http://backend:8000` (the backend service name) instead of `http://localhost:8000`.
+
+**Local Development (without Docker):**
+
+When running locally without Docker, the frontend falls back to `http://localhost:8000` if `VITE_API_URL` is not set.
+
+**Custom Configuration:**
+
+You can customize the API URL in `docker-compose.yml`:
+
+```yaml
+frontend:
+  environment:
+    - VITE_API_URL=http://custom-backend:9000
+```
+
+#### Other Environment Variables
 
 ```yaml
 backend:
   environment:
     - DEBUG=true
     - LOG_LEVEL=debug
-
-frontend:
-  environment:
-    - VITE_API_URL=http://localhost:8000
+    - PYTHONUNBUFFERED=1
 ```
 
 ### Development Mode
@@ -251,15 +278,50 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 
 ### Frontend Can't Connect to Backend
 
-1. **Verify CORS configuration** in `backend/main.py`
-2. **Check network connectivity:**
-   ```bash
-   docker compose exec frontend ping backend
+This is the most common issue when running in Docker. The frontend must use the Docker service name, not `localhost`.
+
+**Problem:** Frontend shows "Failed to fetch data from backend" error.
+
+**Solution:**
+
+1. **Verify VITE_API_URL is set correctly** in `docker-compose.yml`:
+   ```yaml
+   frontend:
+     environment:
+       - VITE_API_URL=http://backend:8000  # Must use service name 'backend'
    ```
 
-3. **Verify backend is running:**
+2. **Check network connectivity:**
+   ```bash
+   # Enter frontend container
+   docker compose exec frontend sh
+   
+   # Test connection to backend (install curl if needed)
+   curl http://backend:8000/health
+   ```
+
+3. **Verify both services are on the same network:**
    ```bash
    docker compose ps
+   docker network ls
+   docker network inspect hello-world-fullstack-app_app-network
+   ```
+
+4. **Check CORS configuration** in `backend/main.py`:
+   ```python
+   app.add_middleware(
+       CORSMiddleware,
+       allow_origins=["http://localhost:3000"],
+       allow_credentials=True,
+       allow_methods=["*"],
+       allow_headers=["*"],
+   )
+   ```
+
+5. **Restart services with clean build:**
+   ```bash
+   docker compose down -v
+   docker compose up --build
    ```
 
 ### Docker Compose Issues
@@ -289,6 +351,25 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
    npm test -- --reporter=verbose
    ```
 
+### Environment Variable Not Taking Effect
+
+**Problem:** Changes to `VITE_API_URL` in `docker-compose.yml` don't seem to work.
+
+**Solution:** Vite environment variables are embedded at **build time**, not runtime. You must rebuild the frontend container:
+
+```bash
+# Stop services
+docker compose down
+
+# Rebuild with no cache
+docker compose build --no-cache frontend
+
+# Start services
+docker compose up
+```
+
+**Note:** For development with hot reload, the environment variable is read at runtime by the Vite dev server, so changes take effect when you restart the container without rebuilding.
+
 ## 📊 Performance
 
 - **API Response Time**: < 100ms for both endpoints
@@ -301,6 +382,53 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 - No sensitive data in code or configuration files
 - Docker images use official base images
 - Multi-stage builds minimize attack surface
+
+## 🏗️ Architecture: Docker Networking
+
+### How It Works
+
+When you run `docker compose up`, Docker creates:
+
+1. **A bridge network** named `app-network` where both containers communicate
+2. **Backend container** accessible at `backend:8000` within the network
+3. **Frontend container** that uses `VITE_API_URL=http://backend:8000` to reach the backend
+
+### Why Not Localhost?
+
+Inside Docker containers, `localhost` refers to the **container itself**, not the host machine. This is why:
+
+- ❌ `http://localhost:8000` - **Does NOT work** (tries to reach port 8000 in the frontend container)
+- ✅ `http://backend:8000` - **Works** (uses Docker service name to reach backend container)
+
+### Network Diagram
+
+```
+Host Machine (localhost)
+├── Port 3000 → Frontend Container
+│   └── Connects to: http://backend:8000 (via app-network)
+└── Port 8000 → Backend Container
+    └── Listens on: 0.0.0.0:8000
+
+Docker Network (app-network)
+├── frontend (service name)
+└── backend (service name)
+```
+
+### Local Development (No Docker)
+
+If you run the services locally without Docker:
+
+```bash
+# Terminal 1: Start backend
+cd backend
+uvicorn main:app --reload --port 8000
+
+# Terminal 2: Start frontend
+cd frontend
+npm run dev
+```
+
+The frontend will fall back to `http://localhost:8000` automatically since `VITE_API_URL` is not set.
 
 ## 🤝 Contributing
 

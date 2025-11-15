@@ -13,6 +13,11 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // Get API URL from environment variable or fallback to localhost for local development
+  // In Docker: VITE_API_URL=http://backend:8000 (uses Docker service name)
+  // In local dev: Falls back to http://localhost:8000
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
   /**
    * Fetch message from backend API.
    * Handles loading states, errors, and displays response.
@@ -24,7 +29,7 @@ function App() {
     setTimestamp('')
 
     try {
-      const response = await fetch('http://localhost:8000/api/hello')
+      const response = await fetch(`${API_URL}/api/hello`)
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
