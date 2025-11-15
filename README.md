@@ -10,6 +10,7 @@ A simple fullstack "Hello World" application demonstrating frontend-backend inte
 - **FastAPI Backend**: Fast, modern Python API with automatic documentation
 - **Docker Compose Orchestration**: Single command to run the entire stack
 - **Hot Module Replacement**: Fast development iteration with Vite HMR
+- **Environment Variable Configuration**: Flexible API URL configuration for different environments
 - **Comprehensive Testing**: Unit tests, integration tests, and E2E tests with Cypress
 - **CI/CD Pipeline**: Automated testing with GitHub Actions
 
@@ -74,6 +75,7 @@ This command will:
 - Start both services
 - Display logs from both services in your terminal
 - Enable hot module replacement for development
+- Configure the frontend to communicate with backend via Docker network
 
 ### 3. Access the Application
 
@@ -91,6 +93,56 @@ docker compose down
 # Or stop and remove volumes
 docker compose down -v
 ```
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+The application uses environment variables for configuration. The key variable is:
+
+- **`VITE_API_BASE_URL`**: The base URL for the backend API
+
+#### Docker Environment (Default)
+
+When running with Docker Compose, the frontend automatically uses the internal Docker network:
+
+```yaml
+VITE_API_BASE_URL=http://backend:8000
+```
+
+This is configured in `docker-compose.yml` and allows containers to communicate via Docker's internal DNS.
+
+#### Local Development (Without Docker)
+
+If running the frontend locally (outside Docker), create a `.env` file in the `frontend/` directory:
+
+```bash
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+Then start the services:
+
+```bash
+# Terminal 1 - Backend
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload
+
+# Terminal 2 - Frontend
+cd frontend
+npm install
+npm run dev
+```
+
+#### Production Environment
+
+For production deployments, set the environment variable to your production API URL:
+
+```bash
+VITE_API_BASE_URL=https://api.yourdomain.com
+```
+
+See `.env.example` for a template of all available environment variables.
 
 ## 🎯 Using the Application
 
@@ -190,6 +242,7 @@ npx cypress open
 │
 ├── docker-compose.yml       # Docker Compose orchestration
 ├── cypress.config.js        # Cypress configuration
+├── .env.example            # Environment variable template
 └── README.md               # This file
 ```
 
@@ -287,12 +340,22 @@ docker compose up
 1. Verify backend is running: `curl http://localhost:8000/health`
 2. Check CORS configuration in `backend/main.py`
 3. Verify Docker network is working: `docker network ls`
+4. Check that `VITE_API_BASE_URL` is set correctly for your environment
 
 ### Frontend Shows Blank Page
 
 1. Check browser console for errors (F12)
 2. Verify frontend container is running: `docker compose ps`
 3. Check frontend logs: `docker compose logs frontend`
+4. Ensure environment variables are properly configured
+
+### API Connection Issues in Docker
+
+If the frontend can't connect to the backend in Docker:
+
+1. Verify both containers are on the same network: `docker network inspect ab-sdlc-agent-ai-backend_app-network`
+2. Check that `VITE_API_BASE_URL=http://backend:8000` in docker-compose.yml
+3. Rebuild the frontend container: `docker compose build frontend && docker compose up frontend`
 
 ## 📊 CI/CD Pipeline
 
