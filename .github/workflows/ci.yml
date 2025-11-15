@@ -116,7 +116,7 @@ jobs:
     
     - name: Test docker-compose configuration
       run: |
-        docker-compose config
+        docker compose config
 
   # Integration test job
   integration-tests:
@@ -130,7 +130,7 @@ jobs:
     
     - name: Start services with docker-compose
       run: |
-        docker-compose up -d
+        docker compose up -d
         
         # Wait for services to be healthy
         echo "Waiting for services to start..."
@@ -160,14 +160,14 @@ jobs:
       if: failure()
       run: |
         echo "=== Backend logs ==="
-        docker-compose logs backend
+        docker compose logs backend
         echo "=== Frontend logs ==="
-        docker-compose logs frontend
+        docker compose logs frontend
     
     - name: Stop services
       if: always()
       run: |
-        docker-compose down
+        docker compose down
 
   # Final status job
   ci-success:
