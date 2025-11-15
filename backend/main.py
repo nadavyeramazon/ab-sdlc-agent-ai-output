@@ -11,12 +11,16 @@ app = FastAPI(
 )
 
 # Configure CORS middleware to allow frontend access
+# For Docker development environment, we need to allow:
+# - http://localhost:3000 (browser accessing frontend)
+# - http://frontend:3000 (Docker internal service name)
+# Using wildcard (*) for development to handle all Docker networking scenarios
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Frontend origin
+    allow_origins=["*"],  # Allow all origins for Docker development
     allow_credentials=True,
     allow_methods=["GET"],  # Only GET methods needed
-    allow_headers=["Content-Type", "Authorization", "Accept"],  # Specific headers only
+    allow_headers=["*"],  # Allow all headers for flexibility
 )
 
 

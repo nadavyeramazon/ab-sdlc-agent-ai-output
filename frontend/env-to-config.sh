@@ -1,5 +1,6 @@
 #!/bin/sh
 # Script to inject environment variables into config.js at runtime
+# This script is executed by nginx's docker-entrypoint system before nginx starts
 
 # Get API_URL from environment or use default
 API_URL=${API_URL:-http://localhost:8000}
@@ -15,5 +16,5 @@ EOF
 
 echo "Generated config.js with API_URL: ${API_URL}"
 
-# Start nginx
-exec nginx -g 'daemon off;'
+# DO NOT exec nginx here - the nginx entrypoint system will handle starting nginx
+# This script runs as part of /docker-entrypoint.d/ and should exit cleanly
