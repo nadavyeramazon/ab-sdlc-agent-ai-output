@@ -75,14 +75,18 @@ describe('App Component', () => {
       
       fireEvent.click(button)
       
-      // Check loading state appears - look for the button text change first
+      // Wait for button to be disabled first (most reliable indicator of loading state)
       await waitFor(() => {
-        const loadingButton = screen.getByRole('button', { name: /loading/i })
-        expect(loadingButton).toBeInTheDocument()
-      }, { timeout: 1000 })
+        expect(button).toBeDisabled()
+      })
       
-      // Also check the loading paragraph
-      expect(screen.getByText('Loading...')).toBeInTheDocument()
+      // Then check that loading text is shown - check the loading paragraph
+      await waitFor(() => {
+        expect(screen.getByText('Loading...')).toBeInTheDocument()
+      })
+      
+      // Verify button text changed to "Loading..."
+      expect(button).toHaveTextContent('Loading...')
     })
 
     it('button is disabled during loading', async () => {
