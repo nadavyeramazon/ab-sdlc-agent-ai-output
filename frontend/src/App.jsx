@@ -10,6 +10,7 @@
  */
 
 import { useState } from 'react'
+import './App.css'
 
 function App() {
   // State management using React hooks
