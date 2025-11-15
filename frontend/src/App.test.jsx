@@ -11,25 +11,17 @@ import App from './App'
 // Mock fetch globally
 global.fetch = vi.fn()
 
-// Mock import.meta.env
-const mockEnv = {
-  VITE_API_URL: 'http://localhost:8000'
-}
-
-// Override import.meta.env for tests
-Object.defineProperty(import.meta, 'env', {
-  get: () => mockEnv,
-  configurable: true
-})
-
 describe('App Component', () => {
   beforeEach(() => {
     // Reset fetch mock before each test
     fetch.mockReset()
+    // Clear any environment variable stubs
+    vi.unstubAllEnvs()
   })
 
   afterEach(() => {
     vi.clearAllMocks()
+    vi.unstubAllEnvs()
   })
 
   describe('Initial Rendering', () => {
@@ -312,6 +304,9 @@ describe('App Component', () => {
 
   describe('API Call Details', () => {
     it('calls correct API endpoint with environment variable', async () => {
+      // Set environment variable using Vitest's proper method
+      vi.stubEnv('VITE_API_URL', 'http://localhost:8000')
+      
       fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ message: 'Test', timestamp: new Date().toISOString() })
@@ -328,9 +323,8 @@ describe('App Component', () => {
     })
 
     it('uses Docker service name when VITE_API_URL is set to backend', async () => {
-      // Temporarily override environment variable
-      const originalEnv = mockEnv.VITE_API_URL
-      mockEnv.VITE_API_URL = 'http://backend:8000'
+      // Set environment variable using Vitest's proper method
+      vi.stubEnv('VITE_API_URL', 'http://backend:8000')
 
       fetch.mockResolvedValueOnce({
         ok: true,
@@ -345,9 +339,6 @@ describe('App Component', () => {
       await waitFor(() => {
         expect(fetch).toHaveBeenCalledWith('http://backend:8000/api/hello')
       })
-
-      // Restore original environment
-      mockEnv.VITE_API_URL = originalEnv
     })
 
     it('makes GET request', async () => {
@@ -369,8 +360,7 @@ describe('App Component', () => {
 
   describe('Environment Variable Configuration', () => {
     it('uses VITE_API_URL when provided', async () => {
-      const originalEnv = mockEnv.VITE_API_URL
-      mockEnv.VITE_API_URL = 'http://custom-backend:9000'
+      vi.stubEnv('VITE_API_URL', 'http://custom-backend:9000')
 
       fetch.mockResolvedValueOnce({
         ok: true,
@@ -385,13 +375,11 @@ describe('App Component', () => {
       await waitFor(() => {
         expect(fetch).toHaveBeenCalledWith('http://custom-backend:9000/api/hello')
       })
-
-      mockEnv.VITE_API_URL = originalEnv
     })
 
     it('falls back to localhost when VITE_API_URL is not set', async () => {
-      const originalEnv = mockEnv.VITE_API_URL
-      delete mockEnv.VITE_API_URL
+      // Don't set VITE_API_URL, let it use the default fallback
+      vi.unstubAllEnvs()
 
       fetch.mockResolvedValueOnce({
         ok: true,
@@ -406,8 +394,6 @@ describe('App Component', () => {
       await waitFor(() => {
         expect(fetch).toHaveBeenCalledWith('http://localhost:8000/api/hello')
       })
-
-      mockEnv.VITE_API_URL = originalEnv
     })
   })
 
