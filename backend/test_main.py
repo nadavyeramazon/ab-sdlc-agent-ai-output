@@ -104,7 +104,14 @@ class TestCORS:
     
     def test_cors_headers_present_on_hello_endpoint(self):
         """Test that CORS headers are present on hello endpoint."""
-        response = client.options("/api/hello")
+        # FastAPI's CORSMiddleware requires an Origin header to add CORS headers
+        response = client.options(
+            "/api/hello",
+            headers={
+                "Origin": "http://localhost:3000",
+                "Access-Control-Request-Method": "GET"
+            }
+        )
         assert "access-control-allow-origin" in response.headers
     
     def test_cors_allows_frontend_origin(self):
