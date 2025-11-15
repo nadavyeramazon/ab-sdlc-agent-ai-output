@@ -29,30 +29,61 @@ describe('Green Theme Hello World Application', () => {
 
   describe('Backend Integration', () => {
     it('fetches and displays message from backend', () => {
+      // Intercept the API call and add a small delay to make loading state observable
+      cy.intercept('GET', 'http://localhost:8000/api/hello', (req) => {
+        req.continue((res) => {
+          // Add delay to ensure loading state is visible
+          res.delay = 200
+        })
+      }).as('getHello')
+
       // Click the button
       cy.get('button').click()
 
       // Verify loading state appears in the button
       cy.get('button').should('contain', 'Loading...')
 
+      // Wait for the API call to complete
+      cy.wait('@getHello')
+
       // Wait for and verify the backend message appears
       cy.contains('Hello World from Backend!', { timeout: 10000 }).should('be.visible')
     })
 
     it('can fetch message multiple times', () => {
+      // Intercept the API call and add a small delay to make loading state observable
+      cy.intercept('GET', 'http://localhost:8000/api/hello', (req) => {
+        req.continue((res) => {
+          res.delay = 200
+        })
+      }).as('getHello')
+
       // First click
       cy.get('button').click()
+      cy.get('button').should('contain', 'Loading...')
+      cy.wait('@getHello')
       cy.contains('Hello World from Backend!', { timeout: 10000 }).should('be.visible')
 
       // Second click
       cy.get('button').click()
       cy.get('button').should('contain', 'Loading...')
+      cy.wait('@getHello')
       cy.contains('Hello World from Backend!', { timeout: 10000 }).should('be.visible')
     })
 
     it('button is disabled during loading', () => {
+      // Intercept the API call and add a small delay to make loading state observable
+      cy.intercept('GET', 'http://localhost:8000/api/hello', (req) => {
+        req.continue((res) => {
+          res.delay = 200
+        })
+      }).as('getHello')
+
       cy.get('button').click()
       cy.get('button').should('be.disabled')
+      
+      // Wait for API call to complete
+      cy.wait('@getHello')
     })
   })
 
