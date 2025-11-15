@@ -75,9 +75,11 @@ describe('App Component', () => {
       
       fireEvent.click(button)
       
-      // Use findByText which waits for element to appear (combines getBy + waitFor)
-      const loadingText = await screen.findByText('Loading...', {}, { timeout: 3000 })
-      expect(loadingText).toBeInTheDocument()
+      // Wait for loading state to appear using waitFor pattern
+      await waitFor(() => {
+        const loadingElement = screen.getByRole('status', { name: /loading/i })
+        expect(loadingElement).toBeInTheDocument()
+      })
       
       // Button should be disabled during loading
       expect(button).toBeDisabled()
