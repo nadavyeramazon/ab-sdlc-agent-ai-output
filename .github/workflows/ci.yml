@@ -1,0 +1,187 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  # Backend testing job
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./backend
+    
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run backend tests
+      run: |
+        pytest -v --tb=short test_main.py
+    
+    - name: Test backend startup
+      run: |
+        # Start backend in background
+        uvicorn main:app --host 0.0.0.0 --port 8000 &
+        BACKEND_PID=$!
+        
+        # Wait for backend to start
+        sleep 3
+        
+        # Test health endpoint
+        curl -f http://localhost:8000/health || exit 1
+        
+        # Test hello endpoint
+        curl -f http://localhost:8000/api/hello || exit 1
+        
+        # Cleanup
+        kill $BACKEND_PID
+
+  # Frontend build job
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./frontend
+    
+    strategy:
+      matrix:
+        node-version: ["18"]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: './frontend/package-lock.json'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build frontend
+      run: npm run build
+    
+    - name: Check build output
+      run: |
+        if [ ! -d "dist" ]; then
+          echo "Build failed: dist directory not found"
+          exit 1
+        fi
+        echo "Build successful!"
+
+  # Docker build job
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-build]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build backend Docker image
+      run: |
+        docker build -t backend:test ./backend
+    
+    - name: Build frontend Docker image
+      run: |
+        docker build -t frontend:test ./frontend
+    
+    - name: Test docker-compose configuration
+      run: |
+        docker-compose config
+
+  # Integration test job
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-build]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Start services with docker-compose
+      run: |
+        docker-compose up -d
+        
+        # Wait for services to be healthy
+        echo "Waiting for services to start..."
+        sleep 15
+    
+    - name: Check backend health
+      run: |
+        curl -f http://localhost:8000/health || exit 1
+        echo "Backend health check passed"
+    
+    - name: Check backend hello endpoint
+      run: |
+        response=$(curl -f http://localhost:8000/api/hello)
+        echo "Response: $response"
+        
+        # Verify response contains expected fields
+        echo $response | grep -q '"message"' || exit 1
+        echo $response | grep -q '"timestamp"' || exit 1
+        echo "Backend hello endpoint test passed"
+    
+    - name: Check frontend accessibility
+      run: |
+        curl -f http://localhost:3000 || exit 1
+        echo "Frontend accessibility check passed"
+    
+    - name: Display service logs on failure
+      if: failure()
+      run: |
+        echo "=== Backend logs ==="
+        docker-compose logs backend
+        echo "=== Frontend logs ==="
+        docker-compose logs frontend
+    
+    - name: Stop services
+      if: always()
+      run: |
+        docker-compose down
+
+  # Final status job
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-build, docker-build, integration-tests]
+    
+    steps:
+    - name: CI Pipeline Passed
+      run: |
+        echo "✅ All CI checks passed successfully!"
+        echo "- Backend tests: PASSED"
+        echo "- Frontend build: PASSED"
+        echo "- Docker builds: PASSED"
+        echo "- Integration tests: PASSED"
