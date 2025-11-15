@@ -62,7 +62,7 @@ describe('App Component', () => {
 
   describe('Button Click and Loading State', () => {
     it('shows loading state when button is clicked', async () => {
-      // Mock a delayed response with longer delay to ensure loading state is visible
+      // Mock a delayed response to ensure loading state is visible
       fetch.mockImplementation(() => 
         new Promise(resolve => setTimeout(() => resolve({
           ok: true,
@@ -75,17 +75,12 @@ describe('App Component', () => {
       
       fireEvent.click(button)
       
-      // Wait for button to be disabled first (most reliable indicator of loading state)
-      await waitFor(() => {
-        expect(button).toBeDisabled()
-      })
+      // Use findByText which waits for element to appear (combines getBy + waitFor)
+      const loadingText = await screen.findByText('Loading...', {}, { timeout: 3000 })
+      expect(loadingText).toBeInTheDocument()
       
-      // Then check that loading text is shown - check the loading paragraph
-      await waitFor(() => {
-        expect(screen.getByText('Loading...')).toBeInTheDocument()
-      })
-      
-      // Verify button text changed to "Loading..."
+      // Button should be disabled during loading
+      expect(button).toBeDisabled()
       expect(button).toHaveTextContent('Loading...')
     })
 
