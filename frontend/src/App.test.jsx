@@ -62,12 +62,12 @@ describe('App Component', () => {
 
   describe('Button Click and Loading State', () => {
     it('shows loading state when button is clicked', async () => {
-      // Mock a delayed response
+      // Mock a delayed response with longer delay to ensure loading state is visible
       fetch.mockImplementation(() => 
         new Promise(resolve => setTimeout(() => resolve({
           ok: true,
           json: async () => ({ message: 'Test message', timestamp: new Date().toISOString() })
-        }), 100))
+        }), 500))
       )
 
       render(<App />)
@@ -75,10 +75,14 @@ describe('App Component', () => {
       
       fireEvent.click(button)
       
-      // Check loading text appears
+      // Check loading state appears - look for the button text change first
       await waitFor(() => {
-        expect(screen.getByText(/loading\.\.\./i)).toBeInTheDocument()
-      })
+        const loadingButton = screen.getByRole('button', { name: /loading/i })
+        expect(loadingButton).toBeInTheDocument()
+      }, { timeout: 1000 })
+      
+      // Also check the loading paragraph
+      expect(screen.getByText('Loading...')).toBeInTheDocument()
     })
 
     it('button is disabled during loading', async () => {
@@ -86,7 +90,7 @@ describe('App Component', () => {
         new Promise(resolve => setTimeout(() => resolve({
           ok: true,
           json: async () => ({ message: 'Test message', timestamp: new Date().toISOString() })
-        }), 100))
+        }), 500))
       )
 
       render(<App />)
@@ -104,7 +108,7 @@ describe('App Component', () => {
         new Promise(resolve => setTimeout(() => resolve({
           ok: true,
           json: async () => ({ message: 'Test message', timestamp: new Date().toISOString() })
-        }), 100))
+        }), 500))
       )
 
       render(<App />)
@@ -184,7 +188,7 @@ describe('App Component', () => {
         expect(screen.getByText('Hello World from Backend!')).toBeInTheDocument()
       })
       
-      expect(screen.queryByText(/loading\.\.\./i)).not.toBeInTheDocument()
+      expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
     })
 
     it('re-enables button after successful fetch', async () => {
@@ -251,7 +255,7 @@ describe('App Component', () => {
         expect(screen.getByText(/failed to fetch data from backend/i)).toBeInTheDocument()
       })
       
-      expect(screen.queryByText(/loading\.\.\./i)).not.toBeInTheDocument()
+      expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
     })
 
     it('re-enables button after error', async () => {
@@ -340,7 +344,7 @@ describe('App Component', () => {
         new Promise(resolve => setTimeout(() => resolve({
           ok: true,
           json: async () => ({ message: 'Test', timestamp: new Date().toISOString() })
-        }), 100))
+        }), 500))
       )
 
       render(<App />)
