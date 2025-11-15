@@ -65,7 +65,7 @@ function App() {
           </button>
 
           {loading && (
-            <div className="loading" role="status" aria-live="polite">
+            <div className="loading" role="status" aria-label="Loading" aria-live="polite">
               <div className="spinner"></div>
               <p>Loading...</p>
             </div>
