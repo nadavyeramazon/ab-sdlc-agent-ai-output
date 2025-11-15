@@ -32,8 +32,8 @@ describe('Green Theme Hello World Application', () => {
       // Click the button
       cy.get('button').click()
 
-      // Verify loading state appears
-      cy.contains('Loading...').should('be.visible')
+      // Verify loading state appears in the button
+      cy.get('button').should('contain', 'Loading...')
 
       // Wait for and verify the backend message appears
       cy.contains('Hello World from Backend!', { timeout: 10000 }).should('be.visible')
@@ -46,7 +46,7 @@ describe('Green Theme Hello World Application', () => {
 
       // Second click
       cy.get('button').click()
-      cy.contains('Loading...').should('be.visible')
+      cy.get('button').should('contain', 'Loading...')
       cy.contains('Hello World from Backend!', { timeout: 10000 }).should('be.visible')
     })
 
@@ -65,6 +65,15 @@ describe('Green Theme Hello World Application', () => {
 
       // Click the button
       cy.get('button').click()
+
+      // Verify loading state appears in the button
+      cy.get('button').should('contain', 'Loading...')
+      
+      // Verify button is disabled during loading
+      cy.get('button').should('be.disabled')
+
+      // Wait for the API call to complete
+      cy.wait('@getHello')
 
       // Verify error message appears
       cy.contains('Failed to fetch message from backend', { timeout: 10000 }).should('be.visible')
