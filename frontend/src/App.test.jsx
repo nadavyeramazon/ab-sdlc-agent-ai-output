@@ -75,9 +75,11 @@ describe('App Component', () => {
       
       await userEvent.click(button)
       
-      // Check loading state
-      expect(button).toHaveTextContent('Loading...')
-      expect(button).toBeDisabled()
+      // Wait for loading state using waitFor to properly handle async updates
+      await waitFor(() => {
+        expect(button).toHaveTextContent('Loading...')
+        expect(button).toBeDisabled()
+      })
     })
   })
 
