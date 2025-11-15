@@ -57,9 +57,9 @@ jobs:
         # Cleanup
         kill $BACKEND_PID
 
-  # Frontend build job
-  frontend-build:
-    name: Frontend Build
+  # Frontend tests and build job
+  frontend-tests:
+    name: Frontend Tests & Build
     runs-on: ubuntu-latest
     
     defaults:
@@ -82,6 +82,12 @@ jobs:
     - name: Install dependencies
       run: npm install
     
+    - name: Run frontend tests
+      run: npm test
+    
+    - name: Run tests with coverage
+      run: npm run test:coverage
+    
     - name: Build frontend
       run: npm run build
     
@@ -97,7 +103,7 @@ jobs:
   docker-build:
     name: Docker Build Test
     runs-on: ubuntu-latest
-    needs: [backend-tests, frontend-build]
+    needs: [backend-tests, frontend-tests]
     
     steps:
     - name: Checkout code
@@ -110,9 +116,13 @@ jobs:
       run: |
         docker build -t backend:test ./backend
     
-    - name: Build frontend Docker image
+    - name: Build frontend Docker image (production)
       run: |
         docker build -t frontend:test ./frontend
+    
+    - name: Build frontend Docker image (development)
+      run: |
+        docker build -f frontend/Dockerfile.dev -t frontend:dev ./frontend
     
     - name: Test docker-compose configuration
       run: |
@@ -122,7 +132,7 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
-    needs: [backend-tests, frontend-build]
+    needs: [backend-tests, frontend-tests]
     
     steps:
     - name: Checkout code
@@ -134,7 +144,7 @@ jobs:
         
         # Wait for services to be healthy
         echo "Waiting for services to start..."
-        sleep 15
+        sleep 20
     
     - name: Check backend health
       run: |
@@ -156,6 +166,11 @@ jobs:
         curl -f http://localhost:3000 || exit 1
         echo "Frontend accessibility check passed"
     
+    - name: Verify frontend config.js is accessible
+      run: |
+        curl -f http://localhost:3000/config.js || exit 1
+        echo "Frontend config.js check passed"
+    
     - name: Display service logs on failure
       if: failure()
       run: |
@@ -173,13 +188,14 @@ jobs:
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [backend-tests, frontend-build, docker-build, integration-tests]
+    needs: [backend-tests, frontend-tests, docker-build, integration-tests]
     
     steps:
     - name: CI Pipeline Passed
       run: |
         echo "✅ All CI checks passed successfully!"
         echo "- Backend tests: PASSED"
+        echo "- Frontend tests: PASSED"
         echo "- Frontend build: PASSED"
         echo "- Docker builds: PASSED"
         echo "- Integration tests: PASSED"

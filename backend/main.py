@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict
 
 # Create FastAPI application instance
@@ -16,7 +16,7 @@ app.add_middleware(
     allow_origins=["http://localhost:3000"],  # Frontend origin
     allow_credentials=True,
     allow_methods=["GET"],  # Only GET methods needed
-    allow_headers=["*"],
+    allow_headers=["Content-Type", "Authorization", "Accept"],  # Specific headers only
 )
 
 
@@ -30,7 +30,7 @@ async def get_hello_message() -> Dict[str, str]:
     """
     return {
         "message": "Hello World from Backend!",
-        "timestamp": datetime.utcnow().isoformat() + "Z"  # ISO 8601 format with Z suffix
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")  # ISO 8601 format with Z suffix
     }
 
 

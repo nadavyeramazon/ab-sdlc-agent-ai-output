@@ -26,8 +26,15 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# Copy runtime configuration template
+COPY public/config.js /usr/share/nginx/html/config.js
+
+# Copy entrypoint script
+COPY env-to-config.sh /docker-entrypoint.d/env-to-config.sh
+RUN chmod +x /docker-entrypoint.d/env-to-config.sh
+
 # Expose port 3000
 EXPOSE 3000
 
-# Start nginx
+# Start nginx (entrypoint script will run automatically)
 CMD ["nginx", "-g", "daemon off;"]

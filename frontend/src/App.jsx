@@ -20,8 +20,9 @@ function App() {
     setTimestamp('')
 
     try {
-      // Use environment variable for API URL, fallback to localhost
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      // Use runtime configuration for API URL (set by nginx at runtime)
+      // Fallback to localhost for development without docker
+      const apiUrl = window.API_CONFIG?.apiUrl || 'http://localhost:8000'
       
       // Fetch with 5-second timeout
       const controller = new AbortController()

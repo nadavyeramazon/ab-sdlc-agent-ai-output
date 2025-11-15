@@ -18,18 +18,24 @@ services:
       retries: 3
       start_period: 5s
 
-  # Frontend service - React application
+  # Frontend service - React application with development mode
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     ports:
       - "3000:3000"
     volumes:
-      # Mount src directory for Vite HMR
+      # Mount src directory for Vite HMR (avoid node_modules)
       - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+      # Prevent node_modules from being overwritten
+      - /app/node_modules
     environment:
-      - VITE_API_URL=http://backend:8000
+      # Not used at build time, but available for reference
+      # Frontend uses runtime window.API_CONFIG with backend service name
+      - API_URL=http://localhost:8000
     depends_on:
       backend:
         condition: service_healthy
