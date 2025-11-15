@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import datetime, timezone
 import logging
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -23,9 +24,22 @@ app = FastAPI(
 )
 
 # Configure CORS middleware to allow requests from frontend
+# Support both local development (localhost:3000) and Docker Compose deployment
+allowed_origins = [
+    "http://localhost:3000",      # Local development
+    "http://frontend:3000",       # Docker Compose internal network
+    "http://127.0.0.1:3000",      # Alternative localhost
+]
+
+# Allow environment variable override for additional origins
+if env_origins := os.getenv("CORS_ORIGINS"):
+    allowed_origins.extend(env_origins.split(","))
+
+logger.info(f"CORS allowed origins: {allowed_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Frontend development server
+    allow_origins=allowed_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
