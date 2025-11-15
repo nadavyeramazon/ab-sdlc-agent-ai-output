@@ -123,10 +123,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       
-      - name: Start services with Docker Compose
+      - name: Start services with Docker Compose for E2E tests
         run: |
-          docker compose up -d
-          sleep 10
+          # Use docker-compose.e2e.yml override to configure frontend for host-based E2E tests
+          # This rebuilds frontend with VITE_API_BASE_URL=http://localhost:8000
+          docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build
+          echo "Waiting for services to be healthy..."
+          sleep 15
       
       - name: Check backend health
         run: |
@@ -139,6 +142,7 @@ jobs:
       - name: Test backend API endpoint
         run: |
           response=$(curl -s http://localhost:8000/api/hello)
+          echo "Backend response: $response"
           echo "$response" | grep -q "Hello World from Backend!" || exit 1
       
       - name: Set up Node.js for Cypress
@@ -157,12 +161,15 @@ jobs:
       - name: Show Docker logs on failure
         if: failure()
         run: |
-          docker compose logs
+          echo "=== Backend Logs ==="
+          docker compose logs backend
+          echo "=== Frontend Logs ==="
+          docker compose logs frontend
       
       - name: Stop services
         if: always()
         run: |
-          docker compose down -v
+          docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v
 
   # Final check - all tests must pass
   all-tests-passed:

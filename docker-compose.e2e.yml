@@ -1,0 +1,21 @@
+# Docker Compose override for E2E testing
+# This file overrides docker-compose.yml for end-to-end tests
+# The frontend is rebuilt with VITE_API_BASE_URL=http://localhost:8000
+# so that Cypress running on the host machine can access the backend
+
+version: '3.8'
+
+services:
+  # Frontend service override for E2E tests
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+      args:
+        # Use localhost instead of backend hostname for E2E tests
+        # This allows the browser (controlled by Cypress on host) to access the backend
+        - VITE_API_BASE_URL=http://localhost:8000
+    environment:
+      - NODE_ENV=development
+      # Override with localhost so browser on host can reach backend
+      - VITE_API_BASE_URL=http://localhost:8000
