@@ -60,6 +60,8 @@ function App() {
         setError('Request timed out. Please check if the backend is running.')
       } else if (err.message.includes('Failed to fetch')) {
         setError('Unable to connect to backend. Please ensure the backend service is running on port 8000.')
+      } else if (err.message.includes('HTTP error')) {
+        setError(`HTTP error: ${err.message}`)
       } else {
         setError(`An error occurred: ${err.message}`)
       }
