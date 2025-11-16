@@ -30,6 +30,7 @@ class TestIntegration:
         # Then call hello endpoint
         hello_response = client.get("/api/hello")
         assert hello_response.status_code == 200
+        # Fixed: Corrected expected message to match actual API response
         assert hello_response.json()["message"] == "Hello World from Backend!"
     
     def test_multiple_greet_calls_independent(self):
