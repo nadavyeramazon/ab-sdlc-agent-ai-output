@@ -66,16 +66,16 @@ jobs:
     - name: Build backend image
       working-directory: ./backend
       run: |
-        docker build -t green-theme-backend:test .
+        docker build -t purple-theme-backend:test .
     
     - name: Build frontend image
       working-directory: ./frontend
       run: |
-        docker build -t green-theme-frontend:test .
+        docker build -t purple-theme-frontend:test .
     
     - name: Verify images exist
       run: |
-        docker images | grep green-theme
+        docker images | grep purple-theme
 
   test-docker-compose:
     name: Docker Compose Integration Tests
@@ -92,7 +92,7 @@ jobs:
     - name: Wait for services to start
       run: |
         echo "Waiting for services to initialize..."
-        sleep 15
+        sleep 20
     
     - name: Check service status
       run: |
@@ -105,12 +105,62 @@ jobs:
         echo "Health response: $HEALTH_RESPONSE"
         echo $HEALTH_RESPONSE | grep -q '"status":"healthy"' || exit 1
     
-    - name: Test backend API endpoint
+    - name: Test backend hello API endpoint
       run: |
         curl -f http://localhost:8000/api/hello || exit 1
         API_RESPONSE=$(curl -s http://localhost:8000/api/hello)
         echo "API response: $API_RESPONSE"
         echo $API_RESPONSE | grep -q '"message":"Hello World from Backend!"' || exit 1
+    
+    - name: Test backend greet API endpoint
+      run: |
+        GREET_RESPONSE=$(curl -s -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name": "Test User"}')
+        echo "Greet response: $GREET_RESPONSE"
+        echo $GREET_RESPONSE | grep -q '"greeting":"Hello, Test User! Welcome to our purple-themed app!"' || exit 1
+        echo "✓ Greet endpoint returns correct greeting"
+    
+    - name: Test greet validation - empty name
+      run: |
+        EMPTY_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name": ""}')
+        HTTP_CODE=$(echo "$EMPTY_RESPONSE" | tail -n1)
+        BODY=$(echo "$EMPTY_RESPONSE" | head -n-1)
+        echo "Empty name response code: $HTTP_CODE"
+        echo "Empty name response body: $BODY"
+        if [ "$HTTP_CODE" != "400" ]; then
+          echo "ERROR: Expected 400, got $HTTP_CODE"
+          exit 1
+        fi
+        echo $BODY | grep -q '"detail":"Name cannot be empty"' || exit 1
+        echo "✓ Empty name validation works"
+    
+    - name: Test greet validation - whitespace name
+      run: |
+        WHITESPACE_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name": "   "}')
+        HTTP_CODE=$(echo "$WHITESPACE_RESPONSE" | tail -n1)
+        BODY=$(echo "$WHITESPACE_RESPONSE" | head -n-1)
+        echo "Whitespace name response code: $HTTP_CODE"
+        echo "Whitespace name response body: $BODY"
+        if [ "$HTTP_CODE" != "400" ]; then
+          echo "ERROR: Expected 400, got $HTTP_CODE"
+          exit 1
+        fi
+        echo $BODY | grep -q '"detail":"Name cannot be empty"' || exit 1
+        echo "✓ Whitespace validation works"
+    
+    - name: Test greet with special characters
+      run: |
+        SPECIAL_RESPONSE=$(curl -s -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name": "José O'\''Brien"}')
+        echo "Special characters response: $SPECIAL_RESPONSE"
+        echo $SPECIAL_RESPONSE | grep -q "José O'Brien" || exit 1
+        echo "✓ Special characters handled correctly"
     
     - name: Validate timestamp format
       run: |
@@ -123,6 +173,19 @@ jobs:
         fi
         echo "Timestamp format valid: $TIMESTAMP"
     
+    - name: Validate greet timestamp format
+      run: |
+        GREET_RESPONSE=$(curl -s -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name": "Test"}')
+        TIMESTAMP=$(echo $GREET_RESPONSE | grep -oP '\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z')
+        if [ -z "$TIMESTAMP" ]; then
+          echo "ERROR: Greet timestamp format invalid"
+          echo "Response: $GREET_RESPONSE"
+          exit 1
+        fi
+        echo "Greet timestamp format valid: $TIMESTAMP"
+    
     - name: Test frontend accessibility
       run: |
         FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000)
@@ -132,10 +195,20 @@ jobs:
           exit 1
         fi
     
-    - name: Test CORS headers
+    - name: Test CORS headers for GET
       run: |
         CORS_RESPONSE=$(curl -s -H "Origin: http://localhost:3000" -v http://localhost:8000/api/hello 2>&1)
         echo "$CORS_RESPONSE" | grep -i "access-control-allow-origin" || exit 1
+        echo "✓ CORS headers present for GET"
+    
+    - name: Test CORS headers for POST
+      run: |
+        CORS_RESPONSE=$(curl -s -H "Origin: http://localhost:3000" -v \
+          -X POST http://localhost:8000/api/greet \
+          -H "Content-Type: application/json" \
+          -d '{"name": "CORS Test"}' 2>&1)
+        echo "$CORS_RESPONSE" | grep -i "access-control-allow-origin" || exit 1
+        echo "✓ CORS headers present for POST"
     
     - name: Show service logs on failure
       if: failure()
