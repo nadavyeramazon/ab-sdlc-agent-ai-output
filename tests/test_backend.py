@@ -5,7 +5,8 @@ from fastapi.testclient import TestClient
 from backend.main import app
 import re
 
-client = TestClient(app)
+# Configure TestClient to trigger CORS middleware
+client = TestClient(app, raise_server_exceptions=False)
 
 
 class TestRegressionTests:

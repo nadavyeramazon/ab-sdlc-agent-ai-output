@@ -3,7 +3,8 @@ import pytest
 from fastapi.testclient import TestClient
 from backend.main import app
 
-client = TestClient(app)
+# Configure TestClient to trigger CORS middleware
+client = TestClient(app, raise_server_exceptions=False)
 
 
 class TestIntegration:
