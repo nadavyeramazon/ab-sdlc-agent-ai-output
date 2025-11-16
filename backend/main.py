@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime
-from pydantic import BaseModel
+from datetime import datetime, timezone
+from pydantic import BaseModel, Field, validator
 import os
 
 # Create FastAPI application instance
@@ -18,7 +18,6 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",  # Frontend development server
         os.getenv("FRONTEND_URL", "http://localhost:3000"),  # Allow environment override
-        "*"  # Allow all origins for testing
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Allow all common HTTP methods
@@ -29,8 +28,15 @@ app.add_middleware(
 
 # Pydantic Models for Greet Endpoint
 class GreetRequest(BaseModel):
-    """Request model for greet endpoint."""
-    name: str
+    """Request model for greet endpoint with validation."""
+    name: str = Field(..., min_length=1, max_length=100, description="User's name (1-100 characters)")
+    
+    @validator('name')
+    def name_must_not_be_whitespace(cls, v):
+        """Validate that name is not empty or whitespace-only."""
+        if not v or not v.strip():
+            raise ValueError('Name cannot be empty or whitespace-only')
+        return v.strip()
 
 
 class GreetResponse(BaseModel):
@@ -52,7 +58,7 @@ async def get_hello():
     """
     return {
         "message": "Hello World from Backend!",
-        "timestamp": datetime.utcnow().isoformat() + "Z"  # ISO8601 format with UTC timezone
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")  # ISO8601 format with UTC timezone
     }
 
 
@@ -62,29 +68,25 @@ async def greet_user(request: GreetRequest):
     Generate personalized greeting for user.
     
     Accepts a name and returns a personalized greeting message with timestamp.
-    Validates that the name is not empty or whitespace-only.
+    Validates that the name is not empty, not whitespace-only, and within length limits (1-100 chars).
     
     Args:
-        request: GreetRequest containing user's name
+        request: GreetRequest containing user's name (validated by Pydantic)
     
     Returns:
         GreetResponse: Personalized greeting and timestamp
     
     Raises:
-        HTTPException: 400 error if name is empty or whitespace-only
+        HTTPException: 422 error if name validation fails (handled by Pydantic)
     """
-    # Extract and trim the name
-    name = request.name.strip()
-    
-    # Validate name is not empty
-    if len(name) == 0:
-        raise HTTPException(status_code=400, detail="Name cannot be empty")
+    # Name is already validated and trimmed by Pydantic validator
+    name = request.name
     
     # Generate personalized greeting
     greeting = f"Hello, {name}! Welcome to our purple-themed app!"
     
-    # Generate timestamp in ISO 8601 format with Z suffix
-    timestamp = datetime.utcnow().isoformat() + "Z"
+    # Generate timestamp in ISO 8601 format with Z suffix using modern datetime API
+    timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     
     return GreetResponse(greeting=greeting, timestamp=timestamp)
 

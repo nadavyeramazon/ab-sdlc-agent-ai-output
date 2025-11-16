@@ -5,6 +5,9 @@ import './App.css'
 // Defaults to localhost:8000 for local development
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
+// Maximum allowed name length to prevent DoS attacks
+const MAX_NAME_LENGTH = 100
+
 function App() {
   // State management for existing "Get Message from Backend" feature
   const [backendMessage, setBackendMessage] = useState('') // Stores message from backend
@@ -62,9 +65,15 @@ function App() {
     setGreetError(null)
     setGreeting(null)
     
-    // Client-side validation
+    // Client-side validation - empty check
     if (name.trim().length === 0) {
       setGreetError('Please enter your name')
+      return
+    }
+    
+    // Client-side validation - max length check to prevent DoS
+    if (name.trim().length > MAX_NAME_LENGTH) {
+      setGreetError(`Name must be ${MAX_NAME_LENGTH} characters or less`)
       return
     }
     
@@ -88,7 +97,7 @@ function App() {
       if (response.ok) {
         setGreeting(data.greeting)
       } else {
-        // Handle server-side validation errors (400)
+        // Handle server-side validation errors (400 or 422)
         setGreetError(data.detail || 'An error occurred')
       }
     } catch (err) {
@@ -164,8 +173,12 @@ function App() {
                 onKeyPress={handleKeyPress}
                 placeholder="Enter your name"
                 disabled={isLoading}
+                maxLength={MAX_NAME_LENGTH}
                 aria-label="Name input"
               />
+              <small className="input-hint">
+                {name.length}/{MAX_NAME_LENGTH} characters
+              </small>
             </div>
             
             <button 
