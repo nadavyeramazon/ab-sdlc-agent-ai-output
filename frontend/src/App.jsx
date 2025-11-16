@@ -130,6 +130,7 @@ function App() {
               onChange={(e) => setUserName(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={greetLoading}
+              maxLength={100}
               aria-label="Enter your name"
             />
             <button 
