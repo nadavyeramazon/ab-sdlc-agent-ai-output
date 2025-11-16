@@ -30,7 +30,8 @@ class TestRegressionTests:
 
     def test_reg_010_cors_headers(self):
         """REG-010: CORS headers present in responses."""
-        response = client.get("/api/hello")
+        # Send Origin header to trigger CORS middleware
+        response = client.get("/api/hello", headers={"Origin": "http://localhost:3000"})
         assert "access-control-allow-origin" in response.headers
 
 
@@ -107,9 +108,11 @@ class TestGreetingAPI:
 
     def test_api_007_cors_headers_on_greet(self):
         """API-007: CORS headers present in /api/greet response."""
+        # Send Origin header to trigger CORS middleware
         response = client.post(
             "/api/greet",
-            json={"name": "Test"}
+            json={"name": "Test"},
+            headers={"Origin": "http://localhost:3000"}
         )
         assert response.status_code == 200
         assert "access-control-allow-origin" in response.headers

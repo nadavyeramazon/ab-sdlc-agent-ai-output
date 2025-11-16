@@ -93,10 +93,11 @@ class TestCombinedFeatures:
         ]
         
         for method, path, json_data in endpoints:
+            # Send Origin header to trigger CORS middleware
             if method == "GET":
-                response = client.get(path)
+                response = client.get(path, headers={"Origin": "http://localhost:3000"})
             else:
-                response = client.post(path, json=json_data)
+                response = client.post(path, json=json_data, headers={"Origin": "http://localhost:3000"})
             
             assert "access-control-allow-origin" in response.headers, \
                 f"CORS missing for {method} {path}"
