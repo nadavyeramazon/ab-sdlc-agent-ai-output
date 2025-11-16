@@ -221,6 +221,11 @@ describe('App Component', () => {
       expect(button).not.toBeDisabled()
     })
 
+    it('displays character counter', () => {
+      render(<App />)
+      expect(screen.getByText(/0\/100 characters/i)).toBeInTheDocument()
+    })
+
     it('allows typing in name input field', async () => {
       const user = userEvent.setup()
       render(<App />)
@@ -229,6 +234,16 @@ describe('App Component', () => {
       await user.type(input, 'Alice')
       
       expect(input).toHaveValue('Alice')
+    })
+
+    it('updates character counter when typing', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      
+      const input = screen.getByLabelText(/name/i)
+      await user.type(input, 'Alice')
+      
+      expect(screen.getByText(/5\/100 characters/i)).toBeInTheDocument()
     })
 
     it('shows validation error when name is empty', async () => {
@@ -255,6 +270,39 @@ describe('App Component', () => {
       
       await waitFor(() => {
         expect(screen.getByText(/please enter your name/i)).toBeInTheDocument()
+      })
+    })
+
+    it('enforces max length of 100 characters', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      
+      const input = screen.getByLabelText(/name/i)
+      expect(input).toHaveAttribute('maxLength', '100')
+      
+      // Try to type 105 characters
+      const longName = 'A'.repeat(105)
+      await user.type(input, longName)
+      
+      // Input should only contain 100 characters
+      expect(input.value).toHaveLength(100)
+    })
+
+    it('shows validation error when name exceeds max length', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      
+      const input = screen.getByLabelText(/name/i)
+      const button = screen.getByRole('button', { name: /greet me/i })
+      
+      // Manually set value to bypass maxLength (simulating paste)
+      const tooLongName = 'A'.repeat(101)
+      input.value = tooLongName
+      
+      await user.click(button)
+      
+      await waitFor(() => {
+        expect(screen.getByText(/name must be 100 characters or less/i)).toBeInTheDocument()
       })
     })
 
@@ -584,6 +632,40 @@ describe('App Component', () => {
       })
 
       expect(fetch).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  describe('DoS Prevention - Max Length Validation', () => {
+    it('accepts name at max length (100 characters)', async () => {
+      const user = userEvent.setup()
+      const maxLengthName = 'A'.repeat(100)
+      
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          greeting: `Hello, ${maxLengthName}! Welcome to our purple-themed app!`,
+          timestamp: '2024-01-15T10:30:00.000000Z'
+        })
+      })
+
+      render(<App />)
+      const input = screen.getByLabelText(/name/i)
+      const button = screen.getByRole('button', { name: /greet me/i })
+      
+      await user.type(input, maxLengthName)
+      await user.click(button)
+
+      await waitFor(() => {
+        expect(screen.getByText(/hello.*welcome to our purple-themed app!/i)).toBeInTheDocument()
+      })
+    })
+
+    it('prevents input beyond max length via HTML maxLength attribute', () => {
+      render(<App />)
+      const input = screen.getByLabelText(/name/i)
+      
+      // Verify maxLength attribute is set
+      expect(input).toHaveAttribute('maxLength', '100')
     })
   })
 })
