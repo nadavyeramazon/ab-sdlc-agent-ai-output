@@ -14,23 +14,24 @@ app = FastAPI(
 # ═══════════════════════════════════════════════════════════════════════════════
 # CORS MIDDLEWARE CONFIGURATION - SECURITY CRITICAL - NO WILDCARDS!
 # ═══════════════════════════════════════════════════════════════════════════════
-# ⚠️  SECURITY VERIFICATION: This configuration does NOT use '*' wildcard
+# ⚠️  SECURITY VERIFICATION: This configuration does NOT use ANY wildcards
 #
 # CURRENT CONFIGURATION (SECURE):
 #   allow_origins = ["http://localhost:3000", os.getenv("FRONTEND_URL", ...)]
 #   ✅ Explicitly whitelists ONLY trusted origins
-#   ✅ NO wildcard '*' present
+#   ✅ NO wildcard '*' in origins, headers, or expose_headers
 #   ✅ Prevents XSS attacks from malicious domains
 #   ✅ Blocks unauthorized data theft
 #   ✅ Mitigates CSRF attack vectors
 #
 # WHY WILDCARDS ARE DANGEROUS:
-#   Using allow_origins=['*'] would allow ANY website to:
-#   - Make authenticated requests to this API
+#   Using allow_origins=['*'] OR allow_headers=['*'] would allow:
+#   - ANY website to make authenticated requests to this API
 #   - Steal user data and session tokens
 #   - Execute cross-site scripting (XSS) attacks
 #   - Perform CSRF attacks against authenticated users
 #   - Access sensitive API endpoints from untrusted domains
+#   - Send arbitrary custom headers that could exploit vulnerabilities
 #
 # PRODUCTION DEPLOYMENT:
 #   Set FRONTEND_URL environment variable to your production frontend domain
@@ -45,9 +46,11 @@ app.add_middleware(
         os.getenv("FRONTEND_URL", "http://localhost:3000"),  # Production frontend from environment
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Allow all common HTTP methods
-    allow_headers=["*"],  # Allow all headers
-    expose_headers=["*"]  # Expose all headers to the client
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Allow common HTTP methods
+    # ✅ SECURE: Explicit header whitelist - NO wildcards!
+    allow_headers=["Content-Type", "Authorization", "Accept"],  # Only allow necessary headers
+    # ✅ SECURE: Explicit expose headers - NO wildcards!
+    expose_headers=["Content-Type"]  # Only expose necessary headers to client
 )
 
 
@@ -169,9 +172,10 @@ async def root():
         "version": "1.2.0",
         "theme": "purple",
         "security": {
-            "cors": "Explicit origin whitelist - NO wildcards",
+            "cors": "Explicit origin whitelist - NO wildcards in origins, headers, or expose_headers",
             "validation": "Max length 100 chars prevents DoS",
-            "datetime": "Modern timezone-aware API"
+            "datetime": "Modern timezone-aware API",
+            "headers": "Explicit header whitelist - only necessary headers allowed"
         },
         "endpoints": [
             "/api/hello - Get greeting message with timestamp",
