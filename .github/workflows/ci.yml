@@ -1,4 +1,4 @@
-name: CI - Green Theme Hello World App
+name: CI - Purple Theme Hello World App
 
 on:
   push:
@@ -55,9 +55,30 @@ jobs:
           
           # Test health endpoint
           curl -f http://localhost:8000/health || exit 1
+          echo "✓ Health endpoint working"
           
-          # Test hello endpoint
+          # Test hello endpoint (existing feature)
           curl -f http://localhost:8000/api/hello || exit 1
+          echo "✓ Hello endpoint working"
+          
+          # Test greet endpoint (new feature) - valid name
+          GREET_RESPONSE=$(curl -f -X POST http://localhost:8000/api/greet \
+            -H "Content-Type: application/json" \
+            -d '{"name":"TestUser"}')
+          echo "Greet Response: $GREET_RESPONSE"
+          echo $GREET_RESPONSE | grep -q "Welcome to our purple-themed app" || exit 1
+          echo "✓ Greet endpoint working with valid name"
+          
+          # Test greet endpoint - empty name (should return 400)
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/api/greet \
+            -H "Content-Type: application/json" \
+            -d '{"name":""}')
+          if [ "$HTTP_CODE" = "400" ]; then
+            echo "✓ Greet endpoint correctly rejects empty name"
+          else
+            echo "✗ Greet endpoint should return 400 for empty name, got $HTTP_CODE"
+            exit 1
+          fi
           
           # Stop backend
           kill $BACKEND_PID
@@ -76,11 +97,11 @@ jobs:
 
       - name: Build backend Docker image
         run: |
-          docker build -t green-hello-backend:test ./backend
+          docker build -t purple-hello-backend:test ./backend
 
       - name: Build frontend Docker image
         run: |
-          docker build -t green-hello-frontend:test ./frontend
+          docker build -t purple-hello-frontend:test ./frontend
 
       - name: Start services with Docker Compose
         run: |
@@ -89,10 +110,10 @@ jobs:
       - name: Wait for services to be healthy
         run: |
           echo "Waiting for backend to be healthy..."
-          timeout 30 sh -c 'until docker compose ps | grep green-hello-backend | grep -q "healthy"; do sleep 2; done'
+          timeout 30 sh -c 'until curl -f http://localhost:8000/health 2>/dev/null; do sleep 2; done'
           
-          echo "Waiting for frontend to be healthy..."
-          timeout 30 sh -c 'until docker compose ps | grep green-hello-frontend | grep -q "healthy"; do sleep 2; done'
+          echo "Waiting for frontend to be accessible..."
+          timeout 30 sh -c 'until curl -f http://localhost:3000 2>/dev/null; do sleep 2; done'
 
       - name: Test backend API accessibility
         run: |
@@ -100,14 +121,26 @@ jobs:
           curl -f http://localhost:8000/health || exit 1
           echo "✓ Health endpoint working"
           
-          # Test hello endpoint
+          # Test hello endpoint (existing feature)
           RESPONSE=$(curl -f http://localhost:8000/api/hello)
-          echo "Response: $RESPONSE"
+          echo "Hello Response: $RESPONSE"
           
           # Verify response contains required fields
           echo $RESPONSE | jq -e '.message' || exit 1
           echo $RESPONSE | jq -e '.timestamp' || exit 1
           echo "✓ Hello endpoint working"
+          
+          # Test greet endpoint (new feature)
+          GREET_RESPONSE=$(curl -f -X POST http://localhost:8000/api/greet \
+            -H "Content-Type: application/json" \
+            -d '{"name":"DockerTest"}')
+          echo "Greet Response: $GREET_RESPONSE"
+          
+          # Verify greet response contains required fields
+          echo $GREET_RESPONSE | jq -e '.greeting' || exit 1
+          echo $GREET_RESPONSE | jq -e '.timestamp' || exit 1
+          echo $GREET_RESPONSE | grep -q "Welcome to our purple-themed app" || exit 1
+          echo "✓ Greet endpoint working"
 
       - name: Test frontend accessibility
         run: |
@@ -126,12 +159,47 @@ jobs:
 
       - name: Test CORS headers
         run: |
-          # Test CORS headers from backend
+          # Test CORS headers from backend for GET endpoint
           CORS_HEADER=$(curl -s -H "Origin: http://localhost:3000" -I http://localhost:8000/api/hello | grep -i "access-control-allow-origin")
           if [ -n "$CORS_HEADER" ]; then
-            echo "✓ CORS headers present: $CORS_HEADER"
+            echo "✓ CORS headers present for GET: $CORS_HEADER"
           else
-            echo "✗ CORS headers missing"
+            echo "✗ CORS headers missing for GET"
+            exit 1
+          fi
+          
+          # Test CORS headers for POST endpoint
+          CORS_HEADER_POST=$(curl -s -H "Origin: http://localhost:3000" -I -X POST http://localhost:8000/api/greet | grep -i "access-control-allow-origin")
+          if [ -n "$CORS_HEADER_POST" ]; then
+            echo "✓ CORS headers present for POST: $CORS_HEADER_POST"
+          else
+            echo "✗ CORS headers missing for POST"
+            exit 1
+          fi
+
+      - name: Test regression - existing features still work
+        run: |
+          echo "Testing that existing features are unchanged..."
+          
+          # Test /api/hello returns expected format
+          HELLO_RESPONSE=$(curl -s http://localhost:8000/api/hello)
+          MESSAGE=$(echo $HELLO_RESPONSE | jq -r '.message')
+          
+          if [ "$MESSAGE" = "Hello World from Backend!" ]; then
+            echo "✓ Existing /api/hello endpoint unchanged"
+          else
+            echo "✗ /api/hello endpoint response changed unexpectedly"
+            exit 1
+          fi
+          
+          # Test /health returns expected format
+          HEALTH_RESPONSE=$(curl -s http://localhost:8000/health)
+          STATUS=$(echo $HEALTH_RESPONSE | jq -r '.status')
+          
+          if [ "$STATUS" = "healthy" ]; then
+            echo "✓ Existing /health endpoint unchanged"
+          else
+            echo "✗ /health endpoint response changed unexpectedly"
             exit 1
           fi
 
