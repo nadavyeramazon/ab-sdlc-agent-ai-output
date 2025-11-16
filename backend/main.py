@@ -1,144 +1,107 @@
+"""FastAPI Backend for Purple Theme Hello World Application
+
+This module provides a simple REST API with three endpoints:
+- /api/hello: Returns a hello message with timestamp
+- /api/greet: Returns a personalized greeting for a given name
+- /health: Returns health status
+"""
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime, timezone
-from pydantic import BaseModel, Field, validator
-import os
+from datetime import datetime
+from typing import Dict
+from pydantic import BaseModel, field_validator
+import uvicorn
 
-# Create FastAPI application instance
 app = FastAPI(
-    title="Hello World Backend API",
-    description="Purple Theme Hello World Backend Service with Personalized Greeting",
-    version="1.2.0"
+    title="Purple Theme Hello World API",
+    description="Backend API for Hello World fullstack application with purple theme",
+    version="2.0.0"
 )
 
-# Configure CORS middleware to allow frontend communication
-# SECURITY: CORS configuration explicitly uses specific origins only
-# NEVER use '*' wildcard in allow_origins as it creates serious security vulnerabilities:
-#   - Enables XSS attacks from any malicious domain
-#   - Allows unauthorized data theft and credential exposure  
-#   - Permits CSRF attacks
-#   - Exposes API endpoints to any website
-# This enables the React frontend running on localhost:3000 to make API calls
+# CORS middleware configuration to allow frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",  # Frontend development server
-        os.getenv("FRONTEND_URL", "http://localhost:3000"),  # Allow environment override
-        # NEVER add '*' to this list - it's a critical security vulnerability
-    ],
+    allow_origins=["http://localhost:3000", "http://frontend:3000"],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Allow all common HTTP methods
-    allow_headers=["*"],  # Allow all headers
-    expose_headers=["*"]  # Expose all headers to the client
+    allow_methods=["*"],  # Allow all methods including POST
+    allow_headers=["*"],
 )
 
 
-# Pydantic Models for Greet Endpoint
 class GreetRequest(BaseModel):
-    """Request model for greet endpoint with validation.
+    """Request model for greet endpoint.
     
-    Security features:
-    - Max length validation (100 chars) prevents DoS attacks via large payloads
-    - Whitespace validation ensures meaningful input
+    Attributes:
+        name: User's name (must not be empty or whitespace only)
     """
-    name: str = Field(..., min_length=1, max_length=100, description="User's name (1-100 characters)")
+    name: str
     
-    @validator('name')
-    def name_must_not_be_whitespace(cls, v):
-        """Validate that name is not empty or whitespace-only."""
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        """Validate that name is not empty or whitespace only.
+        
+        Args:
+            v: Name value to validate
+            
+        Returns:
+            Validated name
+            
+        Raises:
+            ValueError: If name is empty or whitespace only
+        """
         if not v or not v.strip():
-            raise ValueError('Name cannot be empty or whitespace-only')
+            raise ValueError('Name cannot be empty')
         return v.strip()
 
 
-class GreetResponse(BaseModel):
-    """Response model for greet endpoint."""
-    greeting: str
-    timestamp: str
-
-
 @app.get("/api/hello")
-async def get_hello():
-    """
-    Returns a greeting message with current timestamp.
-    
-    This endpoint provides dynamic content to demonstrate
-    frontend-backend communication.
+async def get_hello() -> Dict[str, str]:
+    """Return hello message with timestamp.
     
     Returns:
-        dict: JSON object containing message and ISO8601 timestamp
+        Dict with 'message' and 'timestamp' fields
     """
     return {
         "message": "Hello World from Backend!",
-        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")  # ISO8601 format with UTC timezone
+        "timestamp": datetime.now().isoformat()
     }
 
 
-@app.post("/api/greet", response_model=GreetResponse)
-async def greet_user(request: GreetRequest):
-    """
-    Generate personalized greeting for user.
-    
-    Accepts a name and returns a personalized greeting message with timestamp.
-    Validates that the name is not empty, not whitespace-only, and within length limits (1-100 chars).
-    
-    Security:
-    - Max length validation (100 chars) prevents DoS attacks
-    - Whitespace validation prevents empty submissions
-    - Input sanitization via Pydantic validation
+@app.post("/api/greet")
+async def greet_user(request: GreetRequest) -> Dict[str, str]:
+    """Return personalized greeting for user.
     
     Args:
-        request: GreetRequest containing user's name (validated by Pydantic)
-    
+        request: GreetRequest containing user's name
+        
     Returns:
-        GreetResponse: Personalized greeting and timestamp
-    
+        Dict with 'greeting' and 'timestamp' fields
+        
     Raises:
-        HTTPException: 422 error if name validation fails (handled by Pydantic)
+        HTTPException: 400 if name is invalid
     """
-    # Name is already validated and trimmed by Pydantic validator
-    name = request.name
-    
-    # Generate personalized greeting
-    greeting = f"Hello, {name}! Welcome to our purple-themed app!"
-    
-    # Generate timestamp in ISO 8601 format with Z suffix
-    # Using modern timezone-aware datetime API (not deprecated utcnow())
-    timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-    
-    return GreetResponse(greeting=greeting, timestamp=timestamp)
+    try:
+        # Pydantic validation will handle empty/whitespace check
+        name = request.name
+        return {
+            "greeting": f"Hello, {name}! Welcome to our purple-themed app!",
+            "timestamp": datetime.now().isoformat()
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get("/health")
-async def health_check():
-    """
-    Health check endpoint for service monitoring.
-    
-    Used by Docker, Kubernetes, or monitoring tools to verify
-    the service is running and responsive.
+async def health_check() -> Dict[str, str]:
+    """Health check endpoint.
     
     Returns:
-        dict: JSON object indicating service health status
+        Dict with 'status' field indicating service health
     """
     return {"status": "healthy"}
 
 
-# Root endpoint for basic service information
-@app.get("/")
-async def root():
-    """
-    Root endpoint providing basic API information.
-    
-    Returns:
-        dict: API metadata and available endpoints
-    """
-    return {
-        "service": "Hello World Backend API",
-        "version": "1.2.0",
-        "theme": "purple",
-        "endpoints": [
-            "/api/hello - Get greeting message with timestamp",
-            "/api/greet - Post name to receive personalized greeting",
-            "/health - Health check endpoint"
-        ]
-    }
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
