@@ -10,9 +10,10 @@ CORS is enabled for frontend communication on localhost:3000.
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from datetime import datetime
 import uvicorn
+import re
 
 # Initialize FastAPI application
 app = FastAPI(
@@ -39,6 +40,23 @@ class GreetRequest(BaseModel):
         name (str): User's name for personalized greeting
     """
     name: str
+    
+    @validator('name')
+    def validate_name(cls, v):
+        """Validate that name is not empty or whitespace-only.
+        
+        Args:
+            v (str): Name value to validate
+            
+        Returns:
+            str: Validated and trimmed name
+            
+        Raises:
+            ValueError: If name is empty or whitespace-only
+        """
+        if not v or not v.strip():
+            raise ValueError('Name cannot be empty')
+        return v.strip()
 
 
 class GreetResponse(BaseModel):
@@ -56,6 +74,8 @@ class GreetResponse(BaseModel):
 async def get_hello():
     """Return hello message with current timestamp.
     
+    This is the EXISTING endpoint - preserved unchanged for regression testing.
+    
     Returns:
         dict: JSON response with message and ISO format timestamp
     """
@@ -69,6 +89,9 @@ async def get_hello():
 async def greet_user(request: GreetRequest):
     """Generate personalized greeting for the user.
     
+    This is the NEW feature endpoint - implements personalized greetings.
+    Validates input, sanitizes name, and returns personalized message.
+    
     Args:
         request (GreetRequest): Request containing user's name
         
@@ -77,20 +100,22 @@ async def greet_user(request: GreetRequest):
         
     Raises:
         HTTPException: 400 error if name is empty or whitespace-only
+        HTTPException: 422 error if validation fails (Pydantic)
     """
-    # Validate name is not empty or whitespace-only
-    name = request.name.strip()
+    # Name is already validated and trimmed by Pydantic validator
+    name = request.name
     
-    if not name:
+    # Additional validation: check for reasonable length (optional security measure)
+    if len(name) > 100:
         raise HTTPException(
             status_code=400,
-            detail="Name cannot be empty"
+            detail="Name is too long (maximum 100 characters)"
         )
     
-    # Generate personalized greeting
+    # Generate personalized greeting as per specification
     greeting_message = f"Hello, {name}! Welcome to our purple-themed app!"
     
-    # Create response with current timestamp
+    # Create response with current timestamp in ISO-8601 format
     return GreetResponse(
         greeting=greeting_message,
         timestamp=datetime.utcnow().isoformat() + "Z"
@@ -101,10 +126,27 @@ async def greet_user(request: GreetRequest):
 async def health_check():
     """Health check endpoint for service monitoring.
     
+    This is the EXISTING endpoint - preserved unchanged for regression testing.
+    
     Returns:
         dict: JSON response with health status
     """
     return {"status": "healthy"}
+
+
+# Exception handler for Pydantic validation errors
+@app.exception_handler(ValueError)
+async def validation_exception_handler(request, exc):
+    """Handle validation errors from Pydantic models.
+    
+    Args:
+        request: The request that caused the error
+        exc: The ValueError exception
+        
+    Returns:
+        HTTPException: 400 error with validation message
+    """
+    raise HTTPException(status_code=400, detail=str(exc))
 
 
 if __name__ == "__main__":
