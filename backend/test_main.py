@@ -22,7 +22,10 @@ class TestHealthEndpoint:
     
     def test_health_check_has_cors_headers(self):
         """Test that health endpoint includes CORS headers."""
-        response = client.get("/health")
+        response = client.get(
+            "/health",
+            headers={"Origin": "http://localhost:3000"}
+        )
         assert "access-control-allow-origin" in response.headers
 
 
@@ -43,7 +46,10 @@ class TestHelloEndpoint:
     
     def test_hello_has_cors_headers(self):
         """Test that hello endpoint includes CORS headers."""
-        response = client.get("/api/hello")
+        response = client.get(
+            "/api/hello",
+            headers={"Origin": "http://localhost:3000"}
+        )
         assert "access-control-allow-origin" in response.headers
 
 
@@ -116,7 +122,11 @@ class TestGreetEndpoint:
     
     def test_greet_has_cors_headers(self):
         """Test API-007: Response includes CORS headers."""
-        response = client.post("/api/greet", json={"name": "Test"})
+        response = client.post(
+            "/api/greet",
+            json={"name": "Test"},
+            headers={"Origin": "http://localhost:3000"}
+        )
         assert "access-control-allow-origin" in response.headers
         assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
 
@@ -164,5 +174,8 @@ class TestRegressionTests:
     
     def test_reg_010_hello_has_cors_headers(self):
         """REG-010: /api/hello response includes CORS headers."""
-        response = client.get("/api/hello")
+        response = client.get(
+            "/api/hello",
+            headers={"Origin": "http://localhost:3000"}
+        )
         assert "access-control-allow-origin" in response.headers
