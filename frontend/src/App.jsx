@@ -1,92 +1,200 @@
 import { useState } from 'react'
 import './App.css'
 
-// Backend API URL - configurable via environment variable
-// Defaults to localhost:8000 for local development
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-
 function App() {
-  // State management using React hooks
-  const [backendMessage, setBackendMessage] = useState('') // Stores message from backend
-  const [loading, setLoading] = useState(false) // Tracks loading state during API call
-  const [error, setError] = useState('') // Stores error messages
+  // State for existing "Get Message from Backend" feature
+  const [message, setMessage] = useState('')
+  const [messageLoading, setMessageLoading] = useState(false)
+  const [messageError, setMessageError] = useState('')
+
+  // State for new "Greet Me" feature
+  const [name, setName] = useState('')
+  const [greetingMessage, setGreetingMessage] = useState('')
+  const [greetingLoading, setGreetingLoading] = useState(false)
+  const [greetingError, setGreetingError] = useState('')
 
   /**
-   * Fetches message from backend /api/hello endpoint
-   * Implements loading states and error handling
+   * Handle fetching message from backend
+   * This is the EXISTING functionality that must remain unchanged
    */
-  const fetchMessage = async () => {
-    // Reset error state and set loading
-    setError('')
-    setLoading(true)
-    
+  const handleGetMessage = async () => {
+    setMessageLoading(true)
+    setMessageError('')
+    setMessage('')
+
     try {
-      // Make API call to backend
-      const response = await fetch(`${API_URL}/api/hello`)
-      
-      // Check if response is successful
+      const response = await fetch('http://localhost:8000/api/hello')
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error('Failed to fetch message')
       }
-      
-      // Parse JSON response
       const data = await response.json()
-      
-      // Update state with backend message and timestamp
-      setBackendMessage(`${data.message} (at ${new Date(data.timestamp).toLocaleString()})`)
-    } catch (err) {
-      // Handle errors gracefully
-      console.error('Error fetching message:', err)
-      setError(`Failed to fetch message from backend. Please ensure the backend is running at ${API_URL}`)
-      setBackendMessage('') // Clear any previous message
+      setMessage(data.message)
+    } catch (error) {
+      setMessageError('Error: Could not connect to backend. Please make sure the server is running.')
+      console.error('Error fetching message:', error)
     } finally {
-      // Always reset loading state
-      setLoading(false)
+      setMessageLoading(false)
+    }
+  }
+
+  /**
+   * Handle personalized greeting
+   * This is the NEW functionality added per specification
+   */
+  const handleGreet = async () => {
+    // Client-side validation
+    if (!name || !name.trim()) {
+      setGreetingError('Please enter your name')
+      return
+    }
+
+    setGreetingLoading(true)
+    setGreetingError('')
+    setGreetingMessage('')
+
+    try {
+      const response = await fetch('http://localhost:8000/api/greet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: name.trim() }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Failed to get greeting')
+      }
+
+      const data = await response.json()
+      setGreetingMessage(data.greeting)
+      // Keep the name in the input field for better UX
+    } catch (error) {
+      setGreetingError(
+        error.message.includes('Failed to fetch')
+          ? 'Error: Could not connect to backend. Please make sure the server is running.'
+          : `Error: ${error.message}`
+      )
+      console.error('Error getting greeting:', error)
+    } finally {
+      setGreetingLoading(false)
+    }
+  }
+
+  /**
+   * Handle Enter key press in name input
+   */
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleGreet()
     }
   }
 
   return (
     <div className="App">
       <div className="container">
-        {/* Main heading - Story 1 requirement */}
-        <h1 className="hello-heading">Hello World</h1>
-        
-        {/* Subtitle with green accent */}
-        <p className="subtitle">A Green-Themed Fullstack Application</p>
-        
-        {/* Divider line */}
-        <div className="divider"></div>
-        
-        {/* Button to trigger API call - Story 3 requirement */}
-        <button 
-          className="fetch-button"
-          onClick={fetchMessage}
-          disabled={loading}
-          aria-label="Fetch message from backend"
-        >
-          {loading ? 'Loading...' : 'Get Message from Backend'}
-        </button>
-        
-        {/* Display backend message if available */}
-        {backendMessage && (
-          <div className="message-box success" role="alert">
-            <strong>Backend Response:</strong>
-            <p>{backendMessage}</p>
+        {/* Header */}
+        <header className="header">
+          <h1>Hello World</h1>
+          <p className="subtitle">Purple Theme Fullstack Application</p>
+        </header>
+
+        <div className="main-content">
+          {/* Existing Feature: Get Message from Backend */}
+          <div className="card">
+            <h2>Backend Message</h2>
+            <p className="description">
+              Click the button below to fetch a message from the FastAPI backend.
+            </p>
+            
+            <button
+              className="button"
+              onClick={handleGetMessage}
+              disabled={messageLoading}
+              aria-label="Get message from backend"
+            >
+              {messageLoading ? 'Loading...' : 'Get Message from Backend'}
+            </button>
+
+            {messageLoading && (
+              <div className="loading" role="status" aria-live="polite">
+                <div className="spinner"></div>
+                <p>Loading...</p>
+              </div>
+            )}
+
+            {message && !messageLoading && (
+              <div className="result success" role="alert" aria-live="polite">
+                <p className="result-message">{message}</p>
+              </div>
+            )}
+
+            {messageError && !messageLoading && (
+              <div className="result error" role="alert" aria-live="assertive">
+                <p className="error-message">{messageError}</p>
+              </div>
+            )}
           </div>
-        )}
-        
-        {/* Display error message if API call fails - Story 3 requirement */}
-        {error && (
-          <div className="message-box error" role="alert">
-            <strong>Error:</strong>
-            <p>{error}</p>
+
+          {/* New Feature: Personalized Greeting */}
+          <div className="card">
+            <h2>Personalized Greeting</h2>
+            <p className="description">
+              Enter your name to receive a personalized welcome message.
+            </p>
+
+            <div className="form-group">
+              <label htmlFor="name-input" className="visually-hidden">
+                Your name
+              </label>
+              <input
+                id="name-input"
+                type="text"
+                className="input"
+                placeholder="Enter your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyPress={handleKeyPress}
+                disabled={greetingLoading}
+                aria-label="Enter your name for greeting"
+              />
+            </div>
+
+            <button
+              className="button"
+              onClick={handleGreet}
+              disabled={greetingLoading}
+              aria-label="Get personalized greeting"
+            >
+              {greetingLoading ? 'Loading...' : 'Greet Me'}
+            </button>
+
+            {greetingLoading && (
+              <div className="loading" role="status" aria-live="polite">
+                <div className="spinner"></div>
+                <p>Loading...</p>
+              </div>
+            )}
+
+            {greetingMessage && !greetingLoading && (
+              <div className="result success" role="alert" aria-live="polite">
+                <p className="result-message">{greetingMessage}</p>
+              </div>
+            )}
+
+            {greetingError && !greetingLoading && (
+              <div className="result error" role="alert" aria-live="assertive">
+                <p className="error-message">{greetingError}</p>
+              </div>
+            )}
           </div>
-        )}
-        
-        {/* Footer with tech stack information */}
+        </div>
+
+        {/* Footer */}
         <footer className="footer">
-          <p>Built with React 18 + Vite + FastAPI</p>
-          <p className="small">Frontend: localhost:3000 | Backend: localhost:8000</p>
+          <p>
+            Built with React + Vite and FastAPI
+          </p>
         </footer>
       </div>
     </div>

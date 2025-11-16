@@ -1,23 +1,33 @@
-# Use Node 18 Alpine for smaller image size
-FROM node:18-alpine
+# Frontend Dockerfile - Multi-stage build
 
-# Set working directory
+# Build stage
+FROM node:18-alpine AS builder
+
 WORKDIR /app
 
-# Copy package files first for better caching
-# Only rebuild node_modules if package files change
+# Copy package files
 COPY package*.json ./
 
 # Install dependencies
-# Using --legacy-peer-deps to avoid conflicts
 RUN npm install
 
-# Copy application source code
+# Copy source code
 COPY . .
 
-# Expose port 3000 for Vite dev server
-EXPOSE 3000
+# Build the application
+RUN npm run build
 
-# Run Vite development server
-# --host 0.0.0.0 makes server accessible from outside container
-CMD ["npm", "run", "dev"]
+# Production stage
+FROM nginx:alpine
+
+# Copy built assets from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

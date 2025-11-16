@@ -1,48 +1,38 @@
-version: '3.8'
-
 services:
-  # Backend service - FastAPI application
+  # Backend FastAPI service
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: hello-world-backend
+    container_name: purple-greeting-backend
     ports:
-      - "8000:8000"  # Expose backend on localhost:8000
-    volumes:
-      - ./backend:/app  # Mount source code for hot reload
+      - "8000:8000"
     environment:
-      - PYTHONUNBUFFERED=1  # Ensure Python output is sent straight to terminal
-    networks:
-      - fullstack-network
+      - PYTHONUNBUFFERED=1
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 40s
+    networks:
+      - app-network
+    restart: unless-stopped
 
-  # Frontend service - React application with Vite
+  # Frontend React service
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: hello-world-frontend
+    container_name: purple-greeting-frontend
     ports:
-      - "3000:3000"  # Expose frontend on localhost:3000
-    volumes:
-      - ./frontend:/app  # Mount source code for hot reload
-      - /app/node_modules  # Prevent overwriting node_modules in container
-    environment:
-      - VITE_API_URL=http://localhost:8000  # Backend API URL for frontend
-    networks:
-      - fullstack-network
+      - "3000:80"
     depends_on:
-      - backend  # Ensure backend starts before frontend
-    stdin_open: true  # Keep stdin open for interactive terminal
-    tty: true  # Allocate pseudo-TTY for better logging
+      - backend
+    networks:
+      - app-network
+    restart: unless-stopped
 
-# Define custom network for inter-service communication
 networks:
-  fullstack-network:
+  app-network:
     driver: bridge

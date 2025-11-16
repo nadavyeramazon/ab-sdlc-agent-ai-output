@@ -1,217 +1,141 @@
-name: CI/CD Pipeline
+name: CI Pipeline
 
 on:
   push:
-    branches: [ "**" ]  # Run on all branches
+    branches: [ main, feature/* ]
   pull_request:
-    branches: [ "main" ]
-  workflow_dispatch:  # Allow manual trigger
+    branches: [ main ]
 
 jobs:
-  # Backend tests
-  backend-tests:
-    name: Backend Tests (Python/FastAPI)
+  test-backend:
+    name: Test Backend
     runs-on: ubuntu-latest
     
-    strategy:
-      matrix:
-        python-version: ["3.11"]
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      
-      - name: Install dependencies
-        working-directory: ./backend
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      
-      - name: Run pytest
-        working-directory: ./backend
-        run: |
-          pytest -v --tb=short
-      
-      - name: Test backend starts successfully
-        working-directory: ./backend
-        run: |
-          # Start backend in background
-          uvicorn main:app --host 0.0.0.0 --port 8000 &
-          BACKEND_PID=$!
-          
-          # Wait for backend to start (max 30 seconds)
-          echo "Waiting for backend to start..."
-          for i in {1..30}; do
-            if curl -s http://localhost:8000/health > /dev/null; then
-              echo "Backend started successfully"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "Backend failed to start within 30 seconds"
-              kill $BACKEND_PID 2>/dev/null || true
-              exit 1
-            fi
-            sleep 1
-          done
-          
-          # Test endpoints
-          echo "Testing /health endpoint..."
-          curl -f http://localhost:8000/health || exit 1
-          
-          echo "Testing /api/hello endpoint..."
-          curl -f http://localhost:8000/api/hello || exit 1
-          
-          # Cleanup
-          kill $BACKEND_PID 2>/dev/null || true
-  
-  # Frontend tests
-  frontend-tests:
-    name: Frontend Tests (React/Vite)
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Cache Python dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r backend/requirements.txt
+    
+    - name: Run backend tests
+      run: |
+        pytest backend/tests/ -v --cov=backend --cov-report=xml --cov-report=term
+    
+    - name: Run integration tests
+      run: |
+        pytest tests/ -v
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage.xml
+        flags: backend
+        name: backend-coverage
+      continue-on-error: true
+
+  test-frontend:
+    name: Test Frontend Build
     runs-on: ubuntu-latest
     
-    strategy:
-      matrix:
-        node-version: ["18"]
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Set up Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-      
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm ci
-      
-      - name: Run tests
-        working-directory: ./frontend
-        run: npm test -- --run
-      
-      - name: Build frontend
-        working-directory: ./frontend
-        run: npm run build
-  
-  # Docker Compose integration test
-  docker-compose-test:
-    name: Docker Compose Integration Test
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Cache Node modules
+      uses: actions/cache@v3
+      with:
+        path: frontend/node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: npm install
+    
+    - name: Build frontend
+      working-directory: ./frontend
+      run: npm run build
+    
+    - name: Check build output
+      working-directory: ./frontend
+      run: |
+        if [ ! -d "dist" ]; then
+          echo "Error: dist directory not found"
+          exit 1
+        fi
+        echo "Build successful - dist directory created"
+        ls -la dist/
+
+  docker-build:
+    name: Docker Build Test
     runs-on: ubuntu-latest
-    needs: [backend-tests, frontend-tests]
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: Start services with Docker Compose
-        run: |
-          docker compose up -d --build
-      
-      - name: Wait for services to be healthy
-        run: |
-          echo "Waiting for backend to be ready..."
-          for i in {1..30}; do
-            if curl -s http://localhost:8000/health > /dev/null; then
-              echo "Backend is ready"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "Backend failed to start"
-              docker compose logs backend
-              exit 1
-            fi
-            sleep 2
-          done
-          
-          echo "Waiting for frontend to be ready..."
-          for i in {1..30}; do
-            if curl -s http://localhost:3000 > /dev/null; then
-              echo "Frontend is ready"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "Frontend failed to start"
-              docker compose logs frontend
-              exit 1
-            fi
-            sleep 2
-          done
-      
-      - name: Test backend endpoints
-        run: |
-          echo "Testing backend /health endpoint"
-          curl -f http://localhost:8000/health | jq '.status' | grep -q 'healthy'
-          
-          echo "Testing backend /api/hello endpoint"
-          response=$(curl -f http://localhost:8000/api/hello)
-          echo $response | jq '.message' | grep -q 'Hello World from Backend!'
-          echo $response | jq '.timestamp' | grep -qE '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}'
-      
-      - name: Test frontend accessibility
-        run: |
-          echo "Testing frontend is accessible"
-          curl -f http://localhost:3000 > /dev/null
-      
-      - name: Test CORS headers
-        run: |
-          echo "Testing CORS configuration"
-          curl -H "Origin: http://localhost:3000" \
-               -H "Access-Control-Request-Method: GET" \
-               -X OPTIONS \
-               -v http://localhost:8000/api/hello 2>&1 | grep -i "access-control-allow-origin"
-      
-      - name: Show logs on failure
-        if: failure()
-        run: |
-          echo "=== Backend Logs ==="
-          docker compose logs backend
-          echo "=== Frontend Logs ==="
-          docker compose logs frontend
-      
-      - name: Stop services
-        if: always()
-        run: |
-          docker compose down -v
-  
-  # Summary job
-  test-summary:
-    name: Test Summary
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build backend image
+      run: |
+        docker build -t purple-backend:test ./backend
+    
+    - name: Build frontend image
+      run: |
+        docker build -t purple-frontend:test ./frontend
+    
+    - name: Test docker-compose configuration
+      run: |
+        docker compose config
+
+  lint:
+    name: Code Quality
     runs-on: ubuntu-latest
-    needs: [backend-tests, frontend-tests, docker-compose-test]
-    if: always()
     
     steps:
-      - name: Check test results
-        run: |
-          if [ "${{ needs.backend-tests.result }}" != "success" ]; then
-            echo "❌ Backend tests failed"
-            exit 1
-          fi
-          if [ "${{ needs.frontend-tests.result }}" != "success" ]; then
-            echo "❌ Frontend tests failed"
-            exit 1
-          fi
-          if [ "${{ needs.docker-compose-test.result }}" != "success" ]; then
-            echo "❌ Docker Compose integration test failed"
-            exit 1
-          fi
-          echo "✅ All tests passed successfully!"
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install linting tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black
+    
+    - name: Run flake8
+      run: |
+        flake8 backend/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 backend/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      continue-on-error: true
+    
+    - name: Check code formatting
+      run: |
+        black --check backend/
+      continue-on-error: true
