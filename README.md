@@ -1,11 +1,10 @@
-# Purple Theme Hello World Fullstack Application
+# Green Theme Hello World Fullstack Application
 
 ## Overview
 
-A modern fullstack web application with a purple-themed React frontend and FastAPI backend. This application demonstrates:
+A modern fullstack web application with a green-themed React frontend and FastAPI backend. This application demonstrates:
 
-- **Purple Theme UI**: Modern, accessible design with purple color palette (#9b59b6, #8e44ad, #7d3c98)
-- **Personalized Greetings**: Interactive user input with backend API integration
+- **Green Theme UI**: Modern, accessible design with green color palette (#2ecc71, #27ae60)
 - **RESTful API**: FastAPI backend with comprehensive validation
 - **Comprehensive Testing**: Pytest backend tests and GitHub Actions CI
 - **Docker Support**: Full containerization with Docker Compose
@@ -13,40 +12,37 @@ A modern fullstack web application with a purple-themed React frontend and FastA
 ## Features
 
 ### Frontend (React + Vite)
-- Purple-themed responsive UI
-- User name input with greeting functionality
+- Green-themed responsive UI
 - "Get Message from Backend" feature
 - Loading states and error handling
-- Keyboard navigation support (Enter key)
-- WCAG AA compliant contrast ratios
+- Keyboard navigation support
+- Smooth animations and transitions
 
 ### Backend (FastAPI)
 - `GET /api/hello` - Returns hello message with timestamp
-- `POST /api/greet` - Personalized greeting endpoint
 - `GET /health` - Health check endpoint
-- Input validation with Pydantic
 - CORS configuration for frontend
 - Comprehensive error handling
 
 ## Technical Stack
 
 - **Frontend**: React 18, Vite 5, CSS3
-- **Backend**: FastAPI 0.109, Pydantic 2.5, Python 3.11
+- **Backend**: FastAPI 0.109, Python 3.11
 - **Testing**: Pytest 7.4, FastAPI TestClient
 - **CI/CD**: GitHub Actions
-- **Containerization**: Docker, Docker Compose
+- **Containerization**: Docker, Docker Compose V2
 
 ## Quick Start
 
 ### Prerequisites
-- Docker and Docker Compose (V2)
+- Docker and Docker Compose V2
 - Ports 3000 and 8000 available
 
 ### Running the Application
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/nadavyeramazon/ab-sdlc-agent-ai-backend.git
 cd ab-sdlc-agent-ai-backend
 
 # Checkout the feature branch
@@ -86,38 +82,7 @@ Returns a hello message with timestamp.
 ```json
 {
   "message": "Hello World from Backend!",
-  "timestamp": "2024-01-15T14:30:00.123456"
-}
-```
-
-### POST /api/greet
-Returns a personalized greeting.
-
-**Request:**
-```json
-{
-  "name": "John"
-}
-```
-
-**Response (200):**
-```json
-{
-  "greeting": "Hello, John! Welcome to our purple-themed app!",
-  "timestamp": "2024-01-15T14:30:00.123456"
-}
-```
-
-**Error Response (422):**
-```json
-{
-  "detail": [
-    {
-      "loc": ["body", "name"],
-      "msg": "Value error, Name cannot be empty",
-      "type": "value_error"
-    }
-  ]
+  "timestamp": "2024-01-15T14:30:00.123456Z"
 }
 ```
 
@@ -146,19 +111,11 @@ Located in `backend/test_main.py`:
   - Message content
   - Timestamp format (ISO 8601)
 
-- **Greet Endpoint Tests** (12 tests)
-  - Valid name handling
-  - Empty/whitespace validation
-  - Error responses
-  - Name trimming
-  - Multiple name testing
-
-- **CORS Tests** (4 tests)
+- **CORS Tests** (2 tests)
   - Header validation
   - Origin allowance
-  - Method support
 
-- **Performance Tests** (3 tests)
+- **Performance Tests** (2 tests)
   - Response time <100ms requirement
 
 ### Running Tests Locally
@@ -169,7 +126,7 @@ cd backend
 pytest test_main.py -v --cov=main --cov-report=term-missing
 
 # Run specific test class
-pytest test_main.py::TestGreetEndpoint -v
+pytest test_main.py::TestHelloEndpoint -v
 
 # Run with detailed output
 pytest test_main.py -v --tb=long
@@ -190,11 +147,10 @@ pytest test_main.py -v --tb=long
 ├── frontend/
 │   ├── src/
 │   │   ├── App.jsx           # Main React component
-│   │   ├── App.css           # Purple theme styles
+│   │   ├── App.css           # Green theme styles
 │   │   └── main.jsx          # React entry point
 │   ├── Dockerfile            # Frontend Docker configuration
 │   ├── index.html            # HTML template
-│   ├── nginx.conf            # Nginx configuration
 │   ├── package.json          # Node dependencies
 │   └── vite.config.js        # Vite configuration
 ├── docker-compose.yml        # Service orchestration
@@ -229,41 +185,29 @@ The GitHub Actions workflow (`.github/workflows/ci.yml`) includes:
    - Health endpoint validation
    - API functionality tests
    - Frontend accessibility check
-   - Error handling validation
 
 ## Success Criteria
 
-This implementation meets all 22 success criteria:
+This implementation meets all success criteria:
 
-### Critical Success Criteria (9/9) ✓
-- All existing endpoints functional
-- Docker compose startup successful
-- Frontend-backend communication working
-- No new errors in logs
-- CORS properly configured
-
-### Feature Success Criteria (8/8) ✓
-- Purple theme applied throughout
-- WCAG AA contrast compliance
-- Greet endpoint implemented
-- Input validation (client and server)
-- Loading states functional
-- Error messages displayed
-
-### Integration Success Criteria (5/5) ✓
-- Features coexist without conflicts
-- No breaking changes
-- Docker lifecycle functional
-- All tests passing
+✅ User can access frontend at localhost:3000  
+✅ Frontend displays green-themed page with "Hello World" heading  
+✅ User can click button to fetch data from backend  
+✅ Backend API responds with correct JSON message including timestamp  
+✅ Both services start successfully with `docker compose up`  
+✅ Frontend-backend integration works without errors  
+✅ Vite HMR provides instant updates during development  
+✅ README.md includes clear setup and run instructions  
+✅ All acceptance criteria from user stories are met
 
 ## Color Palette
 
-| Color Name | Hex Code | Usage | WCAG Ratio |
-|------------|----------|-------|------------|
-| Amethyst | #9b59b6 | Primary buttons, headings | 4.68:1 (AA) |
-| Wisteria | #8e44ad | Borders, secondary elements | 5.94:1 (AA) |
-| Dark Purple | #7d3c98 | Hover states | 7.09:1 (AAA) |
-| Light Purple | #d7bde2 | Borders, subtle elements | - |
+| Color Name | Hex Code | Usage |
+|------------|----------|-------|
+| Primary Green | #2ecc71 | Primary buttons, headings |
+| Secondary Green | #27ae60 | Borders, secondary elements |
+| Success Background | #d5f4e6 | Success message backgrounds |
+| Success Text | #1e7e34 | Success message text |
 
 ## License
 

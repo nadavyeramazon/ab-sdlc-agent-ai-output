@@ -11,8 +11,9 @@ services:
       - ./backend:/app
     networks:
       - app-network
+    restart: on-failure
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -28,8 +29,12 @@ services:
       - backend
     networks:
       - app-network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     environment:
-      - NODE_ENV=production
+      - VITE_API_URL=http://backend:8000
+    restart: on-failure
 
 networks:
   app-network:

@@ -114,26 +114,6 @@ jobs:
         echo "Response: $response"
         echo "$response" | grep -q "Hello World from Backend" || exit 1
         
-    - name: Test greet endpoint
-      run: |
-        response=$(curl -s -X POST http://localhost:8000/api/greet \
-          -H "Content-Type: application/json" \
-          -d '{"name":"TestUser"}')
-        echo "Response: $response"
-        echo "$response" | grep -q "Hello, TestUser" || exit 1
-        echo "$response" | grep -q "purple-themed app" || exit 1
-        
-    - name: Test greet validation (empty name)
-      run: |
-        status=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/api/greet \
-          -H "Content-Type: application/json" \
-          -d '{"name":""}')
-        echo "Status: $status"
-        if [ "$status" != "422" ]; then
-          echo "Expected 422 status for empty name, got $status"
-          exit 1
-        fi
-        
     - name: Check frontend accessibility
       run: |
         status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000)
