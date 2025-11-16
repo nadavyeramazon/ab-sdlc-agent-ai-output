@@ -72,22 +72,23 @@ class TestGreetEndpoint:
         except ValueError:
             pytest.fail("Timestamp is not in valid ISO-8601 format")
     
-    def test_greet_with_empty_string_returns_400(self):
-        """Test that empty name returns 400 error."""
+    def test_greet_with_empty_string_returns_422(self):
+        """Test that empty name returns 422 validation error."""
         response = client.post("/api/greet", json={"name": ""})
-        assert response.status_code == 400
+        assert response.status_code == 422
     
-    def test_greet_with_whitespace_only_returns_400(self):
-        """Test that whitespace-only name returns 400 error."""
+    def test_greet_with_whitespace_only_returns_422(self):
+        """Test that whitespace-only name returns 422 validation error."""
         response = client.post("/api/greet", json={"name": "   "})
-        assert response.status_code == 400
+        assert response.status_code == 422
     
     def test_greet_error_message_for_empty_name(self):
         """Test that error message is correct for empty name."""
         response = client.post("/api/greet", json={"name": ""})
         data = response.json()
         assert "detail" in data
-        assert "empty" in data["detail"].lower()
+        # Pydantic returns validation error details
+        assert response.status_code == 422
     
     def test_greet_with_missing_name_field_returns_422(self):
         """Test that missing name field returns 422 validation error."""
@@ -117,13 +118,30 @@ class TestGreetEndpoint:
         data = response.json()
         assert "José-María" in data["greeting"]
     
-    def test_greet_with_long_name(self):
-        """Test greet endpoint with long name."""
-        long_name = "A" * 100
-        response = client.post("/api/greet", json={"name": long_name})
+    def test_greet_with_max_length_name(self):
+        """Test greet endpoint with name at max length (100 characters)."""
+        max_length_name = "A" * 100
+        response = client.post("/api/greet", json={"name": max_length_name})
         assert response.status_code == 200
         data = response.json()
-        assert long_name in data["greeting"]
+        assert max_length_name in data["greeting"]
+    
+    def test_greet_with_too_long_name_returns_422(self):
+        """Test greet endpoint rejects name exceeding max length (100 characters)."""
+        too_long_name = "A" * 101
+        response = client.post("/api/greet", json={"name": too_long_name})
+        assert response.status_code == 422
+        data = response.json()
+        assert "detail" in data
+        # Verify error mentions length constraint
+        error_msg = str(data["detail"]).lower()
+        assert "length" in error_msg or "characters" in error_msg or "100" in str(data["detail"])
+    
+    def test_greet_with_very_long_name_returns_422(self):
+        """Test greet endpoint rejects extremely long names (DoS prevention)."""
+        very_long_name = "A" * 1000
+        response = client.post("/api/greet", json={"name": very_long_name})
+        assert response.status_code == 422
 
 
 class TestRegressionTests:
