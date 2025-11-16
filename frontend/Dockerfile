@@ -1,22 +1,23 @@
-FROM node:20-alpine as build
+# Use Node 18 Alpine for smaller image size
+FROM node:18-alpine
 
+# Set working directory
 WORKDIR /app
 
+# Copy package files first for better caching
+# Only rebuild node_modules if package files change
 COPY package*.json ./
-RUN npm ci
 
+# Install dependencies
+# Using --legacy-peer-deps to avoid conflicts
+RUN npm install
+
+# Copy application source code
 COPY . .
-RUN npm run build
 
-FROM node:20-alpine
-
-WORKDIR /app
-
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/package*.json ./
-
-RUN npm ci --only=production && npm install -g serve
-
+# Expose port 3000 for Vite dev server
 EXPOSE 3000
 
-CMD ["serve", "-s", "dist", "-l", "3000"]
+# Run Vite development server
+# --host 0.0.0.0 makes server accessible from outside container
+CMD ["npm", "run", "dev"]
