@@ -71,7 +71,7 @@ class TestHelloEndpoint:
 
         # Validate ISO-8601 format with milliseconds and Z suffix
         # Format: YYYY-MM-DDTHH:MM:SS.sssZ
-        iso_pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$'
+        iso_pattern = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$"
         assert re.match(
             iso_pattern, timestamp
         ), f"Timestamp {timestamp} does not match ISO-8601 format"
@@ -83,7 +83,7 @@ class TestHelloEndpoint:
         timestamp_str = data["timestamp"]
 
         # Parse timestamp (remove Z suffix for parsing)
-        timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+        timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
         now = datetime.utcnow()
 
         # Check timestamp is within last 60 seconds
@@ -122,14 +122,11 @@ class TestCORSConfiguration:
 
     def test_cors_allows_localhost_3000(self):
         """Test that CORS allows requests from localhost:3000."""
-        response = client.get(
-            "/api/hello", headers={"Origin": "http://localhost:3000"}
-        )
+        response = client.get("/api/hello", headers={"Origin": "http://localhost:3000"})
         assert response.status_code == 200
         assert "access-control-allow-origin" in response.headers
         assert (
-            response.headers["access-control-allow-origin"]
-            == "http://localhost:3000"
+            response.headers["access-control-allow-origin"] == "http://localhost:3000"
         )
 
     def test_cors_preflight_request(self):
