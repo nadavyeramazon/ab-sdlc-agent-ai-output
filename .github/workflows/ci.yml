@@ -99,7 +99,7 @@ jobs:
       run: docker build -t frontend:test .
     
     - name: Verify docker-compose configuration
-      run: docker-compose config
+      run: docker compose config
 
   integration-tests:
     name: Integration Tests
@@ -112,7 +112,7 @@ jobs:
     
     - name: Start services with docker-compose
       run: |
-        docker-compose up -d
+        docker compose up -d
         sleep 30
     
     - name: Check backend health
@@ -150,9 +150,9 @@ jobs:
     - name: Show logs on failure
       if: failure()
       run: |
-        docker-compose logs backend
-        docker-compose logs frontend
+        docker compose logs backend
+        docker compose logs frontend
     
     - name: Cleanup
       if: always()
-      run: docker-compose down -v
+      run: docker compose down -v
