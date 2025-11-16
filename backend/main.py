@@ -17,11 +17,13 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",  # Frontend development server
-        os.getenv("FRONTEND_URL", "http://localhost:3000")  # Allow environment override
+        os.getenv("FRONTEND_URL", "http://localhost:3000"),  # Allow environment override
+        "*"  # Allow all origins for testing
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Allow all common HTTP methods
     allow_headers=["*"],  # Allow all headers
+    expose_headers=["*"]  # Expose all headers to the client
 )
 
 
