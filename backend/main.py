@@ -95,7 +95,7 @@ async def greet_user(request: GreetRequest) -> GreetResponse:
     # Generate personalized greeting
     greeting = f"Hello, {name}! Welcome to our purple-themed app!"
     
-    # Generate ISO 8601 timestamp
-    timestamp = datetime.utcnow().isoformat() + "Z"
+    # Generate ISO 8601 timestamp with microseconds
+    timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f") + "Z"
     
     return GreetResponse(greeting=greeting, timestamp=timestamp)
