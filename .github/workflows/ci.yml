@@ -1,0 +1,189 @@
+name: CI - Green Theme Hello World App
+
+on:
+  push:
+    branches:
+      - main
+      - feature/**
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # Backend tests
+  backend-tests:
+    name: Backend Tests (Python/FastAPI)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run backend tests with pytest
+        working-directory: ./backend
+        run: |
+          pytest test_main.py -v --tb=short
+
+      - name: Test backend API endpoints
+        working-directory: ./backend
+        run: |
+          # Start backend in background
+          python main.py &
+          BACKEND_PID=$!
+          
+          # Wait for backend to start
+          sleep 5
+          
+          # Test health endpoint
+          curl -f http://localhost:8000/health || exit 1
+          
+          # Test hello endpoint
+          curl -f http://localhost:8000/api/hello || exit 1
+          
+          # Stop backend
+          kill $BACKEND_PID
+
+  # Docker build and integration tests
+  docker-integration:
+    name: Docker Build & Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend Docker image
+        run: |
+          docker build -t green-hello-backend:test ./backend
+
+      - name: Build frontend Docker image
+        run: |
+          docker build -t green-hello-frontend:test ./frontend
+
+      - name: Start services with Docker Compose
+        run: |
+          docker compose up -d
+
+      - name: Wait for services to be healthy
+        run: |
+          echo "Waiting for backend to be healthy..."
+          timeout 30 sh -c 'until docker compose ps | grep green-hello-backend | grep -q "healthy"; do sleep 2; done'
+          
+          echo "Waiting for frontend to be healthy..."
+          timeout 30 sh -c 'until docker compose ps | grep green-hello-frontend | grep -q "healthy"; do sleep 2; done'
+
+      - name: Test backend API accessibility
+        run: |
+          # Test health endpoint
+          curl -f http://localhost:8000/health || exit 1
+          echo "✓ Health endpoint working"
+          
+          # Test hello endpoint
+          RESPONSE=$(curl -f http://localhost:8000/api/hello)
+          echo "Response: $RESPONSE"
+          
+          # Verify response contains required fields
+          echo $RESPONSE | jq -e '.message' || exit 1
+          echo $RESPONSE | jq -e '.timestamp' || exit 1
+          echo "✓ Hello endpoint working"
+
+      - name: Test frontend accessibility
+        run: |
+          # Test frontend is serving content
+          curl -f http://localhost:3000 || exit 1
+          echo "✓ Frontend is accessible"
+          
+          # Verify HTML contains expected content
+          CONTENT=$(curl -s http://localhost:3000)
+          if echo "$CONTENT" | grep -q "Hello World"; then
+            echo "✓ Frontend contains expected content"
+          else
+            echo "✗ Frontend missing expected content"
+            exit 1
+          fi
+
+      - name: Test CORS headers
+        run: |
+          # Test CORS headers from backend
+          CORS_HEADER=$(curl -s -H "Origin: http://localhost:3000" -I http://localhost:8000/api/hello | grep -i "access-control-allow-origin")
+          if [ -n "$CORS_HEADER" ]; then
+            echo "✓ CORS headers present: $CORS_HEADER"
+          else
+            echo "✗ CORS headers missing"
+            exit 1
+          fi
+
+      - name: Show Docker logs on failure
+        if: failure()
+        run: |
+          echo "=== Backend logs ==="
+          docker compose logs backend
+          echo "=== Frontend logs ==="
+          docker compose logs frontend
+
+      - name: Stop Docker Compose services
+        if: always()
+        run: |
+          docker compose down -v
+
+  # Linting and code quality checks
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python linting tools
+        run: |
+          pip install flake8 black
+
+      - name: Run flake8 on backend
+        working-directory: ./backend
+        run: |
+          # Check Python code style (ignore line length for now)
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Check Python code formatting with black
+        working-directory: ./backend
+        run: |
+          black --check --diff . || true
+
+      - name: Validate Docker Compose configuration
+        run: |
+          docker compose config
+
+      - name: Check for security issues in dependencies
+        working-directory: ./backend
+        run: |
+          pip install safety
+          safety check -r requirements.txt --continue-on-error || true
