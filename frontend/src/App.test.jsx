@@ -6,6 +6,9 @@ import App from './App'
 // Mock fetch globally
 global.fetch = vi.fn()
 
+// Get API URL from environment variable with fallback (same as App.jsx)
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
 describe('App Component', () => {
   beforeEach(() => {
     // Clear all mocks before each test
@@ -63,7 +66,7 @@ describe('App Component', () => {
         expect(screen.getByText('Hello from the backend!')).toBeInTheDocument()
       })
 
-      expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/api/hello')
+      expect(global.fetch).toHaveBeenCalledWith(`${API_URL}/api/hello`)
     })
 
     it('displays loading state during message fetch', async () => {
@@ -125,7 +128,7 @@ describe('App Component', () => {
       })
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/greet',
+        `${API_URL}/api/greet`,
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

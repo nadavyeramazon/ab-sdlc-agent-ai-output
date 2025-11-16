@@ -7,9 +7,14 @@ from typing import Optional
 app = FastAPI(title="Hello World API")
 
 # CORS middleware configuration
+# Allow requests from both localhost (local dev) and frontend container (Docker)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",      # Local development
+        "http://frontend:3000",       # Docker Compose frontend service
+        "http://127.0.0.1:3000",      # Alternative localhost
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

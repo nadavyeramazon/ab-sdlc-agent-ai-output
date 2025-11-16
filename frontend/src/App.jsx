@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import './App.css'
 
+// Get API URL from environment variable with fallback to localhost
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
 function App() {
   // State for existing "Get Message from Backend" feature
   const [message, setMessage] = useState('')
@@ -19,7 +22,7 @@ function App() {
     setMessageError('')
     
     try {
-      const response = await fetch('http://localhost:8000/api/hello')
+      const response = await fetch(`${API_URL}/api/hello`)
       
       if (!response.ok) {
         throw new Error('Failed to fetch message')
@@ -49,7 +52,7 @@ function App() {
     setGreeting('')
     
     try {
-      const response = await fetch('http://localhost:8000/api/greet', {
+      const response = await fetch(`${API_URL}/api/greet`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
