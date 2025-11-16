@@ -175,6 +175,14 @@ body {
   cursor: not-allowed;
 }
 
+/* Character counter hint */
+.input-hint {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  text-align: right;
+  margin-top: 4px;
+}
+
 .greet-button {
   background: linear-gradient(135deg, var(--primary-purple), var(--secondary-purple));
   color: var(--white);
