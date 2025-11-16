@@ -1,0 +1,1 @@
+"""Test package for purple-themed greeting application."""
