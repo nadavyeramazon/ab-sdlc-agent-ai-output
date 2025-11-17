@@ -1,0 +1,173 @@
+name: CI - Tests
+
+on:
+  push:
+    branches: [ "feature/JIRA-777/fullstack-app", "main" ]
+  pull_request:
+    branches: [ "feature/JIRA-777/fullstack-app", "main" ]
+
+jobs:
+  backend-tests:
+    name: Backend Tests (Python/FastAPI)
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./backend
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+        cache-dependency-path: backend/requirements.txt
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run backend tests with pytest
+      run: |
+        pytest test_main.py -v --tb=short
+    
+    - name: Test backend health endpoint
+      run: |
+        python main.py &
+        sleep 5
+        curl -f http://localhost:8000/health || exit 1
+        curl -f http://localhost:8000/api/hello || exit 1
+        pkill -f "python main.py"
+
+  frontend-tests:
+    name: Frontend Tests (React/Vitest)
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./frontend
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Node.js 20
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run frontend tests with Vitest
+      run: npm test -- --run
+    
+    - name: Build frontend
+      run: npm run build
+
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Build backend Docker image
+      run: |
+        docker build -t hello-world-backend:test ./backend
+    
+    - name: Build frontend Docker image
+      run: |
+        docker build -t hello-world-frontend:test ./frontend
+    
+    - name: Verify Docker images built successfully
+      run: |
+        docker images | grep hello-world-backend
+        docker images | grep hello-world-frontend
+
+  integration-test:
+    name: Integration Test (Docker Compose)
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Start services with Docker Compose
+      run: |
+        docker compose up -d --build
+    
+    - name: Wait for services to be healthy
+      run: |
+        echo "Waiting for backend to be healthy..."
+        for i in {1..30}; do
+          if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+            echo "Backend is healthy!"
+            break
+          fi
+          echo "Attempt $i/30: Backend not ready yet..."
+          sleep 2
+        done
+        curl -f http://localhost:8000/health || exit 1
+    
+    - name: Test backend API endpoints
+      run: |
+        echo "Testing /health endpoint..."
+        response=$(curl -s http://localhost:8000/health)
+        echo "Response: $response"
+        echo $response | grep -q '"status":"healthy"' || exit 1
+        
+        echo "Testing /api/hello endpoint..."
+        response=$(curl -s http://localhost:8000/api/hello)
+        echo "Response: $response"
+        echo $response | grep -q '"message":"Hello World from Backend!"' || exit 1
+        echo $response | grep -q '"timestamp"' || exit 1
+    
+    - name: Test frontend is accessible
+      run: |
+        echo "Waiting for frontend to be accessible..."
+        for i in {1..30}; do
+          if curl -f http://localhost:3000 > /dev/null 2>&1; then
+            echo "Frontend is accessible!"
+            break
+          fi
+          echo "Attempt $i/30: Frontend not ready yet..."
+          sleep 2
+        done
+        curl -f http://localhost:3000 || exit 1
+    
+    - name: Show container logs on failure
+      if: failure()
+      run: |
+        echo "=== Backend Logs ==="
+        docker compose logs backend
+        echo "=== Frontend Logs ==="
+        docker compose logs frontend
+    
+    - name: Stop services
+      if: always()
+      run: |
+        docker compose down -v
+
+  all-tests-passed:
+    name: All Tests Passed
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests, docker-build, integration-test]
+    
+    steps:
+    - name: All tests passed successfully
+      run: |
+        echo "✅ All tests passed successfully!"
+        echo "✅ Backend tests: PASSED"
+        echo "✅ Frontend tests: PASSED"
+        echo "✅ Docker build: PASSED"
+        echo "✅ Integration tests: PASSED"
