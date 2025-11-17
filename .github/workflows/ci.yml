@@ -1,0 +1,222 @@
+# GitHub Actions CI/CD Pipeline for Yellow Theme Hello World Application
+# Runs automated tests on push and pull request events
+
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - feature/**
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # Backend testing job
+  backend-tests:
+    name: Backend Tests (Python + FastAPI)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run pytest
+        working-directory: ./backend
+        run: |
+          pytest test_main.py -v --tb=short
+
+      - name: Test API endpoints manually
+        working-directory: ./backend
+        run: |
+          # Start server in background
+          uvicorn main:app --host 0.0.0.0 --port 8000 &
+          SERVER_PID=$!
+          
+          # Wait for server to start
+          sleep 5
+          
+          # Test health endpoint
+          curl -f http://localhost:8000/health || exit 1
+          
+          # Test hello endpoint
+          curl -f http://localhost:8000/api/hello || exit 1
+          
+          # Kill server
+          kill $SERVER_PID
+
+  # Frontend testing job
+  frontend-tests:
+    name: Frontend Tests (React + Vite)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run Vitest tests
+        working-directory: ./frontend
+        run: npm test -- --run
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+
+  # Docker build validation job
+  docker-build:
+    name: Docker Build Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          tags: yellow-theme-backend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: false
+          tags: yellow-theme-frontend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Integration test with docker-compose
+  integration-tests:
+    name: Integration Tests (Docker Compose)
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Start services with Docker Compose
+        run: |
+          docker compose up -d --build
+          
+      - name: Wait for services to be healthy
+        run: |
+          # Wait up to 60 seconds for backend to be ready
+          timeout=60
+          elapsed=0
+          while [ $elapsed -lt $timeout ]; do
+            if curl -f http://localhost:8000/health 2>/dev/null; then
+              echo "Backend is healthy"
+              break
+            fi
+            echo "Waiting for backend... ($elapsed/$timeout)"
+            sleep 2
+            elapsed=$((elapsed + 2))
+          done
+          
+          if [ $elapsed -ge $timeout ]; then
+            echo "Backend failed to become healthy"
+            docker compose logs backend
+            exit 1
+          fi
+          
+          # Wait for frontend to be ready
+          timeout=60
+          elapsed=0
+          while [ $elapsed -lt $timeout ]; do
+            if curl -f http://localhost:3000 2>/dev/null; then
+              echo "Frontend is healthy"
+              break
+            fi
+            echo "Waiting for frontend... ($elapsed/$timeout)"
+            sleep 2
+            elapsed=$((elapsed + 2))
+          done
+          
+          if [ $elapsed -ge $timeout ]; then
+            echo "Frontend failed to become healthy"
+            docker compose logs frontend
+            exit 1
+          fi
+
+      - name: Test backend API endpoints
+        run: |
+          # Test health endpoint
+          response=$(curl -s http://localhost:8000/health)
+          echo "Health response: $response"
+          echo $response | grep -q '"status":"healthy"' || exit 1
+          
+          # Test hello endpoint
+          response=$(curl -s http://localhost:8000/api/hello)
+          echo "Hello response: $response"
+          echo $response | grep -q '"message":"Hello World from Backend!"' || exit 1
+          echo $response | grep -q '"timestamp"' || exit 1
+
+      - name: Test frontend accessibility
+        run: |
+          # Check frontend is accessible
+          curl -f http://localhost:3000 || exit 1
+          
+          # Check for expected content
+          response=$(curl -s http://localhost:3000)
+          echo $response | grep -q 'Hello World' || exit 1
+
+      - name: Show logs on failure
+        if: failure()
+        run: |
+          echo "=== Backend Logs ==="
+          docker compose logs backend
+          echo "=== Frontend Logs ==="
+          docker compose logs frontend
+
+      - name: Stop services
+        if: always()
+        run: docker compose down -v
+
+  # Summary job
+  ci-success:
+    name: CI Pipeline Success
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests, docker-build, integration-tests]
+    
+    steps:
+      - name: Success message
+        run: |
+          echo "✅ All CI checks passed successfully!"
+          echo "✅ Backend tests passed"
+          echo "✅ Frontend tests passed"
+          echo "✅ Docker builds successful"
+          echo "✅ Integration tests passed"
