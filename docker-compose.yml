@@ -1,0 +1,52 @@
+# Docker Compose configuration for fullstack Hello World application
+# Orchestrates frontend (React) and backend (FastAPI) services
+
+version: '3.8'
+
+services:
+  # Backend service - FastAPI application
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hello-world-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount source code for hot reload
+      - ./backend:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - app-network
+
+  # Frontend service - React with Vite
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hello-world-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount source code for hot reload
+      - ./frontend:/app
+      # Don't mount node_modules from host
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

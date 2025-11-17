@@ -1,0 +1,120 @@
+/**
+ * Styles for the main App component
+ * Green theme with centered, responsive layout
+ */
+
+.app {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.container {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+}
+
+.title {
+  color: #2ecc71;
+  font-size: 3rem;
+  margin-bottom: 30px;
+  font-weight: 700;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.fetch-button {
+  background: #2ecc71;
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+}
+
+.fetch-button:hover:not(:disabled) {
+  background: #27ae60;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+}
+
+.fetch-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.fetch-button:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.error-message {
+  margin-top: 20px;
+  padding: 15px;
+  background: #e74c3c;
+  color: white;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.backend-response {
+  margin-top: 30px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border-left: 4px solid #2ecc71;
+}
+
+.message {
+  color: #2c3e50;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.timestamp {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* Responsive design for mobile devices */
+@media (max-width: 768px) {
+  .container {
+    padding: 30px 20px;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .fetch-button {
+    padding: 12px 24px;
+    font-size: 1rem;
+  }
+
+  .message {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .container {
+    padding: 20px 15px;
+  }
+}
