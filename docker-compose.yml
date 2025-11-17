@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # Backend service - FastAPI
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: yellow-theme-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount source code for hot reload in development
+      - ./backend:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - fullstack-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Frontend service - React with Vite
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: yellow-theme-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount source code for Vite HMR
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_BACKEND_URL=http://localhost:8000
+    networks:
+      - fullstack-network
+    depends_on:
+      - backend
+
+networks:
+  fullstack-network:
+    driver: bridge
