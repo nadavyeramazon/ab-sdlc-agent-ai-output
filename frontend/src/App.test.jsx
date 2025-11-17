@@ -111,8 +111,11 @@ describe('App Component', () => {
       
       await user.click(button)
 
-      // Check loading state
-      expect(screen.getByRole('button', { name: /loading/i })).toBeInTheDocument()
+      // Wait for loading state to appear
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /loading/i })).toBeInTheDocument()
+      })
+      
       expect(button).toBeDisabled()
 
       // Resolve the promise
@@ -145,7 +148,9 @@ describe('App Component', () => {
       
       await user.click(button)
 
-      expect(button).toBeDisabled()
+      await waitFor(() => {
+        expect(button).toBeDisabled()
+      })
 
       resolvePromise({
         ok: true,
