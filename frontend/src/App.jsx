@@ -55,7 +55,7 @@ function App() {
           className="fetch-button" 
           onClick={fetchMessage}
           disabled={loading}
-          aria-label="Get Message from Backend"
+          aria-label={loading ? 'Loading' : 'Get Message from Backend'}
         >
           {loading ? 'Loading...' : 'Get Message from Backend'}
         </button>
