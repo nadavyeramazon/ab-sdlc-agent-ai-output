@@ -1,11 +1,11 @@
 /**
  * Styles for the main App component
- * Green theme with centered, responsive layout
+ * Purple theme with centered, responsive layout
  */
 
 .app {
   min-height: 100vh;
-  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -23,7 +23,7 @@
 }
 
 .title {
-  color: #2ecc71;
+  color: #9b59b6;
   font-size: 3rem;
   margin-bottom: 30px;
   font-weight: 700;
@@ -31,7 +31,7 @@
 }
 
 .fetch-button {
-  background: #2ecc71;
+  background: #9b59b6;
   color: white;
   border: none;
   padding: 15px 30px;
@@ -40,13 +40,13 @@
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+  box-shadow: 0 4px 15px rgba(155, 89, 182, 0.3);
 }
 
 .fetch-button:hover:not(:disabled) {
-  background: #27ae60;
+  background: #8e44ad;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+  box-shadow: 0 6px 20px rgba(155, 89, 182, 0.4);
 }
 
 .fetch-button:active:not(:disabled) {
@@ -73,7 +73,7 @@
   padding: 20px;
   background: #f8f9fa;
   border-radius: 10px;
-  border-left: 4px solid #2ecc71;
+  border-left: 4px solid #9b59b6;
 }
 
 .message {
@@ -89,6 +89,80 @@
   font-style: italic;
 }
 
+/* Greeting section styles */
+.greeting-section {
+  margin-top: 40px;
+  padding-top: 30px;
+  border-top: 2px solid #e9ecef;
+}
+
+.greeting-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
+}
+
+.greeting-input {
+  width: 100%;
+  max-width: 400px;
+  padding: 15px;
+  font-size: 1rem;
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.greeting-input:focus {
+  border-color: #9b59b6;
+  box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1);
+}
+
+.greet-button {
+  background: #9b59b6;
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(155, 89, 182, 0.3);
+}
+
+.greet-button:hover:not(:disabled) {
+  background: #7d3c98;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(155, 89, 182, 0.4);
+}
+
+.greet-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.greet-button:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.greeting-response {
+  margin-top: 20px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border-left: 4px solid #9b59b6;
+}
+
+.greeting-text {
+  color: #2c3e50;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
 /* Responsive design for mobile devices */
 @media (max-width: 768px) {
   .container {
@@ -99,12 +173,14 @@
     font-size: 2rem;
   }
 
-  .fetch-button {
+  .fetch-button,
+  .greet-button {
     padding: 12px 24px;
     font-size: 1rem;
   }
 
-  .message {
+  .message,
+  .greeting-text {
     font-size: 1.1rem;
   }
 }

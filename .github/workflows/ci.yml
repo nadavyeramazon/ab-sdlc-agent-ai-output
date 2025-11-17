@@ -1,4 +1,4 @@
-name: CI - Green Theme Hello World App
+name: CI - Purple Theme Hello World App with Greet API
 
 # Trigger workflow on push and pull requests to main and feature branches
 on:
@@ -159,6 +159,33 @@ jobs:
           echo "API hello response: $response"
           echo $response | grep -q '"message":"Hello World from Backend!"' || exit 1
           echo $response | grep -q '"timestamp"' || exit 1
+      
+      - name: Test backend /api/greet endpoint with valid name
+        run: |
+          response=$(curl -s -X POST http://localhost:8000/api/greet \
+            -H "Content-Type: application/json" \
+            -d '{"name":"Alice"}')
+          echo "API greet response: $response"
+          echo $response | grep -q '"greeting"' || exit 1
+          echo $response | grep -q 'Alice' || exit 1
+          echo $response | grep -q 'purple-themed app' || exit 1
+          echo $response | grep -q '"timestamp"' || exit 1
+      
+      - name: Test backend /api/greet endpoint rejects empty name
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST http://localhost:8000/api/greet \
+            -H "Content-Type: application/json" \
+            -d '{"name":""}')
+          echo "API greet empty name response: $response"
+          echo $response | grep -q '422' || exit 1
+      
+      - name: Test backend /api/greet endpoint rejects missing name
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST http://localhost:8000/api/greet \
+            -H "Content-Type: application/json" \
+            -d '{}')
+          echo "API greet missing name response: $response"
+          echo $response | grep -q '422' || exit 1
       
       - name: Test frontend is accessible
         run: |
