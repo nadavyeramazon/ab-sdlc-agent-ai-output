@@ -69,10 +69,11 @@ services:
       - "3000:80"
     
     # Service dependencies
-    # Ensures backend starts before frontend
-    # Frontend can communicate with backend via service name 'backend'
+    # Wait for backend to be healthy before starting frontend
+    # This ensures the backend API is available when frontend starts
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     
     # Network configuration
     # Connects service to the custom bridge network for inter-service communication
