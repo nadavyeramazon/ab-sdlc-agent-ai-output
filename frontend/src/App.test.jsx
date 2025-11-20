@@ -482,8 +482,15 @@ describe('App Component', () => {
       it('should not display greeting or error messages initially', () => {
         render(<App />)
         
+        // Check for specific greeting error messages, not just any text containing "hello"
         expect(screen.queryByText(/please enter your name/i)).not.toBeInTheDocument()
-        expect(screen.queryByText(/hello/i)).not.toBeInTheDocument()
+        expect(screen.queryByText(/failed to connect to server/i)).not.toBeInTheDocument()
+        expect(screen.queryByText(/failed to get greeting/i)).not.toBeInTheDocument()
+        
+        // Check that no success greeting is displayed (these would have className="success")
+        const greetingCard = screen.getByRole('heading', { name: /personalized greeting/i }).closest('.card')
+        expect(greetingCard?.querySelector('.success')).not.toBeInTheDocument()
+        expect(greetingCard?.querySelector('.error')).not.toBeInTheDocument()
       })
     })
 
