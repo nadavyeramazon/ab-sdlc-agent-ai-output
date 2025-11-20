@@ -7,11 +7,15 @@ WORKDIR /app
 
 # Copy package files for dependency installation
 # This layer is cached unless package.json or package-lock.json changes
-COPY package.json package-lock.json* ./
+COPY package.json ./
+
+# Clean npm cache to prevent integrity errors
+RUN npm cache clean --force
 
 # Install dependencies
+# Use npm install (not npm ci) to generate fresh package-lock.json if missing
 # Use --production=false to ensure devDependencies are installed (needed for build)
-RUN npm install
+RUN npm install --production=false
 
 # Copy all source files
 COPY . .
