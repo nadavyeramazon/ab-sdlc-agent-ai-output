@@ -17,6 +17,13 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Prevents Python from buffering stdout and stderr (equivalent to python -u)
 ENV PYTHONUNBUFFERED=1
 
+# Install wget for health checks
+# --no-install-recommends: Only install essential packages, reduces image size
+# Clean up apt cache to reduce image size
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends wget && \
+    rm -rf /var/lib/apt/lists/*
+
 # Copy requirements file first for better Docker layer caching
 # This layer will only rebuild if requirements.txt changes
 COPY requirements.txt .
@@ -35,10 +42,8 @@ COPY main.py .
 # This is the port uvicorn will listen on
 EXPOSE 8000
 
-# Health check to ensure container is running properly
-# Checks the /health endpoint every 30 seconds
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
+# Health check is configured in docker-compose.yml using wget
+# Removed inline HEALTHCHECK to avoid conflicts with docker-compose configuration
 
 # Run the application with uvicorn
 # --host 0.0.0.0: Listen on all network interfaces
