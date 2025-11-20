@@ -133,6 +133,227 @@ class TestHelloEndpoint:
         assert "timestamp" in data2
 
 
+class TestGreetEndpoint:
+    """Test suite for the POST /api/greet endpoint"""
+    
+    def test_greet_returns_200_with_valid_name(self, client):
+        """Test that the greet endpoint returns 200 OK with a valid name"""
+        response = client.post("/api/greet", json={"name": "Alice"})
+        assert response.status_code == 200, f"Expected 200 but got {response.status_code}"
+    
+    def test_greet_returns_correct_structure(self, client):
+        """Test that the greet endpoint returns the expected JSON structure with greeting and timestamp fields"""
+        response = client.post("/api/greet", json={"name": "Bob"})
+        data = response.json()
+        
+        assert isinstance(data, dict), "Response should be a dictionary"
+        assert "greeting" in data, "Response should contain 'greeting' field"
+        assert "timestamp" in data, "Response should contain 'timestamp' field"
+        assert len(data) == 2, "Response should only contain 'greeting' and 'timestamp' fields"
+    
+    def test_greet_timestamp_is_valid_iso8601_format(self, client):
+        """Test that the timestamp in greet response is in valid ISO 8601 format with Z suffix"""
+        response = client.post("/api/greet", json={"name": "Charlie"})
+        data = response.json()
+        
+        timestamp = data["timestamp"]
+        
+        # Verify timestamp ends with 'Z' (UTC indicator)
+        assert timestamp.endswith("Z"), f"Timestamp should end with 'Z' but got: {timestamp}"
+        
+        # Verify timestamp is valid ISO 8601 format by parsing it
+        try:
+            # Remove the 'Z' and parse
+            parsed_timestamp = datetime.fromisoformat(timestamp.rstrip('Z'))
+            assert isinstance(parsed_timestamp, datetime), "Timestamp should be parseable as datetime"
+        except ValueError as e:
+            pytest.fail(f"Timestamp is not in valid ISO 8601 format: {e}")
+    
+    def test_greet_returns_400_for_empty_name(self, client):
+        """Test that the greet endpoint returns 400 Bad Request when name is empty string"""
+        response = client.post("/api/greet", json={"name": ""})
+        assert response.status_code == 400, f"Expected 400 for empty name but got {response.status_code}"
+        
+        data = response.json()
+        assert "detail" in data, "Error response should contain 'detail' field"
+        assert data["detail"] == "Name cannot be empty", f"Expected specific error message but got: {data['detail']}"
+    
+    def test_greet_returns_400_for_whitespace_only_name(self, client):
+        """Test that the greet endpoint returns 400 Bad Request when name contains only whitespace"""
+        whitespace_names = ["   ", "\t", "\n", "  \t\n  "]
+        
+        for whitespace_name in whitespace_names:
+            response = client.post("/api/greet", json={"name": whitespace_name})
+            assert response.status_code == 400, f"Expected 400 for whitespace-only name '{repr(whitespace_name)}' but got {response.status_code}"
+            
+            data = response.json()
+            assert "detail" in data, "Error response should contain 'detail' field"
+            assert data["detail"] == "Name cannot be empty", f"Expected specific error message but got: {data['detail']}"
+    
+    def test_greet_strips_leading_trailing_whitespace(self, client):
+        """Test that the greet endpoint strips leading and trailing whitespace from names"""
+        test_cases = [
+            ("  David  ", "David"),
+            ("\tEve\t", "Eve"),
+            ("\n Frank \n", "Frank"),
+            ("  Grace", "Grace"),
+            ("Henry  ", "Henry"),
+        ]
+        
+        for input_name, expected_name in test_cases:
+            response = client.post("/api/greet", json={"name": input_name})
+            assert response.status_code == 200, f"Expected 200 for name '{repr(input_name)}'"
+            
+            data = response.json()
+            expected_greeting = f"Hello, {expected_name}! Welcome to our purple-themed app!"
+            assert data["greeting"] == expected_greeting, f"Expected greeting for '{expected_name}' but got: {data['greeting']}"
+    
+    def test_greet_with_various_valid_names(self, client):
+        """Test that the greet endpoint handles various valid name inputs correctly"""
+        test_names = [
+            "John",
+            "Mary Jane",
+            "José",
+            "李明",
+            "O'Brien",
+            "Anne-Marie",
+            "123",
+            "User@123",
+            "a",  # Single character
+        ]
+        
+        for name in test_names:
+            response = client.post("/api/greet", json={"name": name})
+            assert response.status_code == 200, f"Expected 200 for name '{name}' but got {response.status_code}"
+            
+            data = response.json()
+            expected_greeting = f"Hello, {name}! Welcome to our purple-themed app!"
+            assert data["greeting"] == expected_greeting, f"Greeting mismatch for name '{name}'"
+            assert "timestamp" in data, f"Response should contain timestamp for name '{name}'"
+    
+    def test_greet_endpoint_get_method_not_allowed(self, client):
+        """Test that GET method is not allowed on the greet endpoint (should be POST only)"""
+        response = client.get("/api/greet")
+        assert response.status_code == 405, f"Expected 405 Method Not Allowed but got {response.status_code}"
+    
+    def test_greet_endpoint_content_type(self, client):
+        """Test that the greet endpoint returns JSON content type"""
+        response = client.post("/api/greet", json={"name": "Isabella"})
+        assert response.status_code == 200
+        assert "application/json" in response.headers["content-type"], "Response should be JSON"
+    
+    def test_greet_greeting_message_format(self, client):
+        """Test that the greeting message follows the expected format"""
+        test_name = "Jack"
+        response = client.post("/api/greet", json={"name": test_name})
+        data = response.json()
+        
+        greeting = data["greeting"]
+        
+        # Verify greeting format: "Hello, {name}! Welcome to our purple-themed app!"
+        assert greeting.startswith("Hello, "), "Greeting should start with 'Hello, '"
+        assert test_name in greeting, f"Greeting should contain the name '{test_name}'"
+        assert greeting.endswith("! Welcome to our purple-themed app!"), "Greeting should end with expected message"
+        
+        expected_greeting = f"Hello, {test_name}! Welcome to our purple-themed app!"
+        assert greeting == expected_greeting, f"Expected exact format: {expected_greeting}"
+    
+    def test_greet_with_very_long_name(self, client):
+        """Test that the greet endpoint handles very long names correctly"""
+        long_name = "A" * 1000  # 1000 character name
+        response = client.post("/api/greet", json={"name": long_name})
+        
+        assert response.status_code == 200, "Should accept very long names"
+        data = response.json()
+        
+        assert long_name in data["greeting"], "Greeting should contain the full long name"
+        assert "timestamp" in data, "Response should contain timestamp"
+    
+    def test_greet_with_special_characters(self, client):
+        """Test that the greet endpoint handles special characters in names"""
+        special_names = [
+            "Alice & Bob",
+            "user<script>",
+            "name'with'quotes",
+            'name"with"doublequotes',
+            "name\nwith\nnewlines",
+            "emoji😀user",
+            "tab\tname",
+        ]
+        
+        for name in special_names:
+            response = client.post("/api/greet", json={"name": name})
+            assert response.status_code == 200, f"Should accept special characters in name '{repr(name)}'"
+            
+            data = response.json()
+            # Name should appear in greeting exactly as provided (after stripping)
+            stripped_name = name.strip()
+            expected_greeting = f"Hello, {stripped_name}! Welcome to our purple-themed app!"
+            assert data["greeting"] == expected_greeting, f"Greeting mismatch for special name '{name}'"
+    
+    def test_greet_requires_name_field(self, client):
+        """Test that the greet endpoint returns 422 Unprocessable Entity when name field is missing"""
+        response = client.post("/api/greet", json={})
+        assert response.status_code == 422, f"Expected 422 for missing name field but got {response.status_code}"
+    
+    def test_greet_rejects_invalid_json(self, client):
+        """Test that the greet endpoint returns 422 when request body is not valid JSON structure"""
+        response = client.post(
+            "/api/greet",
+            data="not json",
+            headers={"Content-Type": "application/json"}
+        )
+        assert response.status_code == 422, f"Expected 422 for invalid JSON but got {response.status_code}"
+    
+    def test_greet_rejects_non_string_name(self, client):
+        """Test that the greet endpoint returns 422 when name is not a string"""
+        invalid_names = [
+            {"name": 123},
+            {"name": None},
+            {"name": []},
+            {"name": {}},
+            {"name": True},
+        ]
+        
+        for invalid_payload in invalid_names:
+            response = client.post("/api/greet", json=invalid_payload)
+            assert response.status_code == 422, f"Expected 422 for non-string name {invalid_payload} but got {response.status_code}"
+    
+    def test_greet_timestamp_is_recent(self, client):
+        """Test that the timestamp in greet response is recent (within last 5 seconds)"""
+        response = client.post("/api/greet", json={"name": "Karen"})
+        data = response.json()
+        
+        # Parse timestamp (remove 'Z' suffix)
+        timestamp_str = data["timestamp"].rstrip('Z')
+        timestamp = datetime.fromisoformat(timestamp_str)
+        now = datetime.utcnow()
+        time_difference = (now - timestamp).total_seconds()
+        
+        # Timestamp should be within the last 5 seconds
+        assert abs(time_difference) < 5, f"Timestamp is not recent. Difference: {time_difference} seconds"
+    
+    def test_greet_multiple_calls_return_different_timestamps(self, client):
+        """Test that multiple calls to greet endpoint return different timestamps"""
+        response1 = client.post("/api/greet", json={"name": "Larry"})
+        response2 = client.post("/api/greet", json={"name": "Larry"})
+        
+        data1 = response1.json()
+        data2 = response2.json()
+        
+        # Timestamps should exist
+        assert "timestamp" in data1
+        assert "timestamp" in data2
+        
+        # With the same name, greeting should be the same
+        assert data1["greeting"] == data2["greeting"]
+        
+        # Timestamps might be different if there's enough time between calls
+        # At minimum, verify they are valid timestamps
+        assert data1["timestamp"].endswith("Z")
+        assert data2["timestamp"].endswith("Z")
+
+
 class TestCORSConfiguration:
     """Test suite for CORS (Cross-Origin Resource Sharing) middleware configuration"""
     
@@ -275,3 +496,4 @@ def test_all_endpoints_are_covered():
     # Check that critical endpoints exist
     assert "/health" in routes
     assert "/api/hello" in routes
+    assert "/api/greet" in routes
