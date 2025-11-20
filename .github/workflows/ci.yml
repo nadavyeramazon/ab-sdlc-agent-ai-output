@@ -1,0 +1,262 @@
+name: Fullstack CI/CD Pipeline
+
+# Trigger configuration: Run on pull requests to any branch and on pushes to main/master
+on:
+  pull_request:
+    branches:
+      - '**'  # All branches
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  # ============================================================================
+  # Job 1: Backend CI - Python FastAPI/Uvicorn Application
+  # ============================================================================
+  backend-ci:
+    name: Backend CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      # Cache pip dependencies for faster subsequent runs
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      # Install and run flake8 for Python linting
+      - name: Run backend linting
+        working-directory: ./backend
+        run: |
+          pip install flake8
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      
+      # Health check: Start uvicorn server and verify it responds
+      - name: Backend health check
+        working-directory: ./backend
+        run: |
+          echo "Starting uvicorn server in background..."
+          # Start uvicorn server in background (adjust module path as needed)
+          nohup uvicorn main:app --host 0.0.0.0 --port 8000 > uvicorn.log 2>&1 &
+          SERVER_PID=$!
+          echo "Server started with PID: $SERVER_PID"
+          
+          # Wait for server to be ready (max 30 seconds)
+          echo "Waiting for server to be ready..."
+          for i in {1..30}; do
+            if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+              echo "✓ Backend server is healthy!"
+              kill $SERVER_PID 2>/dev/null || true
+              exit 0
+            fi
+            echo "Attempt $i/30: Server not ready yet..."
+            sleep 1
+          done
+          
+          # If we reach here, server didn't start properly
+          echo "✗ Backend server health check failed!"
+          echo "=== Server logs ==="
+          cat uvicorn.log
+          kill $SERVER_PID 2>/dev/null || true
+          exit 1
+
+  # ============================================================================
+  # Job 2: Frontend CI - Node.js React/Next.js Application
+  # ============================================================================
+  frontend-ci:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js 18 LTS
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      # Cache npm dependencies for faster subsequent runs
+      - name: Cache npm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      # Verify that the frontend builds successfully
+      - name: Build frontend application
+        working-directory: ./frontend
+        run: |
+          echo "Building frontend application..."
+          npm run build
+          echo "✓ Frontend build completed successfully!"
+
+  # ============================================================================
+  # Job 3: Docker Build Verification - Validate Docker Images
+  # ============================================================================
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      # Build backend Docker image
+      - name: Build backend Docker image
+        run: |
+          echo "Building backend Docker image..."
+          docker build -t backend:${{ github.sha }} ./backend
+          echo "✓ Backend Docker image built successfully!"
+          docker images | grep backend
+      
+      # Build frontend Docker image
+      - name: Build frontend Docker image
+        run: |
+          echo "Building frontend Docker image..."
+          docker build -t frontend:${{ github.sha }} ./frontend
+          echo "✓ Frontend Docker image built successfully!"
+          docker images | grep frontend
+      
+      # Verify images were created and show sizes
+      - name: Verify Docker images
+        run: |
+          echo "=== Docker Images Built ==="
+          docker images | head -n 1
+          docker images | grep -E "(backend|frontend)"
+          echo "=========================="
+
+  # ============================================================================
+  # Job 4: Docker Compose Validation - End-to-End Service Testing
+  # ============================================================================
+  docker-compose:
+    name: Docker Compose
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      # Validate docker-compose.yml syntax
+      - name: Validate docker-compose.yml syntax
+        run: |
+          echo "Validating docker-compose.yml syntax..."
+          docker compose config > /dev/null
+          echo "✓ docker-compose.yml syntax is valid!"
+      
+      # Start all services defined in docker-compose.yml
+      - name: Start Docker Compose services
+        run: |
+          echo "Starting Docker Compose services..."
+          docker compose up -d
+          echo "✓ Services started successfully!"
+      
+      # Wait for services to be healthy
+      - name: Wait for services to be healthy
+        run: |
+          echo "Waiting for services to be healthy (max 30 seconds)..."
+          for i in {1..30}; do
+            # Check if containers are running
+            RUNNING=$(docker compose ps --filter "status=running" --quiet | wc -l)
+            if [ "$RUNNING" -gt 0 ]; then
+              echo "Services are up after $i seconds"
+              break
+            fi
+            echo "Attempt $i/30: Waiting for services to start..."
+            sleep 1
+          done
+          
+          # Show service status
+          echo "=== Docker Compose Service Status ==="
+          docker compose ps
+          echo "====================================="
+      
+      # Test backend health endpoint
+      - name: Test backend health endpoint
+        run: |
+          echo "Testing backend health endpoint..."
+          # Wait for backend to be ready
+          for i in {1..30}; do
+            if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+              echo "✓ Backend health check passed!"
+              curl -s http://localhost:8000/health | head -n 20
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "✗ Backend health check failed after 30 attempts!"
+              echo "=== Backend logs ==="
+              docker compose logs backend | tail -n 50
+              exit 1
+            fi
+            echo "Attempt $i/30: Backend not ready yet..."
+            sleep 1
+          done
+      
+      # Test frontend accessibility
+      - name: Test frontend accessibility
+        run: |
+          echo "Testing frontend accessibility..."
+          # Wait for frontend to be ready
+          for i in {1..30}; do
+            if curl -f http://localhost:3000 > /dev/null 2>&1; then
+              echo "✓ Frontend accessibility check passed!"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "✗ Frontend accessibility check failed after 30 attempts!"
+              echo "=== Frontend logs ==="
+              docker compose logs frontend | tail -n 50
+              exit 1
+            fi
+            echo "Attempt $i/30: Frontend not ready yet..."
+            sleep 1
+          done
+      
+      # Show service logs for debugging if needed
+      - name: Show service logs
+        if: always()
+        run: |
+          echo "=== Backend Logs ==="
+          docker compose logs backend | tail -n 100
+          echo ""
+          echo "=== Frontend Logs ==="
+          docker compose logs frontend | tail -n 100
+      
+      # Clean shutdown of all services
+      - name: Shut down Docker Compose services
+        if: always()
+        run: |
+          echo "Shutting down Docker Compose services..."
+          docker compose down -v
+          echo "✓ Services shut down successfully!"
