@@ -12,3 +12,7 @@ build/
 .vite/
 .DS_Store
 *.log
+
+# Test coverage
+coverage/
+.nyc_output/
