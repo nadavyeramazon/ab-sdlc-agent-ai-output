@@ -32,14 +32,14 @@ body {
 }
 
 .title {
-  color: #2ecc71;
+  color: #9b59b6;
   font-size: 3rem;
   margin-bottom: 30px;
   font-weight: bold;
 }
 
 .button {
-  background-color: #2ecc71;
+  background-color: #9b59b6;
   color: #ffffff;
   border: none;
   border-radius: 8px;
@@ -52,7 +52,7 @@ body {
 }
 
 .button:hover:not(:disabled) {
-  background-color: #27ae60;
+  background-color: #8e44ad;
   transform: translateY(-2px);
 }
 
@@ -61,12 +61,12 @@ body {
 }
 
 .button:disabled {
-  background-color: #95a5a6;
+  background-color: #bdc3c7;
   cursor: not-allowed;
 }
 
 .loading {
-  color: #2ecc71;
+  color: #9b59b6;
   font-size: 1.1rem;
   margin: 20px 0;
   font-weight: 500;
@@ -84,13 +84,13 @@ body {
 .response {
   margin-top: 30px;
   padding: 20px;
-  background-color: #d5f4e6;
+  background-color: #e8daef;
   border-radius: 8px;
-  border-left: 4px solid #2ecc71;
+  border-left: 4px solid #9b59b6;
 }
 
 .response h2 {
-  color: #27ae60;
+  color: #8e44ad;
   font-size: 1.3rem;
   margin-bottom: 15px;
 }
@@ -100,6 +100,53 @@ body {
   font-size: 1.1rem;
   line-height: 1.6;
   word-wrap: break-word;
+}
+
+.card {
+  margin-top: 40px;
+  padding: 30px;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  border: 2px solid #e8daef;
+}
+
+.card h2 {
+  color: #8e44ad;
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+}
+
+.input-field {
+  width: 100%;
+  max-width: 300px;
+  padding: 12px;
+  margin: 10px 0;
+  border: 2px solid #9b59b6;
+  border-radius: 4px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #8e44ad;
+  box-shadow: 0 0 5px rgba(155, 89, 182, 0.5);
+}
+
+.success {
+  color: #27ae60;
+  margin: 10px 0;
+  font-weight: 500;
+  font-size: 18px;
+}
+
+button:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+}
+
+button:disabled:hover {
+  background-color: #bdc3c7;
 }
 
 /* Responsive design */
@@ -124,5 +171,17 @@ body {
 
   .response p {
     font-size: 1rem;
+  }
+
+  .card {
+    padding: 20px;
+  }
+
+  .card h2 {
+    font-size: 1.3rem;
+  }
+
+  .input-field {
+    width: 100%;
   }
 }
