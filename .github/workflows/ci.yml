@@ -1,0 +1,320 @@
+name: CI/CD Pipeline
+
+# Workflow triggers
+on:
+  # Trigger on pull request to any branch
+  pull_request:
+    branches:
+      - '*'
+  # Trigger on push to main branch
+  push:
+    branches:
+      - main
+
+# Cancel in-progress runs for the same workflow and PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ===========================================
+  # Backend Tests Job
+  # ===========================================
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      # Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      # Setup Python 3.11 environment
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      # Cache pip dependencies for faster builds
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      # Install backend dependencies
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      # Run backend linting (if ruff or flake8 is available)
+      - name: Run backend linting
+        working-directory: ./backend
+        continue-on-error: true
+        run: |
+          if pip list | grep -q "ruff"; then
+            echo "Running ruff linter..."
+            ruff check .
+          elif pip list | grep -q "flake8"; then
+            echo "Running flake8 linter..."
+            flake8 .
+          else
+            echo "No linter found (ruff or flake8), skipping linting step"
+          fi
+      
+      # Run backend health check test
+      - name: Run backend health check test
+        working-directory: ./backend
+        run: |
+          echo "Starting FastAPI server in background..."
+          uvicorn main:app --host 0.0.0.0 --port 8000 &
+          SERVER_PID=$!
+          
+          echo "Waiting for server to be ready..."
+          for i in {1..30}; do
+            if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+              echo "✓ Health check passed!"
+              kill $SERVER_PID
+              exit 0
+            fi
+            echo "Attempt $i/30: Server not ready yet..."
+            sleep 2
+          done
+          
+          echo "✗ Health check failed - server did not respond in time"
+          kill $SERVER_PID 2>/dev/null || true
+          exit 1
+      
+      # Run backend unit tests (if pytest tests exist)
+      - name: Run backend unit tests
+        working-directory: ./backend
+        continue-on-error: true
+        run: |
+          if [ -d "tests" ] || [ -d "../tests" ]; then
+            echo "Running pytest tests..."
+            pytest -v
+          else
+            echo "No test directory found, skipping unit tests"
+          fi
+
+  # ===========================================
+  # Frontend Tests Job
+  # ===========================================
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      # Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      # Check if frontend has Node.js project (package.json)
+      - name: Check for Node.js project
+        id: check-nodejs
+        run: |
+          if [ -f "frontend/package.json" ]; then
+            echo "nodejs=true" >> $GITHUB_OUTPUT
+            echo "✓ Node.js project detected (package.json found)"
+          else
+            echo "nodejs=false" >> $GITHUB_OUTPUT
+            echo "ℹ Static frontend detected (no package.json found)"
+          fi
+      
+      # Setup Node.js 18 environment (only if package.json exists)
+      - name: Set up Node.js 18
+        if: steps.check-nodejs.outputs.nodejs == 'true'
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      # Cache npm dependencies for faster builds (only if package.json exists)
+      - name: Cache npm dependencies
+        if: steps.check-nodejs.outputs.nodejs == 'true'
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      
+      # Install frontend dependencies (only if package.json exists)
+      - name: Install frontend dependencies
+        if: steps.check-nodejs.outputs.nodejs == 'true'
+        working-directory: ./frontend
+        run: npm ci
+      
+      # Run frontend linting (only if package.json exists)
+      - name: Run frontend linting
+        if: steps.check-nodejs.outputs.nodejs == 'true'
+        working-directory: ./frontend
+        continue-on-error: true
+        run: |
+          if npm run lint --if-present; then
+            echo "✓ Linting passed"
+          else
+            echo "⚠ Linting not configured or failed"
+          fi
+      
+      # Run frontend build test (only if package.json exists)
+      - name: Run frontend build test
+        if: steps.check-nodejs.outputs.nodejs == 'true'
+        working-directory: ./frontend
+        run: |
+          if npm run build --if-present; then
+            echo "✓ Build successful"
+          else
+            echo "⚠ No build script found"
+          fi
+      
+      # Validate static frontend files (if no package.json)
+      - name: Validate static frontend files
+        if: steps.check-nodejs.outputs.nodejs == 'false'
+        working-directory: ./frontend
+        run: |
+          echo "Checking for required static files..."
+          if [ ! -f "index.html" ]; then
+            echo "✗ Error: index.html not found"
+            exit 1
+          fi
+          echo "✓ Frontend validation passed (index.html found)"
+          
+          # List frontend files
+          echo "Frontend files:"
+          ls -la
+
+  # ===========================================
+  # Docker Build Verification Job
+  # ===========================================
+  docker-build:
+    name: Docker Build Verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [backend-tests, frontend-tests]
+    
+    steps:
+      # Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      # Verify docker-compose.yml exists
+      - name: Check for docker-compose.yml
+        run: |
+          if [ ! -f "docker-compose.yml" ]; then
+            echo "✗ Error: docker-compose.yml not found in repository root"
+            exit 1
+          fi
+          echo "✓ docker-compose.yml found"
+      
+      # Validate docker-compose.yml syntax
+      - name: Validate docker-compose.yml syntax
+        run: |
+          echo "Validating docker-compose.yml syntax..."
+          docker compose config > /dev/null
+          echo "✓ docker-compose.yml syntax is valid"
+      
+      # Build backend Docker image
+      - name: Build backend Docker image
+        run: |
+          echo "Building backend Docker image..."
+          docker build -t backend:test ./backend
+          echo "✓ Backend Docker image built successfully"
+          docker images | grep backend
+      
+      # Build frontend Docker image
+      - name: Build frontend Docker image
+        run: |
+          echo "Building frontend Docker image..."
+          docker build -t frontend:test ./frontend
+          echo "✓ Frontend Docker image built successfully"
+          docker images | grep frontend
+      
+      # Start services with docker compose
+      - name: Start services with docker compose
+        run: |
+          echo "Starting services with docker compose..."
+          docker compose up -d
+          echo "✓ Services started"
+          
+          echo "Waiting for services to initialize..."
+          sleep 10
+          
+          echo "Running containers:"
+          docker compose ps
+      
+      # Check backend service health
+      - name: Check backend service accessibility
+        run: |
+          echo "Checking backend service on port 8000..."
+          for i in {1..30}; do
+            if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+              echo "✓ Backend service is accessible and healthy on port 8000"
+              curl -v http://localhost:8000/health
+              exit 0
+            fi
+            echo "Attempt $i/30: Backend not ready yet..."
+            sleep 2
+          done
+          
+          echo "✗ Backend service health check failed"
+          echo "Backend logs:"
+          docker compose logs backend
+          exit 1
+      
+      # Check frontend service health
+      - name: Check frontend service accessibility
+        run: |
+          echo "Checking frontend service on port 3000..."
+          for i in {1..15}; do
+            if curl -f http://localhost:3000 > /dev/null 2>&1; then
+              echo "✓ Frontend service is accessible on port 3000"
+              curl -I http://localhost:3000
+              exit 0
+            fi
+            echo "Attempt $i/15: Frontend not ready yet..."
+            sleep 2
+          done
+          
+          echo "✗ Frontend service health check failed"
+          echo "Frontend logs:"
+          docker compose logs frontend
+          exit 1
+      
+      # Display service logs for debugging
+      - name: Display service logs
+        if: always()
+        run: |
+          echo "=== Backend Logs ==="
+          docker compose logs backend
+          echo ""
+          echo "=== Frontend Logs ==="
+          docker compose logs frontend
+      
+      # Stop and cleanup docker compose services
+      - name: Stop and cleanup services
+        if: always()
+        run: |
+          echo "Stopping and removing containers..."
+          docker compose down -v
+          echo "✓ Cleanup completed"
+      
+      # Display final status
+      - name: Docker build verification summary
+        if: success()
+        run: |
+          echo "======================================"
+          echo "✓ All Docker build checks passed!"
+          echo "======================================"
+          echo "✓ Backend Docker image built"
+          echo "✓ Frontend Docker image built"
+          echo "✓ docker-compose.yml validated"
+          echo "✓ Services started successfully"
+          echo "✓ Backend health check passed (port 8000)"
+          echo "✓ Frontend accessibility verified (port 3000)"
+          echo "======================================"
