@@ -1,0 +1,16 @@
+# FastAPI Backend Dependencies
+# 
+# Core framework and server dependencies for the Hello World API
+
+# FastAPI - Modern, fast web framework for building APIs
+fastapi>=0.100.0
+
+# Uvicorn - ASGI server for running FastAPI applications
+# [standard] includes extra dependencies for enhanced performance and features:
+# - uvloop: High-performance event loop
+# - httptools: Fast HTTP parsing
+# - websockets: WebSocket support
+uvicorn[standard]>=0.23.0
+
+# Python standard library datetime is used for timestamp handling
+# No additional dependencies required for ISO 8601 timestamp formatting
