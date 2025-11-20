@@ -1,0 +1,86 @@
+# Docker Compose Configuration for LOCAL DEVELOPMENT with Hot Reload
+# Use this file for local development to enable hot reload for code changes
+# 
+# Usage: docker compose -f docker-compose.dev.yml up
+#
+# For CI/CD and production-like testing, use the standard docker-compose.yml
+
+services:
+  # Backend Service - FastAPI Application with Hot Reload
+  backend:
+    # Build configuration
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    
+    # Container naming for easy identification
+    container_name: fastapi-backend-dev
+    
+    # Port mapping: Host:Container
+    ports:
+      - "8000:8000"
+    
+    # Environment variables for backend configuration
+    environment:
+      - PYTHONUNBUFFERED=1
+    
+    # Volume mounts for development hot reload
+    # Maps local backend directory to container /app directory
+    # This allows code changes to be reflected immediately without rebuilding
+    # Note: Dependencies are installed during build, so they persist even with volume mounts
+    volumes:
+      - ./backend:/app
+    
+    # Network configuration
+    networks:
+      - app-network
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Health check configuration
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # Frontend Service - React + Vite Application (served by Nginx)
+  frontend:
+    # Build configuration
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    
+    # Container naming for easy identification
+    container_name: react-frontend-dev
+    
+    # Port mapping: Host:Container
+    ports:
+      - "3000:80"
+    
+    # Service dependencies
+    depends_on:
+      backend:
+        condition: service_healthy
+    
+    # Network configuration
+    networks:
+      - app-network
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Health check configuration
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+# Network configuration
+networks:
+  app-network:
+    driver: bridge
