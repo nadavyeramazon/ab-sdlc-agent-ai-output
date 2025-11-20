@@ -7,9 +7,16 @@ pnpm-lock.yaml
 
 # Dependencies
 node_modules/
+frontend/node_modules/
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Python virtual environments
+env/
+venv/
+.venv/
+.Python
 
 # Environment variables
 .env
@@ -36,3 +43,6 @@ build/
 .coverage
 coverage/
 .pytest_cache/
+
+# Docker (optional - uncomment if needed)
+# .dockerignore
