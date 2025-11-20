@@ -25,10 +25,10 @@ services:
       # Example: - DATABASE_URL=postgresql://user:pass@db:5432/dbname
     
     # Volume mounts for development hot reload
-    # Binds local backend directory to container /app directory
-    # This allows code changes to be reflected immediately without rebuilding
-    volumes:
-      - ./backend:/app
+    # NOTE: Volume mounts are commented out for CI/CD testing to prevent overwriting
+    # installed dependencies. Uncomment for local development with hot reload.
+    # volumes:
+    #   - ./backend:/app
     
     # Network configuration
     # Connects service to the custom bridge network for inter-service communication
@@ -48,13 +48,13 @@ services:
       # --spider: Don't download, just check if page exists
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/health"]
       # Time between health checks
-      interval: 30s
+      interval: 10s
       # Maximum time to wait for health check response
-      timeout: 10s
+      timeout: 5s
       # Number of consecutive failures before marking as unhealthy
-      retries: 3
+      retries: 5
       # Initial delay before starting health checks (allows app to start)
-      start_period: 40s
+      start_period: 20s
 
   # Frontend Service - React + Vite Application (served by Nginx)
   frontend:
@@ -95,13 +95,13 @@ services:
       # --spider: Don't download, just check if page exists
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
       # Time between health checks
-      interval: 30s
+      interval: 10s
       # Maximum time to wait for health check response
-      timeout: 10s
+      timeout: 5s
       # Number of consecutive failures before marking as unhealthy
-      retries: 3
+      retries: 5
       # Initial delay before starting health checks
-      start_period: 40s
+      start_period: 20s
 
 # Network configuration
 networks:
