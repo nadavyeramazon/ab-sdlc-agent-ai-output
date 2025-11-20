@@ -47,7 +47,9 @@ describe('App Component', () => {
       
       await user.click(button)
       
-      expect(global.fetch).toHaveBeenCalledTimes(1)
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+      })
       expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/api/hello')
     })
 
@@ -66,8 +68,10 @@ describe('App Component', () => {
       await user.click(button)
       
       // Button should be disabled while loading
-      expect(button).toBeDisabled()
-      expect(button).toHaveTextContent(/loading/i)
+      await waitFor(() => {
+        expect(button).toBeDisabled()
+        expect(button).toHaveTextContent(/loading/i)
+      })
     })
   })
 
@@ -86,8 +90,10 @@ describe('App Component', () => {
       
       await user.click(button)
       
-      expect(button).toHaveTextContent(/loading/i)
-      expect(screen.getAllByText(/loading/i).length).toBeGreaterThan(0)
+      await waitFor(() => {
+        expect(button).toHaveTextContent(/loading/i)
+        expect(screen.getAllByText(/loading/i).length).toBeGreaterThan(0)
+      })
     })
 
     it('should display loading paragraph when API call is in progress', async () => {
@@ -105,8 +111,10 @@ describe('App Component', () => {
       await user.click(button)
       
       // Should show loading paragraph
-      const loadingParagraphs = screen.getAllByText(/loading/i)
-      expect(loadingParagraphs.length).toBeGreaterThanOrEqual(2) // Button + paragraph
+      await waitFor(() => {
+        const loadingParagraphs = screen.getAllByText(/loading/i)
+        expect(loadingParagraphs.length).toBeGreaterThanOrEqual(2) // Button + paragraph
+      })
     })
 
     it('should clear loading state after API call completes', async () => {
@@ -410,7 +418,8 @@ describe('App Component', () => {
   describe('Accessibility', () => {
     it('should have accessible button with proper role', () => {
       render(<App />)
-      const button = screen.getByRole('button')
+      // Fixed: Specify which button to query by using the button name
+      const button = screen.getByRole('button', { name: /get message from backend/i })
       expect(button).toBeInTheDocument()
     })
 
@@ -436,7 +445,9 @@ describe('App Component', () => {
       await user.click(button)
       
       // Button should be disabled and not clickable
-      expect(button).toBeDisabled()
+      await waitFor(() => {
+        expect(button).toBeDisabled()
+      })
     })
   })
 })
