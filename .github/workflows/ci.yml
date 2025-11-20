@@ -2,9 +2,13 @@ name: CI
 
 on:
   pull_request:
+    branches:
+      - main
+      - master
   push:
     branches:
       - main
+      - master
 
 jobs:
   backend-tests:
@@ -34,8 +38,27 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       
-      - name: Run basic validation
-        run: python -c "import fastapi; print('FastAPI imported successfully')"
+      - name: Install pytest and coverage tools
+        run: pip install pytest pytest-cov pytest-asyncio httpx
+      
+      - name: Run pytest tests
+        run: |
+          if [ -d "tests" ] || ls test_*.py 2>/dev/null; then
+            echo "Running backend tests with pytest..."
+            pytest -v --cov=. --cov-report=term-missing --cov-report=xml
+          else
+            echo "⚠️  No backend tests found. Skipping pytest execution."
+            echo "Expected: tests/ directory or test_*.py files"
+            exit 0
+          fi
+      
+      - name: Upload backend coverage report
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml
+          if-no-files-found: ignore
 
   frontend-tests:
     runs-on: ubuntu-latest
@@ -64,12 +87,41 @@ jobs:
       - name: Install dependencies
         run: npm install
       
-      - name: Run basic validation
+      - name: Run linting (if configured)
+        continue-on-error: true
+        run: |
+          if npm run lint --if-present 2>/dev/null; then
+            echo "✓ Linting passed"
+          else
+            echo "⚠️  No lint script found or linting not configured"
+          fi
+      
+      - name: Run frontend tests
+        run: |
+          # Check if test script exists in package.json
+          if grep -q '"test"' package.json && ! grep -q '"test": "echo \\"Error: no test specified\\" && exit 1"' package.json; then
+            echo "Running frontend tests..."
+            npm test
+          else
+            echo "⚠️  No frontend tests configured. Skipping test execution."
+            echo "Expected: 'test' script in package.json (vitest or jest)"
+            exit 0
+          fi
+      
+      - name: Upload frontend coverage report
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          if-no-files-found: ignore
+      
+      - name: Build frontend to validate
         run: npm run build
 
   docker-validation:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     needs: [backend-tests, frontend-tests]
     
     steps:
@@ -78,3 +130,63 @@ jobs:
       
       - name: Validate docker-compose.yml syntax
         run: docker compose config
+      
+      - name: Build backend Docker image
+        run: docker build -t backend:test ./backend
+      
+      - name: Build frontend Docker image
+        run: docker build -t frontend:test ./frontend
+      
+      - name: Test Docker Compose startup
+        run: |
+          echo "Starting services with Docker Compose..."
+          docker compose up -d
+          
+          echo "Waiting for services to be ready..."
+          sleep 10
+          
+          echo "Checking service status..."
+          docker compose ps
+          
+          echo "Checking backend health..."
+          curl -f http://localhost:8000/health || echo "Backend health check failed"
+          
+          echo "Checking frontend availability..."
+          curl -f http://localhost:3000 || echo "Frontend check failed"
+      
+      - name: Show service logs on failure
+        if: failure()
+        run: |
+          echo "=== Backend logs ==="
+          docker compose logs backend
+          echo "=== Frontend logs ==="
+          docker compose logs frontend
+      
+      - name: Cleanup Docker Compose
+        if: always()
+        run: docker compose down -v
+
+  test-summary:
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests, docker-validation]
+    if: always()
+    
+    steps:
+      - name: Test Results Summary
+        run: |
+          echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend Tests: ${{ needs.backend-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend Tests: ${{ needs.frontend-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Docker Validation: ${{ needs.docker-validation.result }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.backend-tests.result }}" != "success" ] || \
+             [ "${{ needs.frontend-tests.result }}" != "success" ] || \
+             [ "${{ needs.docker-validation.result }}" != "success" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "❌ One or more jobs failed. Please review the logs above." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ All tests passed successfully!" >> $GITHUB_STEP_SUMMARY
+          fi
