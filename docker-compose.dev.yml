@@ -39,12 +39,17 @@ services:
     restart: unless-stopped
     
     # Health check configuration
+    # Aligned with production config for consistency
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/health"]
-      interval: 10s
-      timeout: 5s
+      # Time between health checks
+      interval: 15s
+      # Maximum time to wait for health check response
+      timeout: 10s
+      # Number of consecutive failures before marking as unhealthy
       retries: 5
-      start_period: 20s
+      # Initial delay before starting health checks (40s for FastAPI --reload initialization)
+      start_period: 40s
 
   # Frontend Service - React + Vite Application (served by Nginx)
   frontend:
@@ -73,12 +78,17 @@ services:
     restart: unless-stopped
     
     # Health check configuration
+    # Aligned with production config for consistency
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
-      interval: 10s
-      timeout: 5s
+      # Time between health checks
+      interval: 15s
+      # Maximum time to wait for health check response
+      timeout: 10s
+      # Number of consecutive failures before marking as unhealthy
       retries: 5
-      start_period: 20s
+      # Initial delay before starting health checks
+      start_period: 40s
 
 # Network configuration
 networks:
