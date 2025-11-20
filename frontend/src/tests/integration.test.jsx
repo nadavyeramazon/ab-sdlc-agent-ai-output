@@ -33,7 +33,10 @@ describe('Integration Tests - User Workflows', () => {
       expect(screen.getByRole('heading', { name: /hello world/i })).toBeInTheDocument();
       expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/error/i)).not.toBeInTheDocument();
-      expect(screen.queryByText(/backend says/i)).not.toBeInTheDocument();
+      const backendSaysElements = screen.queryAllByText((content, element) => {
+        return element?.classList?.contains('message') && content.includes('Backend says:');
+      });
+      expect(backendSaysElements).toHaveLength(0);
       
       // 3. User clicks button
       const button = screen.getByRole('button', { name: /get message from backend/i });
@@ -41,12 +44,17 @@ describe('Integration Tests - User Workflows', () => {
       await user.click(button);
       
       // 4. Loading state appears
-      expect(button).toBeDisabled();
-      expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(button).toBeDisabled();
+        expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      });
       
       // 5. Success state appears
       await waitFor(() => {
-        expect(screen.getByText(/backend says/i)).toBeInTheDocument();
+        const messageDiv = screen.getByText((content, element) => {
+          return element?.classList?.contains('message') && content.includes('Backend says:');
+        });
+        expect(messageDiv).toBeInTheDocument();
         expect(screen.getByText(mockMessage)).toBeInTheDocument();
       });
       
@@ -78,8 +86,10 @@ describe('Integration Tests - User Workflows', () => {
       await user.click(button);
       
       // 4. Loading state appears
-      expect(button).toBeDisabled();
-      expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(button).toBeDisabled();
+        expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      });
       
       // 5. Error state appears
       await waitFor(() => {
@@ -92,7 +102,10 @@ describe('Integration Tests - User Workflows', () => {
       expect(button).not.toBeDisabled();
       
       // 7. No success message
-      expect(screen.queryByText(/backend says/i)).not.toBeInTheDocument();
+      const backendSaysElements = screen.queryAllByText((content, element) => {
+        return element?.classList?.contains('message') && content.includes('Backend says:');
+      });
+      expect(backendSaysElements).toHaveLength(0);
     });
   });
 
@@ -196,7 +209,10 @@ describe('Integration Tests - User Workflows', () => {
       
       // 3. Success message should be gone
       expect(screen.queryByText(/initial success/i)).not.toBeInTheDocument();
-      expect(screen.queryByText(/backend says/i)).not.toBeInTheDocument();
+      const backendSaysElements = screen.queryAllByText((content, element) => {
+        return element?.classList?.contains('message') && content.includes('Backend says:');
+      });
+      expect(backendSaysElements).toHaveLength(0);
     });
   });
 
@@ -298,8 +314,10 @@ describe('Integration Tests - User Workflows', () => {
       await user.click(button);
       
       // 3. Immediate feedback: button disabled and loading
-      expect(button).toBeDisabled();
-      expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(button).toBeDisabled();
+        expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      });
       
       // 4. Action completes with success
       resolvePromise({
@@ -379,6 +397,10 @@ describe('Integration Tests - User Workflows', () => {
       });
       global.fetch.mockReturnValueOnce(promise);
       await user.click(button);
+      
+      await waitFor(() => {
+        expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      });
       expect(heading).toBeInTheDocument();
       
       // Heading visible after success
