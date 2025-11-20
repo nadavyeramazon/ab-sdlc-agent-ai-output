@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 
@@ -41,11 +41,17 @@ describe('Integration Tests - User Workflows', () => {
       // 3. User clicks button
       const button = screen.getByRole('button', { name: /get message from backend/i });
       expect(button).not.toBeDisabled();
-      await user.click(button);
+      
+      await act(async () => {
+        await user.click(button);
+      });
       
       // 4. Loading state appears
       await waitFor(() => {
         expect(button).toBeDisabled();
+      });
+      
+      await waitFor(() => {
         expect(screen.getByText(/loading/i)).toBeInTheDocument();
       });
       
@@ -83,13 +89,14 @@ describe('Integration Tests - User Workflows', () => {
       expect(button).not.toBeDisabled();
       
       // 3. User clicks button
-      await user.click(button);
-      
-      // 4. Loading state appears
-      await waitFor(() => {
-        expect(button).toBeDisabled();
-        expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      await act(async () => {
+        await user.click(button);
       });
+      
+      // 4. Loading state appears - button should be disabled
+      await waitFor(() => {
+        expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      }, { timeout: 3000 });
       
       // 5. Error state appears
       await waitFor(() => {
@@ -97,9 +104,11 @@ describe('Integration Tests - User Workflows', () => {
         expect(screen.getByText(/connection refused/i)).toBeInTheDocument();
       });
       
-      // 6. Loading state is gone
-      expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-      expect(button).not.toBeDisabled();
+      // 6. Loading state is gone and button is re-enabled
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+        expect(button).not.toBeDisabled();
+      });
       
       // 7. No success message
       const backendSaysElements = screen.queryAllByText((content, element) => {
@@ -119,7 +128,9 @@ describe('Integration Tests - User Workflows', () => {
       render(<App />);
       const button = screen.getByRole('button', { name: /get message from backend/i });
       
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
       
       await waitFor(() => {
         expect(screen.getByText(/network timeout/i)).toBeInTheDocument();
@@ -131,7 +142,9 @@ describe('Integration Tests - User Workflows', () => {
         json: async () => ({ message: 'Success after retry!' })
       });
       
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
       
       // 3. Verify error is cleared and success is shown
       await waitFor(() => {
@@ -156,7 +169,9 @@ describe('Integration Tests - User Workflows', () => {
       render(<App />);
       const button = screen.getByRole('button', { name: /get message from backend/i });
       
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
       
       await waitFor(() => {
         expect(screen.getByText(/first message/i)).toBeInTheDocument();
@@ -168,7 +183,9 @@ describe('Integration Tests - User Workflows', () => {
         json: async () => ({ message: 'Second message' })
       });
       
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
       
       await waitFor(() => {
         expect(screen.getByText(/second message/i)).toBeInTheDocument();
@@ -192,7 +209,9 @@ describe('Integration Tests - User Workflows', () => {
       render(<App />);
       const button = screen.getByRole('button', { name: /get message from backend/i });
       
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
       
       await waitFor(() => {
         expect(screen.getByText(/initial success/i)).toBeInTheDocument();
@@ -201,7 +220,9 @@ describe('Integration Tests - User Workflows', () => {
       // 2. Second attempt fails
       global.fetch.mockRejectedValueOnce(new Error('Backend unavailable'));
       
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
       
       await waitFor(() => {
         expect(screen.getByText(/backend unavailable/i)).toBeInTheDocument();
@@ -230,7 +251,9 @@ describe('Integration Tests - User Workflows', () => {
           json: async () => ({ message: messages[i] })
         });
         
-        await user.click(button);
+        await act(async () => {
+          await user.click(button);
+        });
         
         await waitFor(() => {
           expect(screen.getByText(messages[i])).toBeInTheDocument();
@@ -259,14 +282,18 @@ describe('Integration Tests - User Workflows', () => {
         ok: true,
         json: async () => ({ message: 'Success 1' })
       });
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
       await waitFor(() => {
         expect(screen.getByText(/success 1/i)).toBeInTheDocument();
       });
       
       // 2. Error
       global.fetch.mockRejectedValueOnce(new Error('Error 1'));
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
       await waitFor(() => {
         expect(screen.getByText(/error 1/i)).toBeInTheDocument();
       });
@@ -277,7 +304,9 @@ describe('Integration Tests - User Workflows', () => {
         ok: true,
         json: async () => ({ message: 'Success 2' })
       });
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
       await waitFor(() => {
         expect(screen.getByText(/success 2/i)).toBeInTheDocument();
       });
@@ -285,7 +314,9 @@ describe('Integration Tests - User Workflows', () => {
       
       // 4. Error again
       global.fetch.mockRejectedValueOnce(new Error('Error 2'));
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
       await waitFor(() => {
         expect(screen.getByText(/error 2/i)).toBeInTheDocument();
       });
@@ -311,7 +342,9 @@ describe('Integration Tests - User Workflows', () => {
       });
       global.fetch.mockReturnValueOnce(promise);
       
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
       
       // 3. Immediate feedback: button disabled and loading
       await waitFor(() => {
@@ -320,9 +353,11 @@ describe('Integration Tests - User Workflows', () => {
       });
       
       // 4. Action completes with success
-      resolvePromise({
-        ok: true,
-        json: async () => ({ message: 'Backend response!' })
+      await act(async () => {
+        resolvePromise({
+          ok: true,
+          json: async () => ({ message: 'Backend response!' })
+        });
       });
       
       await waitFor(() => {
@@ -347,7 +382,9 @@ describe('Integration Tests - User Workflows', () => {
       render(<App />);
       const button = screen.getByRole('button', { name: /get message from backend/i });
       
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
       
       // Verify API call
       await waitFor(() => {
@@ -371,7 +408,9 @@ describe('Integration Tests - User Workflows', () => {
       render(<App />);
       const button = screen.getByRole('button', { name: /get message from backend/i });
       
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
       
       await waitFor(() => {
         expect(screen.getByText(mockResponse.message)).toBeInTheDocument();
@@ -396,7 +435,10 @@ describe('Integration Tests - User Workflows', () => {
         resolvePromise = resolve;
       });
       global.fetch.mockReturnValueOnce(promise);
-      await user.click(button);
+      
+      await act(async () => {
+        await user.click(button);
+      });
       
       await waitFor(() => {
         expect(screen.getByText(/loading/i)).toBeInTheDocument();
@@ -404,10 +446,13 @@ describe('Integration Tests - User Workflows', () => {
       expect(heading).toBeInTheDocument();
       
       // Heading visible after success
-      resolvePromise({
-        ok: true,
-        json: async () => ({ message: 'Test' })
+      await act(async () => {
+        resolvePromise({
+          ok: true,
+          json: async () => ({ message: 'Test' })
+        });
       });
+      
       await waitFor(() => {
         expect(screen.getByText(/test/i)).toBeInTheDocument();
       });
@@ -415,7 +460,9 @@ describe('Integration Tests - User Workflows', () => {
       
       // Heading visible after error
       global.fetch.mockRejectedValueOnce(new Error('Error'));
-      await user.click(button);
+      await act(async () => {
+        await user.click(button);
+      });
       await waitFor(() => {
         expect(screen.getByText(/error:/i)).toBeInTheDocument();
       });
