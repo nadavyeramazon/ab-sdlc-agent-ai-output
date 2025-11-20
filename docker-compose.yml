@@ -1,7 +1,5 @@
 # Docker Compose Configuration for Fullstack Application
-# Version: 3.8 - Provides modern features including health checks and custom networks
-
-version: '3.8'
+# Provides modern features including health checks and custom networks
 
 services:
   # Backend Service - FastAPI Application
