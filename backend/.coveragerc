@@ -1,0 +1,88 @@
+# Coverage.py configuration for backend tests
+
+[run]
+# Source code to measure coverage for
+source = .
+
+# Files to omit from coverage
+omit =
+    */tests/*
+    */test_*.py
+    */__pycache__/*
+    */site-packages/*
+    */venv/*
+    */.venv/*
+    */virtualenv/*
+    conftest.py
+    pytest.ini
+
+# Enable branch coverage
+branch = True
+
+# Measure coverage in parallel mode
+parallel = False
+
+[report]
+# Precision for coverage percentages
+precision = 2
+
+# Show missing lines in report
+show_missing = True
+
+# Skip covered files
+skip_covered = False
+
+# Skip empty files
+skip_empty = True
+
+# Fail if coverage is below threshold
+fail_under = 90
+
+# Sort report by name
+sort = Name
+
+# Lines to exclude from coverage
+exclude_lines =
+    # Standard pragma
+    pragma: no cover
+    
+    # Don't complain about missing debug code
+    def __repr__
+    def __str__
+    
+    # Don't complain if tests don't hit defensive assertion code
+    raise AssertionError
+    raise NotImplementedError
+    
+    # Don't complain if non-runnable code isn't run
+    if __name__ == .__main__.:
+    if __name__==.__main__.:
+    
+    # Don't complain about abstract methods
+    @abstractmethod
+    @abc.abstractmethod
+    
+    # Don't complain about type checking code
+    if TYPE_CHECKING:
+    if typing.TYPE_CHECKING:
+    
+    # Don't complain about pass statements
+    pass
+    
+    # Don't complain about ellipsis
+    ...
+
+[html]
+# Directory for HTML report
+directory = htmlcov
+
+# HTML report title
+title = Backend Test Coverage Report
+
+[xml]
+# Output file for XML report
+output = coverage.xml
+
+[json]
+# Output file for JSON report
+output = coverage.json
