@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Package lock files (following demo mode guidelines)
+package-lock.json
+
+# Build outputs
+dist/
+build/
+
+# Development
+.vite/
+.DS_Store
+*.log
