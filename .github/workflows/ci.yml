@@ -100,17 +100,24 @@ jobs:
           node-version: '18'
       
       # Cache npm dependencies for faster subsequent runs
+      # Updated cache key to avoid corrupted cache
       - name: Cache npm dependencies
         uses: actions/cache@v3
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+          key: ${{ runner.os }}-node-v2-${{ hashFiles('frontend/package.json') }}
           restore-keys: |
-            ${{ runner.os }}-node-
+            ${{ runner.os }}-node-v2-
       
+      # Clean npm cache to prevent integrity errors
+      - name: Clean npm cache
+        working-directory: ./frontend
+        run: npm cache clean --force
+      
+      # Use npm install instead of npm ci to generate fresh package-lock.json
       - name: Install frontend dependencies
         working-directory: ./frontend
-        run: npm ci
+        run: npm install
       
       # Verify that the frontend builds successfully
       - name: Build frontend application
