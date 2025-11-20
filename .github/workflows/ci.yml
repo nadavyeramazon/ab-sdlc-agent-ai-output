@@ -2,9 +2,7 @@ name: CI Pipeline
 
 on:
   pull_request:
-    branches:
-      - main
-      - master
+    # Trigger on all pull requests, not just to main/master
   push:
     branches:
       - main
@@ -100,8 +98,8 @@ jobs:
         run: |
           echo "✓ Frontend tests completed successfully"
 
-  docker-build-verification:
-    name: Docker Build Verification
+  docker-compose-validation:
+    name: Docker Compose Validation
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [backend-tests, frontend-tests]
