@@ -42,8 +42,11 @@ services:
     # Health check configuration
     # Docker will periodically check if the backend is healthy
     healthcheck:
-      # Command to test service health
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      # Command to test service health using wget (installed in Dockerfile)
+      # --no-verbose: Reduces output noise
+      # --tries=1: Only attempt once
+      # --spider: Don't download, just check if page exists
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/health"]
       # Time between health checks
       interval: 30s
       # Maximum time to wait for health check response
