@@ -37,11 +37,16 @@ jobs:
         working-directory: ./backend
         run: pip install -r requirements.txt
       
-      - name: Run health check validation
+      - name: Run pytest tests
         working-directory: ./backend
         run: |
-          python -c "import sys; print('Python version:', sys.version)"
-          python -c "print('✓ Backend health check passed')"
+          echo "Running backend tests with pytest..."
+          pytest test_main.py -v --tb=short
+      
+      - name: Verify test execution
+        working-directory: ./backend
+        run: |
+          echo "✓ Backend tests completed successfully"
 
   frontend-tests:
     name: Frontend Tests
@@ -69,9 +74,31 @@ jobs:
         working-directory: ./frontend
         run: npm install
       
+      - name: Run Vitest tests
+        working-directory: ./frontend
+        run: |
+          echo "Running frontend tests with Vitest..."
+          npm test
+      
+      - name: Run linting (if configured)
+        working-directory: ./frontend
+        run: |
+          if grep -q "\"lint\"" package.json; then
+            echo "Running linting..."
+            npm run lint || echo "⚠ Linting not configured or failed"
+          else
+            echo "ℹ Linting not configured, skipping"
+          fi
+        continue-on-error: true
+      
       - name: Build frontend
         working-directory: ./frontend
         run: npm run build
+      
+      - name: Verify test execution
+        working-directory: ./frontend
+        run: |
+          echo "✓ Frontend tests completed successfully"
 
   docker-build-verification:
     name: Docker Build Verification
