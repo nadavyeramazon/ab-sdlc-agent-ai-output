@@ -49,10 +49,59 @@ ab-sdlc-agent-ai-output/
 │   └── workflows/
 │       └── ci.yml                # Automated testing and validation workflow
 │
-├── docker-compose.yml            # Docker Compose orchestration
+├── docker-compose.yml            # Production-like Docker Compose (CI/CD)
+├── docker-compose.dev.yml        # Development Docker Compose (hot reload)
 ├── README.md                     # This file
 └── LICENSE                       # MIT License
 ```
+
+## 🐳 Docker Compose Configurations
+
+This project provides **two Docker Compose configurations** for different use cases:
+
+### `docker-compose.yml` - CI/CD & Testing
+
+**Purpose**: Production-like environment for CI/CD pipelines and integration testing
+
+**Features**:
+- ✅ No volume mounts (tests actual Docker images)
+- ✅ Optimized health checks (10s interval, 20s start period)
+- ✅ Fast startup times
+- ✅ Suitable for automated testing
+- ✅ Production-ready configuration
+
+**Usage**:
+```bash
+docker compose up
+```
+
+**When to use**:
+- Running CI/CD tests
+- Testing Docker images before deployment
+- Validating production configuration
+- Integration testing
+
+### `docker-compose.dev.yml` - Local Development
+
+**Purpose**: Development environment with hot reload for rapid iteration
+
+**Features**:
+- ✅ Volume mounts enabled (backend: `./backend:/app`)
+- ✅ Hot reload for code changes
+- ✅ No need to rebuild containers
+- ✅ Fast development cycle
+- ✅ Same health checks as production
+
+**Usage**:
+```bash
+docker compose -f docker-compose.dev.yml up
+```
+
+**When to use**:
+- Local development with hot reload
+- Making frequent code changes
+- Testing changes without rebuilding
+- Debugging with live code updates
 
 ## 🚀 Quick Start
 
@@ -73,17 +122,19 @@ git checkout feature/JIRA-777/fullstack-app
 
 ### 3. Start the Application
 
-Use Docker Compose to build and start both frontend and backend services:
+**For testing (recommended for first run):**
 
 ```bash
 docker compose up --build
 ```
 
-The `--build` flag ensures containers are built from scratch on first run. On subsequent runs, you can omit this flag:
+**For development with hot reload:**
 
 ```bash
-docker compose up
+docker compose -f docker-compose.dev.yml up --build
 ```
+
+The `--build` flag ensures containers are built from scratch on first run. On subsequent runs, you can omit this flag.
 
 ### 4. Access the Application
 
@@ -199,9 +250,15 @@ FastAPI automatically generates interactive API documentation:
 
 ## 💻 Development Workflow
 
-### Hot Reload Capabilities
+### Hot Reload for Development
 
-Both frontend and backend support hot reload during development:
+To enable hot reload during development, use the **development compose file**:
+
+```bash
+docker compose -f docker-compose.dev.yml up
+```
+
+This configuration includes volume mounts that enable hot reload:
 
 #### Frontend Hot Reload (Vite HMR)
 
@@ -212,8 +269,11 @@ Both frontend and backend support hot reload during development:
 
 **Example:**
 ```bash
-# Edit frontend/src/App.css to change the green theme color
-# Save the file - browser updates immediately without full page reload!
+# 1. Start services with dev compose file
+docker compose -f docker-compose.dev.yml up
+
+# 2. Edit frontend/src/App.css to change the green theme color
+# 3. Save the file - browser updates immediately without full page reload!
 ```
 
 #### Backend Hot Reload (Uvicorn Auto-reload)
@@ -225,13 +285,16 @@ Both frontend and backend support hot reload during development:
 
 **Example:**
 ```bash
-# Edit backend/main.py to add a new endpoint
-# Save the file - server restarts automatically!
+# 1. Start services with dev compose file
+docker compose -f docker-compose.dev.yml up
+
+# 2. Edit backend/main.py to add a new endpoint
+# 3. Save the file - server restarts automatically!
 ```
 
 ### Volume Mounts Explained
 
-The `docker-compose.yml` file includes volume mounts that enable hot reload:
+The `docker-compose.dev.yml` file includes volume mounts that enable hot reload:
 
 ```yaml
 backend:
@@ -244,10 +307,15 @@ This means:
 - No need to rebuild Docker images during development
 - Fast iteration cycle for development
 
+**⚠️ Important Note**: The standard `docker-compose.yml` does **not** include volume mounts. This ensures CI/CD tests run against actual Docker images without file system dependencies.
+
 ### Making Changes
 
 1. **Edit Frontend Code**:
    ```bash
+   # Make sure you're using docker-compose.dev.yml
+   docker compose -f docker-compose.dev.yml up
+   
    # Open frontend/src/App.jsx in your editor
    # Make changes and save
    # Browser updates automatically!
@@ -255,6 +323,9 @@ This means:
 
 2. **Edit Backend Code**:
    ```bash
+   # Make sure you're using docker-compose.dev.yml
+   docker compose -f docker-compose.dev.yml up
+   
    # Open backend/main.py in your editor
    # Make changes and save
    # Watch Docker logs to see server restart
@@ -263,13 +334,13 @@ This means:
 3. **View Logs**:
    ```bash
    # Watch all service logs
-   docker compose logs -f
+   docker compose -f docker-compose.dev.yml logs -f
    
    # Watch only backend logs
-   docker compose logs -f backend
+   docker compose -f docker-compose.dev.yml logs -f backend
    
    # Watch only frontend logs
-   docker compose logs -f frontend
+   docker compose -f docker-compose.dev.yml logs -f frontend
    ```
 
 ## 🔧 Running Services Individually
@@ -402,6 +473,9 @@ docker build -t backend:prod ./backend
 ```bash
 # Stop all services and remove containers
 docker compose down
+
+# Or for dev compose file
+docker compose -f docker-compose.dev.yml down
 ```
 
 This command:
@@ -446,7 +520,44 @@ docker compose rm -s -v frontend
 
 ## 🔍 Troubleshooting
 
-### Issue 1: Port Already in Use
+### Issue 1: Backend Container Unhealthy
+
+**Symptom:**
+```
+dependency failed to start: container fastapi-backend is unhealthy
+```
+or
+```
+Health check failed
+```
+
+**Cause:** This was a known issue where volume mounts were overwriting the container's `/app` directory, removing installed Python dependencies.
+
+**Solution:**
+
+✅ **Fixed in latest commit!** Use the standard `docker-compose.yml` for testing:
+
+```bash
+# Use standard compose file (no volume mounts)
+docker compose up --build
+```
+
+For local development with hot reload, use the dev compose file:
+
+```bash
+# Use dev compose file (with volume mounts)
+docker compose -f docker-compose.dev.yml up --build
+```
+
+**Technical Details:**
+- `docker-compose.yml` has no volume mounts (CI/CD)
+- `docker-compose.dev.yml` has volume mounts (development)
+- This ensures health checks work correctly in CI/CD
+- Developers can still use hot reload when needed
+
+---
+
+### Issue 2: Port Already in Use
 
 **Symptom:**
 ```
@@ -485,7 +596,7 @@ Cannot start service backend: Ports are not available: port is already allocated
 
 ---
 
-### Issue 2: Docker Daemon Not Running
+### Issue 3: Docker Daemon Not Running
 
 **Symptom:**
 ```
@@ -514,7 +625,7 @@ Cannot connect to the Docker daemon at unix:///var/run/docker.sock
 
 ---
 
-### Issue 3: Permission Denied Errors
+### Issue 4: Permission Denied Errors
 
 **Symptom:**
 ```
@@ -548,7 +659,7 @@ EACCES: permission denied, open '/app/...'
 
 ---
 
-### Issue 4: Services Not Communicating
+### Issue 5: Services Not Communicating
 
 **Symptom:**
 ```
@@ -594,7 +705,7 @@ ERR_CONNECTION_REFUSED
 
 ---
 
-### Issue 5: Build Failures
+### Issue 6: Build Failures
 
 **Symptom:**
 ```
@@ -643,7 +754,7 @@ ERROR: Could not find a version that satisfies the requirement
 
 ---
 
-### Issue 6: Slow Build Times
+### Issue 7: Slow Build Times
 
 **Cause:** Docker not using layer caching effectively or network latency.
 
@@ -700,36 +811,37 @@ This project includes a comprehensive GitHub Actions workflow for continuous int
 ### Workflow: `.github/workflows/ci.yml`
 
 The CI pipeline automatically runs on:
-- **Pull Requests** to `main` or `master` branches
+- **Pull Requests** to any branch
 - **Pushes** to `main` or `master` branches
 
 ### Pipeline Stages
 
-1. **Backend Tests**:
+1. **Backend CI**:
    - Sets up Python 3.11 environment
    - Installs backend dependencies from `requirements.txt`
-   - Runs backend health checks and API tests
-   - Validates FastAPI application startup
+   - Runs backend linting with flake8
+   - Validates FastAPI application startup with health checks
 
-2. **Frontend Tests**:
+2. **Frontend CI**:
    - Sets up Node.js 18 environment
    - Installs frontend dependencies via npm
-   - Runs linting checks
-   - Validates Vite configuration
-   - Builds production bundle
+   - Builds production bundle with Vite
+   - Validates build artifacts
 
-3. **Docker Build Verification**:
+3. **Docker Build**:
    - Validates Dockerfile syntax
    - Builds Docker images for both services
    - Verifies multi-stage builds complete successfully
    - Checks image sizes and optimization
 
-4. **Docker Compose Validation**:
+4. **Docker Compose**:
    - Validates `docker-compose.yml` syntax
-   - Tests service orchestration with `docker compose config`
    - Starts all services with `docker compose up -d`
-   - Verifies service health checks pass
-   - Tests inter-service communication
+   - Waits for services to initialize (with health checks)
+   - Tests backend health endpoint
+   - Tests frontend accessibility
+   - Verifies inter-service communication
+   - Shows service logs for debugging
    - Cleans up with `docker compose down`
 
 ### Viewing CI Results
@@ -747,7 +859,10 @@ Test the CI pipeline locally before pushing:
 # Backend tests
 cd backend
 pip install -r requirements.txt
+pip install flake8
+flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 python main.py &  # Start server in background
+sleep 5
 curl http://localhost:8000/health  # Test health endpoint
 kill %1  # Stop background server
 
@@ -758,8 +873,11 @@ npm run build
 
 # Docker validation
 docker compose config  # Validate syntax
+docker compose build   # Build images
 docker compose up -d   # Start services
-docker compose ps      # Check status
+sleep 10               # Wait for startup
+curl http://localhost:8000/health  # Test backend
+curl http://localhost:3000         # Test frontend
 docker compose down    # Clean up
 ```
 
@@ -822,13 +940,14 @@ docker compose down    # Clean up
 
 - **Docker Compose** - Multi-container orchestration
   - Define and run multi-container applications
-  - Service dependency management
+  - Service dependency management with health checks
   - Network isolation and service discovery
-  - Health check monitoring
+  - Two configurations: production (ci/cd) and development (hot reload)
 
 - **GitHub Actions** - CI/CD automation
   - Automated testing on pull requests
   - Docker build verification
+  - Docker Compose integration testing
   - Deployment validation
 
 ### Development Tools
@@ -846,7 +965,7 @@ docker compose down    # Clean up
 - **Branch**: `feature/JIRA-777/fullstack-app`
 - **Author**: Nadav Yer Amazon
 - **Created**: 2024
-- **Last Updated**: 2024
+- **Last Updated**: November 2024
 
 ### Repository Information
 
