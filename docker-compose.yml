@@ -1,0 +1,113 @@
+# Docker Compose Configuration for Fullstack Application
+# Version: 3.8 - Provides modern features including health checks and custom networks
+
+version: '3.8'
+
+services:
+  # Backend Service - FastAPI Application
+  backend:
+    # Build configuration
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    
+    # Container naming for easy identification
+    container_name: fastapi-backend
+    
+    # Port mapping: Host:Container
+    # Maps host port 8000 to container port 8000 for API access
+    ports:
+      - "8000:8000"
+    
+    # Environment variables for backend configuration
+    environment:
+      # Prevents Python from buffering stdout/stderr, ensuring logs appear immediately
+      - PYTHONUNBUFFERED=1
+      # Additional environment variables can be added here for development
+      # Example: - DATABASE_URL=postgresql://user:pass@db:5432/dbname
+    
+    # Volume mounts for development hot reload
+    # Binds local backend directory to container /app directory
+    # This allows code changes to be reflected immediately without rebuilding
+    volumes:
+      - ./backend:/app
+    
+    # Network configuration
+    # Connects service to the custom bridge network for inter-service communication
+    networks:
+      - app-network
+    
+    # Restart policy: Automatically restart container unless explicitly stopped
+    # Ensures service availability in case of failures
+    restart: unless-stopped
+    
+    # Health check configuration
+    # Docker will periodically check if the backend is healthy
+    healthcheck:
+      # Command to test service health
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      # Time between health checks
+      interval: 30s
+      # Maximum time to wait for health check response
+      timeout: 10s
+      # Number of consecutive failures before marking as unhealthy
+      retries: 3
+      # Initial delay before starting health checks (allows app to start)
+      start_period: 40s
+
+  # Frontend Service - React + Vite Application (served by Nginx)
+  frontend:
+    # Build configuration
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    
+    # Container naming for easy identification
+    container_name: react-frontend
+    
+    # Port mapping: Host:Container
+    # Maps host port 3000 to container port 80 (Nginx serves on port 80 internally)
+    ports:
+      - "3000:80"
+    
+    # Service dependencies
+    # Ensures backend starts before frontend
+    # Frontend can communicate with backend via service name 'backend'
+    depends_on:
+      - backend
+    
+    # Network configuration
+    # Connects service to the custom bridge network for inter-service communication
+    networks:
+      - app-network
+    
+    # Restart policy: Automatically restart container unless explicitly stopped
+    restart: unless-stopped
+    
+    # Health check configuration
+    # Docker will periodically check if the frontend is serving content
+    healthcheck:
+      # Command to test service health using wget
+      # --no-verbose: Reduces output noise
+      # --tries=1: Only attempt once
+      # --spider: Don't download, just check if page exists
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
+      # Time between health checks
+      interval: 30s
+      # Maximum time to wait for health check response
+      timeout: 10s
+      # Number of consecutive failures before marking as unhealthy
+      retries: 3
+      # Initial delay before starting health checks
+      start_period: 40s
+
+# Network configuration
+networks:
+  # Custom bridge network for service-to-service communication
+  # Enables service discovery: services can reach each other using service names
+  # Example: Frontend can call http://backend:8000/api/hello
+  app-network:
+    driver: bridge
+    # Bridge driver creates an isolated network for the application
+    # All services on this network can communicate with each other
+    # but are isolated from other Docker networks
