@@ -58,7 +58,9 @@ describe('App Component', () => {
       
       await user.click(button);
 
-      expect(global.fetch).toHaveBeenCalledTimes(1);
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledTimes(1);
+      });
       expect(global.fetch).toHaveBeenCalledWith('http://localhost:8000/api/hello');
     });
 
@@ -79,7 +81,9 @@ describe('App Component', () => {
       await user.click(button);
 
       // Button should be disabled during loading
-      expect(button).toBeDisabled();
+      await waitFor(() => {
+        expect(button).toBeDisabled();
+      });
 
       // Resolve the promise to finish the test
       resolvePromise({
@@ -111,7 +115,9 @@ describe('App Component', () => {
       await user.click(button);
 
       // Loading indicator should appear
-      expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText(/loading/i)).toBeInTheDocument();
+      });
 
       // Resolve the promise
       resolvePromise({
@@ -154,7 +160,9 @@ describe('App Component', () => {
       await user.click(button);
 
       // Previous message should be hidden during loading
-      expect(screen.queryByText(/first message/i)).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByText(/first message/i)).not.toBeInTheDocument();
+      });
 
       // Resolve promise
       resolvePromise({
@@ -184,7 +192,10 @@ describe('App Component', () => {
       await user.click(button);
 
       await waitFor(() => {
-        expect(screen.getByText(/backend says:/i)).toBeInTheDocument();
+        const messageDiv = screen.getByText((content, element) => {
+          return element?.classList?.contains('message') && content.includes('Backend says:');
+        });
+        expect(messageDiv).toBeInTheDocument();
         expect(screen.getByText(mockMessage)).toBeInTheDocument();
       });
     });
@@ -203,7 +214,7 @@ describe('App Component', () => {
       await user.click(button);
 
       await waitFor(() => {
-        const messageContainer = screen.getByText(/backend says:/i).closest('.message');
+        const messageContainer = screen.getByText('Test message').closest('.message');
         expect(messageContainer).toBeInTheDocument();
         expect(messageContainer).toHaveClass('message');
       });
@@ -381,7 +392,7 @@ describe('App Component', () => {
       await user.click(button);
 
       await waitFor(() => {
-        const errorContainer = screen.getByText(/error:/i).closest('.error');
+        const errorContainer = screen.getByText(/test error/i).closest('.error');
         expect(errorContainer).toBeInTheDocument();
         expect(errorContainer).toHaveClass('error');
       });
@@ -474,7 +485,10 @@ describe('App Component', () => {
       await user.click(button);
 
       await waitFor(() => {
-        expect(screen.getByText(/backend says:/i)).toBeInTheDocument();
+        const messageDiv = screen.getByText((content, element) => {
+          return element?.classList?.contains('message') && content.includes('Backend says:');
+        });
+        expect(messageDiv).toBeInTheDocument();
       });
     });
 
@@ -517,7 +531,7 @@ describe('App Component', () => {
 
       // Should still work correctly
       await waitFor(() => {
-        expect(screen.getByText(/message/i)).toBeInTheDocument();
+        expect(screen.getByText('Message')).toBeInTheDocument();
       });
 
       // Fetch should have been called multiple times
@@ -555,8 +569,10 @@ describe('App Component', () => {
       await user.click(button);
 
       // Button should be disabled and have the disabled attribute
-      expect(button).toBeDisabled();
-      expect(button).toHaveAttribute('disabled');
+      await waitFor(() => {
+        expect(button).toBeDisabled();
+        expect(button).toHaveAttribute('disabled');
+      });
 
       resolvePromise({
         ok: true,
