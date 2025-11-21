@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import './App.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 function App() {
   const [backendMessage, setBackendMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -12,7 +14,7 @@ function App() {
     setBackendMessage('');
 
     try {
-      const response = await fetch('http://localhost:8000/api/hello');
+      const response = await fetch(`${API_URL}/api/hello`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
