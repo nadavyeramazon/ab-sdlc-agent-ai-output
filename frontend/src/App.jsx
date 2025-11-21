@@ -1,60 +1,50 @@
-import { useState } from 'react';
-import './App.css';
+import { useState } from 'react'
 
 function App() {
-  const [message, setMessage] = useState('');
-  const [timestamp, setTimestamp] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
-  const fetchMessage = async () => {
+  const handleGetMessage = async () => {
+    setLoading(true)
+    setError(null)
+    
     try {
-      setLoading(true);
-      setError('');
-      setMessage('');
-      setTimestamp('');
-      
-      const response = await fetch(`${apiUrl}/api/hello`);
+      const response = await fetch('/api/hello')
       
       if (!response.ok) {
-        throw new Error('Failed to load message');
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
       
-      const data = await response.json();
-      setMessage(data.message);
-      setTimestamp(data.timestamp);
+      const data = await response.json()
+      setMessage(data)
     } catch (err) {
-      setError('Failed to load message');
-      console.error('Error fetching message:', err);
+      setError(err.message)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="App">
-      <div className="container">
-        <h1>Hello World</h1>
-        
-        <button onClick={fetchMessage} disabled={loading}>
-          Get Message from Backend
-        </button>
-
-        {loading && <p className="loading">Loading...</p>}
-        
-        {error && <p className="error">{error}</p>}
-        
-        {message && !loading && (
-          <div className="message">
-            <p className="message-text">{message}</p>
-            <p className="timestamp">Timestamp: {new Date(timestamp).toLocaleString()}</p>
-          </div>
-        )}
-      </div>
+    <div className="app">
+      <h1>Hello World</h1>
+      
+      <button onClick={handleGetMessage} disabled={loading}>
+        Get Message from Backend
+      </button>
+      
+      {loading && <p className="loading">Loading...</p>}
+      
+      {error && <p className="error">Error: {error}</p>}
+      
+      {message && (
+        <div className="message">
+          <p><strong>Message:</strong> {message.message}</p>
+          <p><strong>Timestamp:</strong> {message.timestamp}</p>
+        </div>
+      )}
     </div>
-  );
+  )
 }
 
-export default App;
+export default App
