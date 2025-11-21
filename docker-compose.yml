@@ -1,18 +1,24 @@
-version: '3.12'
+version: '3.9'
 
 services:
   backend:
     build: ./backend
+    container_name: fullstack-backend
+    working_dir: /app
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
     environment:
       - ENV=development
-    restart: unless-stopped
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - fullstack-network
 
   frontend:
     build: ./frontend
+    container_name: fullstack-frontend
+    working_dir: /app
     ports:
       - "3000:3000"
     volumes:
@@ -20,6 +26,12 @@ services:
       - /app/node_modules  # Prevent overwriting node_modules
     environment:
       - VITE_API_URL=http://backend:8000
+    command: npm run dev -- --host 0.0.0.0 --port 3000
     depends_on:
       - backend
-    restart: unless-stopped
+    networks:
+      - fullstack-network
+
+networks:
+  fullstack-network:
+    driver: bridge
