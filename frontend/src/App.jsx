@@ -1,76 +1,60 @@
-import { useState, useEffect } from 'react'
-import './App.css'
+import { useState } from 'react';
+import './App.css';
 
 function App() {
-  const [greeting, setGreeting] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [message, setMessage] = useState('');
+  const [timestamp, setTimestamp] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-  useEffect(() => {
-    fetchGreeting()
-  }, [])
-
-  const fetchGreeting = async () => {
+  const fetchMessage = async () => {
     try {
-      setLoading(true)
-      setError(null)
-      const response = await fetch(`${apiUrl}/api/greeting`)
+      setLoading(true);
+      setError('');
+      setMessage('');
+      setTimestamp('');
+      
+      const response = await fetch(`${apiUrl}/api/hello`);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch greeting')
+        throw new Error('Failed to load message');
       }
-      const data = await response.json()
-      setGreeting(data)
+      
+      const data = await response.json();
+      setMessage(data.message);
+      setTimestamp(data.timestamp);
     } catch (err) {
-      setError(err.message)
+      setError('Failed to load message');
+      console.error('Error fetching message:', err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="app">
+    <div className="App">
       <div className="container">
-        <h1 className="title">Yellow Theme Hello World 🌟</h1>
+        <h1>Hello World</h1>
         
-        <div className="card">
-          {loading && (
-            <div className="loading">
-              <div className="spinner"></div>
-              <p>Loading...</p>
-            </div>
-          )}
-          
-          {error && (
-            <div className="error">
-              <p>⚠️ Error: {error}</p>
-              <button onClick={fetchGreeting} className="retry-button">
-                Retry
-              </button>
-            </div>
-          )}
-          
-          {greeting && !loading && (
-            <div className="greeting">
-              <h2>{greeting.message}</h2>
-              <div className="info">
-                <p><strong>Theme:</strong> {greeting.theme}</p>
-                <p><strong>Timestamp:</strong> {new Date(greeting.timestamp).toLocaleString()}</p>
-              </div>
-              <button onClick={fetchGreeting} className="refresh-button">
-                Refresh Greeting
-              </button>
-            </div>
-          )}
-        </div>
+        <button onClick={fetchMessage} disabled={loading}>
+          Get Message from Backend
+        </button>
 
-        <footer className="footer">
-          <p>Powered by React + Vite + FastAPI</p>
-        </footer>
+        {loading && <p className="loading">Loading...</p>}
+        
+        {error && <p className="error">{error}</p>}
+        
+        {message && !loading && (
+          <div className="message">
+            <p className="message-text">{message}</p>
+            <p className="timestamp">Timestamp: {new Date(timestamp).toLocaleString()}</p>
+          </div>
+        )}
       </div>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
