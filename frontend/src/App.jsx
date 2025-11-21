@@ -4,70 +4,38 @@ import './App.css';
 function App() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
-  const fetchMessage = async () => {
-    // Clear previous state
+  const handleGetMessage = async () => {
     setLoading(true);
-    setError('');
+    setError(null);
     setMessage('');
 
     try {
-      // Fetch from backend API
-      const response = await fetch('http://localhost:8000/api/hello');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/hello`);
       
       if (!response.ok) {
-        throw new Error('Failed to fetch from backend');
+        throw new Error('Failed to fetch message from backend');
       }
 
       const data = await response.json();
-      
-      // Display message and timestamp from backend
-      setMessage(`${data.message} (Received at: ${data.timestamp})`);
+      setMessage(`${data.message} (${data.timestamp})`);
     } catch (err) {
-      // Handle connection errors
-      setError('Failed to connect to backend. Make sure the backend server is running on port 8000.');
+      setError('Failed to connect to backend. Please make sure the backend server is running.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="app">
-      <div className="container">
-        <h1 className="title">Hello World</h1>
-        <p className="subtitle">Fullstack Demo Application</p>
-        
-        <button 
-          className="button" 
-          onClick={fetchMessage}
-          disabled={loading}
-        >
-          {loading ? 'Loading...' : 'Get Message from Backend'}
-        </button>
-
-        {/* Display loading state */}
-        {loading && (
-          <div className="loading">
-            Connecting to backend...
-          </div>
-        )}
-
-        {/* Display error message */}
-        {error && (
-          <div className="error">
-            ❌ {error}
-          </div>
-        )}
-
-        {/* Display success message */}
-        {message && (
-          <div className="message-box">
-            <h3>Response from Backend:</h3>
-            <p>{message}</p>
-          </div>
-        )}
-      </div>
+    <div className="container">
+      <h1>Hello World</h1>
+      <button onClick={handleGetMessage}>Get Message from Backend</button>
+      
+      {loading && <div className="loading">Loading...</div>}
+      {error && <div className="error">{error}</div>}
+      {message && <div className="message">{message}</div>}
     </div>
   );
 }
