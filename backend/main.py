@@ -1,11 +1,12 @@
+"""Minimal FastAPI backend for Yellow Theme Hello World application."""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
-from pydantic import BaseModel
 
-app = FastAPI(title="Yellow Theme Hello World API")
+app = FastAPI()
 
-# CORS configuration
+# Enable CORS for frontend running on localhost:3000
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -15,45 +16,24 @@ app.add_middleware(
 )
 
 
-class HelloResponse(BaseModel):
-    """Response model for the hello endpoint."""
-    message: str
-    timestamp: str
-
-
-class HealthResponse(BaseModel):
-    """Response model for the health endpoint."""
-    status: str
-
-
-@app.get("/")
-async def root():
-    """Root endpoint returning API information."""
-    return {
-        "name": "Yellow Theme Hello World API",
-        "version": "1.0.0",
-        "description": "A simple FastAPI backend for the Hello World fullstack application"
-    }
-
-
-@app.get("/api/hello", response_model=HelloResponse)
+@app.get("/api/hello")
 async def get_hello():
     """
     Hello World endpoint.
     
     Returns a greeting message with the current timestamp in ISO-8601 format.
     """
-    return HelloResponse(
-        message="Hello World from Backend!",
-        timestamp=datetime.utcnow().isoformat() + 'Z'
-    )
+    return {
+        "message": "Hello World from Backend!",
+        "timestamp": datetime.utcnow().isoformat() + "Z"
+    }
 
 
-@app.get("/health", response_model=HealthResponse)
+@app.get("/health")
 async def health_check():
     """
     Health check endpoint.
     
     Returns the health status of the backend service.
     """
-    return HealthResponse(status="healthy")
+    return {"status": "healthy"}
