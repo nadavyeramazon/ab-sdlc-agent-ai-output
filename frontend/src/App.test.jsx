@@ -52,7 +52,9 @@ describe('App Component', () => {
       
       await user.click(button)
 
-      expect(fetchMock).toHaveBeenCalledTimes(1)
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(1)
+      })
       expect(fetchMock).toHaveBeenCalledWith('http://localhost:8000/api/hello')
     })
 
@@ -395,7 +397,13 @@ describe('App Component', () => {
       await user.click(button)
 
       await waitFor(() => {
-        expect(screen.getByText(/hello/i)).toBeInTheDocument()
+        // Use getAllByText to handle multiple elements with "hello" text (heading + message)
+        const elements = screen.getAllByText(/hello/i)
+        // Verify the message element exists (second occurrence after the heading)
+        expect(elements.length).toBeGreaterThan(1)
+        // Check that at least one has the message class
+        const messageElement = screen.getByText('Hello (undefined)')
+        expect(messageElement).toHaveClass('message')
       })
     })
 
@@ -447,6 +455,11 @@ describe('App Component', () => {
       // Loading message is visible to screen readers
       const loadingElement = screen.getByText(/loading/i)
       expect(loadingElement).toBeInTheDocument()
+      
+      // Wait for loading to complete
+      await waitFor(() => {
+        expect(screen.queryByText(/loading/i)).not.toBeInTheDocument()
+      })
     })
   })
 })
