@@ -2,8 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 
-# Initialize FastAPI application
-app = FastAPI()
+# Initialize FastAPI application with redirect_slashes disabled
+# This ensures that routes with trailing slashes are not automatically redirected
+# and will return 404 if not explicitly defined
+app = FastAPI(redirect_slashes=False)
 
 # Configure CORS middleware to allow frontend access
 app.add_middleware(
