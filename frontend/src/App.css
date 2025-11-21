@@ -1,0 +1,113 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.app {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.container {
+  background: white;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+}
+
+h1 {
+  color: #2ecc71;
+  font-size: 48px;
+  margin-bottom: 30px;
+  font-weight: bold;
+}
+
+.fetch-button {
+  background-color: #2ecc71;
+  color: #ffffff;
+  border: none;
+  padding: 15px 30px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  max-width: 300px;
+}
+
+.fetch-button:hover {
+  background-color: #27ae60;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+}
+
+.fetch-button:active {
+  transform: translateY(0);
+}
+
+.fetch-button:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.message-display {
+  margin-top: 30px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading {
+  color: #2ecc71;
+  font-size: 18px;
+  font-weight: 500;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.message {
+  color: #2c3e50;
+  font-size: 18px;
+  font-weight: 500;
+  padding: 15px;
+  background-color: #d5f4e6;
+  border-radius: 8px;
+  border-left: 4px solid #2ecc71;
+}
+
+.error {
+  color: #e74c3c;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 15px;
+  background-color: #fadbd8;
+  border-radius: 8px;
+  border-left: 4px solid #e74c3c;
+}
