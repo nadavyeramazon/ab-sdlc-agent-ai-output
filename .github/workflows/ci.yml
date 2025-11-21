@@ -16,6 +16,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       
+      - name: Check for committed lock files (should not exist in repo)
+        run: |
+          if [ -f "poetry.lock" ] || [ -f "Pipfile.lock" ]; then
+            echo "ERROR: Lock files found in repository! These should not be committed."
+            exit 1
+          fi
+          echo "✓ No Python lock files found in repository"
+      
       - name: Setup Python 3.11
         uses: actions/setup-python@v4
         with:
@@ -33,14 +41,6 @@ jobs:
           echo "Backend dependencies installed successfully"
           python --version
           pip list
-      
-      - name: Check for lock files (should not exist)
-        run: |
-          if [ -f "poetry.lock" ] || [ -f "Pipfile.lock" ]; then
-            echo "ERROR: Lock files found! These should not be committed."
-            exit 1
-          fi
-          echo "✓ No Python lock files found"
 
   # Frontend validation and tests
   frontend-tests:
@@ -50,6 +50,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+      
+      - name: Check for committed lock files (should not exist in repo)
+        run: |
+          if [ -f "frontend/package-lock.json" ] || [ -f "frontend/yarn.lock" ] || [ -f "frontend/pnpm-lock.yaml" ]; then
+            echo "ERROR: Lock files found in repository! These should not be committed."
+            exit 1
+          fi
+          echo "✓ No Node.js lock files found in repository"
       
       - name: Setup Node.js 18
         uses: actions/setup-node@v3
@@ -65,14 +73,6 @@ jobs:
       - name: Build frontend
         working-directory: ./frontend
         run: npm run build
-      
-      - name: Check for lock files (should not exist)
-        run: |
-          if [ -f "frontend/package-lock.json" ] || [ -f "frontend/yarn.lock" ] || [ -f "frontend/pnpm-lock.yaml" ]; then
-            echo "ERROR: Lock files found! These should not be committed."
-            exit 1
-          fi
-          echo "✓ No Node.js lock files found"
 
   # Docker validation
   docker-validation:
