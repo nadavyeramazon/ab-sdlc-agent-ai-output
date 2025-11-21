@@ -10,6 +10,10 @@ package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
+# Test coverage
+coverage/
+.nyc_output/
+
 # Local env files
 *.local
 
