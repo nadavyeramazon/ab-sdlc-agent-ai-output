@@ -20,7 +20,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
@@ -35,13 +35,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
       
-      - name: Install dependencies
+      - name: Install backend dependencies
         working-directory: ./backend
         run: pip install -r requirements.txt
       
-      - name: Run basic validation
+      - name: Run backend tests with pytest
         working-directory: ./backend
-        run: python main.py --help || echo "Backend validation complete"
+        run: |
+          echo "Running backend test suite..."
+          pytest test_main.py -v --tb=short
+      
+      - name: Verify test execution
+        working-directory: ./backend
+        run: |
+          echo "✅ Backend tests completed successfully"
 
   # Job 2: Frontend Tests
   frontend-tests:
@@ -51,10 +58,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Set up Node.js 18
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
       
@@ -66,23 +73,31 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
       
-      - name: Install dependencies
+      - name: Install frontend dependencies
         working-directory: ./frontend
         run: npm install
       
-      - name: Run build validation
+      - name: Run frontend tests with vitest
         working-directory: ./frontend
-        run: npm run build
+        run: |
+          echo "Running frontend test suite..."
+          npm test
+      
+      - name: Verify test execution
+        working-directory: ./frontend
+        run: |
+          echo "✅ Frontend tests completed successfully"
 
   # Job 3: Docker Validation
   docker-validation:
     name: Docker Validation
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [backend-tests, frontend-tests]
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Validate docker-compose.yml syntax
         run: docker-compose config
