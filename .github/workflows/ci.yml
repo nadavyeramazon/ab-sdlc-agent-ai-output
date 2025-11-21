@@ -1,18 +1,16 @@
 name: CI/CD Pipeline
 
 on:
-  # Trigger on pull requests to all branches
   pull_request:
     branches:
-      - '**'
-  # Trigger on push to main and master branches
+      - main
+      - master
   push:
     branches:
       - main
       - master
 
 jobs:
-  # Job 1: Backend Tests
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest
@@ -39,18 +37,10 @@ jobs:
         working-directory: ./backend
         run: pip install -r requirements.txt
       
-      - name: Run backend tests with pytest
+      - name: Run backend tests
         working-directory: ./backend
-        run: |
-          echo "Running backend test suite..."
-          pytest test_main.py -v --tb=short
-      
-      - name: Verify test execution
-        working-directory: ./backend
-        run: |
-          echo "✅ Backend tests completed successfully"
+        run: pytest test_main.py -v
 
-  # Job 2: Frontend Tests
   frontend-tests:
     name: Frontend Tests
     runs-on: ubuntu-latest
@@ -77,18 +67,10 @@ jobs:
         working-directory: ./frontend
         run: npm install
       
-      - name: Run frontend tests with vitest
+      - name: Run frontend tests
         working-directory: ./frontend
-        run: |
-          echo "Running frontend test suite..."
-          npm test
-      
-      - name: Verify test execution
-        working-directory: ./frontend
-        run: |
-          echo "✅ Frontend tests completed successfully"
+        run: npm test
 
-  # Job 3: Docker Validation
   docker-validation:
     name: Docker Validation
     runs-on: ubuntu-latest
@@ -103,10 +85,10 @@ jobs:
         run: docker compose config
       
       - name: Build backend Docker image
-        run: docker compose build backend
+        run: docker build -t backend:test ./backend
       
       - name: Build frontend Docker image
-        run: docker compose build frontend
+        run: docker build -t frontend:test ./frontend
       
-      - name: Verify builds completed successfully
+      - name: Verify Docker builds completed
         run: echo "✅ All Docker images built successfully"
