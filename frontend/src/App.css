@@ -6,7 +6,7 @@ body {
 }
 
 .container {
-  background: #2ecc71;
+  background: #9b59b6;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -22,7 +22,7 @@ h1 {
 }
 
 button {
-  background: #27ae60;
+  background: #8e44ad;
   color: white;
   font-size: 1.2rem;
   padding: 15px 30px;
@@ -33,7 +33,7 @@ button {
 }
 
 button:hover {
-  background: #229954;
+  background: #7d3c98;
 }
 
 .message,
@@ -46,4 +46,21 @@ button:hover {
 
 .error {
   color: #ff6b6b;
+}
+
+.greeting-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.greeting-section h2 {
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.greeting-section input:focus {
+  outline: none;
+  border-color: #8e44ad;
+  box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.3);
 }
