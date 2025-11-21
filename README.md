@@ -1,82 +1,111 @@
 # Hello World Fullstack Application
 
-> A minimal fullstack demonstration featuring a green-themed React frontend and Python FastAPI backend, orchestrated with Docker Compose.
+A minimal fullstack "Hello World" application featuring a green-themed React frontend and Python FastAPI backend, orchestrated with Docker Compose for local development.
 
-## Overview
+## 🎯 Features
 
-This is a **DEMO MODE** application showcasing:
-- ✅ React 18+ frontend with green theme
-- ✅ Python FastAPI backend with REST endpoints
-- ✅ Docker Compose orchestration
-- ✅ Frontend-backend integration
-- ✅ Hot reload for development
+- **Frontend**: React 18 + Vite with green theme (#2ecc71)
+- **Backend**: Python FastAPI with RESTful endpoints
+- **Orchestration**: Docker Compose for easy local development
+- **Hot Reload**: Both frontend and backend support live code changes
+- **Simple Integration**: Button-click API interaction demo
 
-**Technology Stack:**
-- **Frontend**: React 18 + Vite
-- **Backend**: Python 3.11 + FastAPI
-- **Deployment**: Docker Compose
+## 📋 Prerequisites
 
-## Features
+Before you begin, ensure you have the following installed:
 
-### Frontend Features
-- 🎨 **Green Theme**: Clean, modern UI with #2ecc71 primary color
-- 📱 **Responsive Design**: Works on desktop and mobile
-- 🔄 **Dynamic Content**: Fetch data from backend API
-- ⏳ **Loading States**: Visual feedback during API calls
-- ❌ **Error Handling**: User-friendly error messages
+- **Docker**: Version 20.10 or higher
+- **Docker Compose**: Version 2.0 or higher
+- **Git**: For cloning the repository
 
-### Backend Features
-- 🚀 **Fast API**: High-performance REST endpoints
-- 📡 **Health Check**: Monitor backend status
-- 🕒 **Timestamps**: ISO-8601 formatted timestamps
-- 🔓 **CORS Enabled**: Frontend can communicate with backend
-
-## Quick Start
-
-### Prerequisites
-- Docker and Docker Compose installed
-- Ports 3000 and 8000 available
-
-### Run the Application
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/nadavyeramazon/ab-sdlc-agent-ai-output.git
-   cd ab-sdlc-agent-ai-output
-   git checkout feature/JIRA-777/fullstack-app
-   ```
-
-2. **Start both services**:
-   ```bash
-   docker compose up
-   ```
-
-3. **Access the application**:
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000
-   - API Documentation: http://localhost:8000/docs
-
-4. **Stop the application**:
-   ```bash
-   docker compose down
-   ```
-
-## API Endpoints
-
-### GET /api/hello
-Returns a greeting message with timestamp.
-
-**Response:**
-```json
-{
-  "message": "Hello World from Backend!",
-  "timestamp": "2024-01-15T10:30:00.123456"
-}
+To verify your installations:
+```bash
+docker --version
+docker compose version
+git --version
 ```
 
-### GET /health
-Health check endpoint.
+## 🚀 Quick Start
 
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/nadavyeramazon/ab-sdlc-agent-ai-output.git
+cd ab-sdlc-agent-ai-output
+git checkout feature/JIRA-777/fullstack-app
+```
+
+### 2. Start the Application
+
+Run both frontend and backend services with a single command:
+
+```bash
+docker compose up --build
+```
+
+**Expected output:**
+- Backend will start on port 8000
+- Frontend will start on port 3000
+- Services should be ready within 15 seconds
+
+### 3. Access the Application
+
+- **Frontend**: http://localhost:3000
+  - Displays "Hello World" with green theme
+  - Click "Get Message from Backend" button to test API integration
+
+- **Backend API**: http://localhost:8000
+  - Health check: http://localhost:8000/health
+  - Hello endpoint: http://localhost:8000/api/hello
+  - API documentation: http://localhost:8000/docs (FastAPI auto-generated)
+
+### 4. Stop the Application
+
+Press `Ctrl+C` in the terminal, then run:
+
+```bash
+docker compose down
+```
+
+To remove volumes and clean up completely:
+
+```bash
+docker compose down -v
+```
+
+## 📁 Project Structure
+
+```
+project-root/
+├── frontend/                    # React frontend application
+│   ├── src/
+│   │   ├── App.jsx             # Main React component
+│   │   ├── App.css             # Green theme styles
+│   │   └── main.jsx            # React entry point
+│   ├── index.html              # HTML template
+│   ├── package.json            # Frontend dependencies
+│   ├── vite.config.js          # Vite configuration
+│   ├── Dockerfile              # Frontend container image
+│   └── .gitignore              # Frontend-specific ignores
+├── backend/                     # Python FastAPI backend
+│   ├── main.py                 # FastAPI application
+│   ├── test_main.py            # Backend tests
+│   ├── requirements.txt        # Python dependencies
+│   └── Dockerfile              # Backend container image
+├── .github/
+│   └── workflows/
+│       └── ci.yml              # CI/CD pipeline
+├── docker-compose.yml          # Service orchestration
+├── .gitignore                  # Root-level ignores
+└── README.md                   # This file
+```
+
+## 🔌 API Endpoints
+
+### Health Check
+```
+GET /health
+```
 **Response:**
 ```json
 {
@@ -84,165 +113,170 @@ Health check endpoint.
 }
 ```
 
-### GET /
-Root endpoint status.
-
+### Hello World
+```
+GET /api/hello
+```
 **Response:**
 ```json
 {
-  "message": "Backend API is running"
+  "message": "Hello World from Backend!",
+  "timestamp": "2024-01-15T10:30:00.000Z"
 }
 ```
 
-## Project Structure
+## 🛠️ Development
 
-```
-.
-├── frontend/                 # React frontend application
-│   ├── src/
-│   │   ├── App.jsx          # Main React component
-│   │   ├── App.css          # Green theme styles
-│   │   └── main.jsx         # React entry point
-│   ├── index.html           # HTML template
-│   ├── package.json         # NPM dependencies
-│   ├── vite.config.js       # Vite configuration
-│   └── Dockerfile           # Frontend container
-├── backend/                  # FastAPI backend application
-│   ├── main.py              # FastAPI application
-│   ├── requirements.txt     # Python dependencies
-│   └── Dockerfile           # Backend container
-├── .github/
-│   └── workflows/
-│       └── ci.yml           # CI/CD pipeline
-├── docker-compose.yml       # Docker Compose configuration
-└── README.md                # This file
+### Running Without Docker
+
+#### Backend (Python)
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-## Development
-
-### Run Frontend Locally
-
+#### Frontend (React)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Frontend will be available at http://localhost:3000
+### Running Tests
 
-### Run Backend Locally
-
+#### Backend Tests
 ```bash
 cd backend
-pip install -r requirements.txt
-python main.py
+pip install -r requirements.txt pytest httpx
+pytest
 ```
 
-Backend will be available at http://localhost:8000
+#### Frontend Tests
+```bash
+cd frontend
+npm install
+npm test
+```
 
 ### Hot Reload
 
-Both services support hot reload in Docker Compose:
-- **Frontend**: Source files are mounted, changes reflect immediately
-- **Backend**: Code directory is mounted, uvicorn reloads on changes
+Both services support hot reload during development:
 
-## Testing
+- **Backend**: Modify `backend/main.py` and save - changes apply immediately
+- **Frontend**: Modify `frontend/src/App.jsx` and save - browser updates automatically (Vite HMR)
 
-### Manual Testing Checklist
+## 🎨 Color Scheme
 
-1. **Frontend Static Content**:
-   - [ ] "Hello World" heading displays correctly
-   - [ ] Green theme applied consistently
-   - [ ] Page loads at http://localhost:3000
+The frontend uses a green theme:
 
-2. **Backend API**:
-   ```bash
-   curl http://localhost:8000/api/hello
-   curl http://localhost:8000/health
-   ```
+- **Primary Green**: `#2ecc71` (background)
+- **Secondary Green**: `#27ae60` (button)
+- **Hover Green**: `#229954` (button hover state)
+- **Text**: White for high contrast
+- **Error**: `#ff6b6b` (error messages)
 
-3. **Integration**:
-   - [ ] Click "Get Message from Backend" button
-   - [ ] Loading state appears during fetch
-   - [ ] Backend message displays successfully
-   - [ ] Error message shows when backend is stopped
+## 🧪 Testing the Integration
 
-4. **Docker Compose**:
-   - [ ] Both services start within 10 seconds
-   - [ ] No port conflicts
-   - [ ] Services communicate without CORS errors
+1. Navigate to http://localhost:3000
+2. Verify "Hello World" heading displays with green background
+3. Click "Get Message from Backend" button
+4. Verify loading state appears briefly
+5. Verify backend message displays with timestamp
+6. Test error handling by stopping backend (`docker compose stop backend`)
+7. Click button again and verify error message displays
 
-## CI/CD Pipeline
+## 🔧 Configuration
 
-The repository includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that:
-- ✅ Runs backend validation
-- ✅ Builds frontend application
-- ✅ Validates Docker Compose configuration
-- ✅ Builds Docker images
+### Environment Variables
 
-Workflow triggers on:
-- Pull requests to any branch
-- Push to main/master branches
+**Frontend** (`docker-compose.yml`):
+- `VITE_API_URL`: Backend API URL (default: http://localhost:8000)
 
-## Troubleshooting
+**Backend**:
+- `PYTHONUNBUFFERED=1`: Ensures Python output is sent straight to terminal
 
-### Frontend can't connect to backend
-- Ensure backend is running on port 8000
-- Check CORS configuration in `backend/main.py`
-- Verify Docker network connectivity
+### Port Configuration
 
-### Port already in use
+Default ports (can be modified in `docker-compose.yml`):
+- Frontend: 3000
+- Backend: 8000
+
+## 📊 CI/CD Pipeline
+
+The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that runs on:
+- Pull requests
+- Pushes to main/master branch
+
+**Pipeline includes:**
+1. Backend tests with Python 3.11
+2. Frontend validation with Node.js 18
+3. Docker Compose configuration validation
+4. Image build verification
+
+## 🚫 Out of Scope
+
+This is a minimal implementation focused on demonstrating fullstack integration. The following are intentionally excluded:
+
+- Authentication/Authorization
+- Database integration
+- Production builds or deployment configurations
+- Advanced error logging or monitoring
+- Automated E2E tests
+- State management libraries (Redux, Zustand)
+- CSS frameworks (Bootstrap, Tailwind)
+- Lock files (package-lock.json, yarn.lock)
+
+## 🐛 Troubleshooting
+
+### Port Already in Use
 ```bash
-# Find and stop the process using the port
-lsof -ti:3000 | xargs kill -9  # Frontend
-lsof -ti:8000 | xargs kill -9  # Backend
+# Check what's using the port
+lsof -i :3000  # or :8000
+
+# Kill the process or change port in docker-compose.yml
 ```
 
-### Docker build fails
+### Docker Build Issues
 ```bash
-# Clean Docker cache and rebuild
+# Clean rebuild
 docker compose down -v
-docker system prune -f
 docker compose build --no-cache
 docker compose up
 ```
 
-## Design Decisions
+### Frontend Can't Connect to Backend
+- Verify both services are running: `docker compose ps`
+- Check backend logs: `docker compose logs backend`
+- Ensure CORS is configured correctly in `backend/main.py`
 
-This is a **DEMO MODE** application with the following principles:
+### Hot Reload Not Working
+```bash
+# Restart services
+docker compose restart
 
-- ✅ **Simplicity over optimization**: Focus on working functionality
-- ✅ **Minimal dependencies**: Only essential packages included
-- ✅ **No lock files**: Uses `npm install` and `pip install` directly
-- ✅ **Basic error handling**: Sufficient for demonstration purposes
-- ✅ **Development-focused**: Hot reload and easy debugging
-- ✅ **No production optimization**: Suitable for local demonstration only
+# If still not working, rebuild
+docker compose up --build
+```
 
-## Out of Scope
+## 📝 Success Criteria
 
-The following are **NOT** included:
-- ❌ Authentication or authorization
-- ❌ Database integration
-- ❌ Unit tests or integration tests
-- ❌ Production optimizations (minification, caching)
-- ❌ Extensive logging or monitoring
-- ❌ Advanced error handling
-- ❌ Lock files (package-lock.json, poetry.lock)
+✅ User accesses http://localhost:3000 and sees green-themed "Hello World" page  
+✅ Frontend button click fetches data from backend and displays response  
+✅ GET http://localhost:8000/api/hello returns valid JSON with message and timestamp  
+✅ GET http://localhost:8000/health returns `{"status": "healthy"}`  
+✅ `docker compose up` starts both services successfully  
+✅ Vite HMR works (edit App.jsx, see changes without refresh)  
+✅ All acceptance criteria from user stories are met  
 
-## Success Criteria
+## 📄 License
 
-- ✅ Frontend accessible at http://localhost:3000 with green theme
-- ✅ Backend accessible at http://localhost:8000 with working endpoints
-- ✅ Button triggers API call and displays response
-- ✅ Loading state visible during fetch
-- ✅ Error message displays when backend unavailable
-- ✅ `docker compose up` successfully starts both services
-- ✅ No CORS errors during frontend-backend communication
+This is a demo project for educational purposes.
 
-## License
+## 🤝 Contributing
 
-This is a demonstration project for educational purposes.
+This is a demonstration project. For educational purposes only.
 
-## Author
+---
 
-Created for JIRA-777 fullstack application demonstration.
+**Built with ❤️ using React, FastAPI, and Docker**
