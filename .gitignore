@@ -7,6 +7,7 @@ yarn.lock
 poetry.lock
 Pipfile.lock
 pnpm-lock.yaml
+npm-debug.log
 
 # Python
 __pycache__/
