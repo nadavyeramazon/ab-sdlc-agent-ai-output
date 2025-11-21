@@ -52,6 +52,12 @@ jobs:
         run: |
           python -c "from main import app; print('Backend imports successfully')"
         continue-on-error: false
+      
+      # Execute backend test suite with pytest
+      - name: Run backend tests
+        working-directory: ./backend
+        run: pytest -v
+        continue-on-error: false
 
   # Job 2: Frontend Tests
   frontend-tests:
@@ -81,6 +87,12 @@ jobs:
       - name: Install dependencies
         working-directory: ./frontend
         run: npm install
+        continue-on-error: false
+      
+      # Execute frontend test suite
+      - name: Run frontend tests
+        working-directory: ./frontend
+        run: npm test
         continue-on-error: false
       
       - name: Build frontend
