@@ -25,13 +25,13 @@ body {
 
 h1 {
   font-size: 3rem;
-  color: #2ecc71;
+  color: #9b59b6;
   text-align: center;
   margin-bottom: 1rem;
 }
 
 button {
-  background-color: #2ecc71;
+  background-color: #9b59b6;
   color: #ffffff;
   border: none;
   padding: 1rem 2rem;
@@ -44,7 +44,7 @@ button {
 }
 
 button:hover:not(:disabled) {
-  background-color: #27ae60;
+  background-color: #8e44ad;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
@@ -60,7 +60,7 @@ button:disabled {
 
 .loading {
   font-size: 1.2rem;
-  color: #2ecc71;
+  color: #9b59b6;
   font-weight: 500;
   animation: pulse 1.5s ease-in-out infinite;
 }
@@ -76,11 +76,11 @@ button:disabled {
 
 .message {
   font-size: 1.3rem;
-  color: #27ae60;
+  color: #8e44ad;
   background-color: #ffffff;
   padding: 1.5rem 2rem;
   border-radius: 8px;
-  border-left: 4px solid #2ecc71;
+  border-left: 4px solid #9b59b6;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   max-width: 600px;
   text-align: center;
