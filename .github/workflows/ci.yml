@@ -35,10 +35,16 @@ jobs:
         working-directory: ./backend
         run: pip install -r requirements.txt
       
+      - name: Run backend tests with pytest
+        working-directory: ./backend
+        run: |
+          echo "Running backend test suite..."
+          pytest test_main.py -v --tb=short
+      
       - name: Verify backend setup
         working-directory: ./backend
         run: |
-          echo "Backend dependencies installed successfully"
+          echo "✓ Backend tests completed successfully"
           python --version
           pip list
 
@@ -70,9 +76,29 @@ jobs:
         working-directory: ./frontend
         run: npm install
       
+      - name: Run frontend tests with Vitest
+        working-directory: ./frontend
+        run: |
+          echo "Running frontend test suite..."
+          npm test -- --run
+      
+      - name: Run frontend linting (if available)
+        working-directory: ./frontend
+        run: |
+          if grep -q '"lint"' package.json; then
+            echo "Running linting..."
+            npm run lint
+          else
+            echo "No lint script found, skipping..."
+          fi
+        continue-on-error: true
+      
       - name: Build frontend
         working-directory: ./frontend
         run: npm run build
+      
+      - name: Verify frontend tests completed
+        run: echo "✓ Frontend tests completed successfully"
 
   # Docker validation
   docker-validation:
@@ -93,3 +119,26 @@ jobs:
         run: |
           echo "✓ Docker images built successfully"
           docker images
+
+  # Summary job (requires all tests to pass)
+  ci-summary:
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests, docker-validation]
+    if: always()
+    
+    steps:
+      - name: Check all jobs status
+        run: |
+          echo "=== CI Pipeline Summary ==="
+          echo "Backend Tests: ${{ needs.backend-tests.result }}"
+          echo "Frontend Tests: ${{ needs.frontend-tests.result }}"
+          echo "Docker Validation: ${{ needs.docker-validation.result }}"
+          
+          if [ "${{ needs.backend-tests.result }}" != "success" ] || \
+             [ "${{ needs.frontend-tests.result }}" != "success" ] || \
+             [ "${{ needs.docker-validation.result }}" != "success" ]; then
+            echo "❌ CI Pipeline FAILED - One or more jobs failed"
+            exit 1
+          fi
+          
+          echo "✅ CI Pipeline PASSED - All tests successful"
