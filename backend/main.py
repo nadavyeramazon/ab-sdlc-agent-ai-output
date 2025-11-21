@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
+from pydantic import BaseModel, validator
 
 app = FastAPI()
 
@@ -14,6 +15,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class GreetRequest(BaseModel):
+    name: str
+    
+    @validator('name')
+    def name_must_not_be_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Name cannot be empty')
+        return v.strip()
 
 
 @app.get("/api/hello")
@@ -37,3 +48,17 @@ async def health_check():
     Returns the health status of the backend service.
     """
     return {"status": "healthy"}
+
+
+@app.post("/api/greet")
+async def greet_user(request: GreetRequest):
+    """
+    Personalized greeting endpoint.
+    
+    Accepts a name and returns a personalized greeting with timestamp.
+    """
+    greeting_message = f"Hello, {request.name}! Welcome to our blue-themed app!"
+    return {
+        "greeting": greeting_message,
+        "timestamp": datetime.utcnow().isoformat() + "Z"
+    }
