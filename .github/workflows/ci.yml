@@ -1,0 +1,122 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+jobs:
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: pip install -r requirements.txt
+      
+      - name: Verify backend installation
+        working-directory: ./backend
+        run: |
+          python -c "import fastapi; print('FastAPI installed successfully')"
+          python -c "import uvicorn; print('Uvicorn installed successfully')"
+      
+      - name: Check backend syntax
+        working-directory: ./backend
+        run: python -m py_compile main.py
+
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Cache Node.js dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm install
+      
+      - name: Run linting
+        working-directory: ./frontend
+        run: npm run lint
+        continue-on-error: true
+
+  docker-build:
+    name: Docker Build Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Build backend Docker image
+        run: docker build -t yellow-theme-backend:test ./backend
+      
+      - name: Build frontend Docker image
+        run: docker build -t yellow-theme-frontend:test ./frontend
+      
+      - name: Verify backend image
+        run: docker images yellow-theme-backend:test
+      
+      - name: Verify frontend image
+        run: docker images yellow-theme-frontend:test
+
+  docker-compose-validation:
+    name: Docker Compose Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Validate docker-compose.yml syntax
+        run: docker-compose config
+      
+      - name: Test Docker Compose startup
+        run: |
+          docker-compose up -d
+          sleep 30
+          docker-compose ps
+      
+      - name: Check backend health
+        run: |
+          curl -f http://localhost:8000/health || exit 1
+          curl -f http://localhost:8000/ || exit 1
+      
+      - name: Check frontend accessibility
+        run: curl -f http://localhost:3000/ || exit 1
+      
+      - name: Cleanup
+        if: always()
+        run: docker-compose down -v
