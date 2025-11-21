@@ -100,6 +100,79 @@ button:disabled {
   word-wrap: break-word;
 }
 
+/* Greeting Feature Styles */
+.greeting-section {
+  display: flex;
+  gap: 10px;
+  margin-top: 30px;
+  justify-content: center;
+  align-items: center;
+}
+
+.name-input {
+  padding: 12px 20px;
+  font-size: 16px;
+  border: 2px solid #9b59b6;
+  border-radius: 5px;
+  outline: none;
+  min-width: 250px;
+}
+
+.name-input:focus {
+  border-color: #8e44ad;
+  box-shadow: 0 0 5px rgba(155, 89, 182, 0.3);
+}
+
+.name-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.greet-button {
+  padding: 12px 24px;
+  font-size: 16px;
+  background-color: #9b59b6;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.greet-button:hover:not(:disabled) {
+  background-color: #8e44ad;
+}
+
+.greet-button:active:not(:disabled) {
+  background-color: #7d3c98;
+}
+
+.greet-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.greeting-message {
+  margin-top: 20px;
+  padding: 15px 25px;
+  background-color: rgba(155, 89, 182, 0.1);
+  border: 2px solid #9b59b6;
+  border-radius: 5px;
+  color: #333;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.error-message {
+  margin-top: 20px;
+  padding: 15px 25px;
+  background-color: rgba(231, 76, 60, 0.1);
+  border: 2px solid #e74c3c;
+  border-radius: 5px;
+  color: #c0392b;
+  font-size: 16px;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   h1 {
@@ -116,6 +189,15 @@ button:disabled {
     font-size: 1.1rem;
     padding: 1.25rem 1.5rem;
   }
+
+  .greeting-section {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .name-input {
+    min-width: 200px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -125,5 +207,9 @@ button:disabled {
   
   .App {
     gap: 1.5rem;
+  }
+
+  .name-input {
+    min-width: 150px;
   }
 }
