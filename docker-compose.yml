@@ -1,42 +1,41 @@
 version: '3.8'
 
 services:
+  # Backend service - Python FastAPI application
   backend:
     build:
       context: ./backend
     ports:
       - "8000:8000"
     volumes:
+      # Mount source code for hot reload during development
       - ./backend:/app
-      - backend-data:/app/data
-    working_dir: /app
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     environment:
+      # Development mode configuration
       - ENV=development
     networks:
       - app-network
 
+  # Frontend service - React + Vite application
   frontend:
     build:
       context: ./frontend
     ports:
       - "3000:3000"
     volumes:
+      # Mount source code for hot reload during development
       - ./frontend:/app
+      # Preserve node_modules in container (don't overwrite with host)
       - /app/node_modules
-    working_dir: /app
-    command: npm run dev -- --host 0.0.0.0 --port 3000
     environment:
+      # API URL for backend communication
       - VITE_API_URL=http://localhost:8000
     depends_on:
       - backend
     networks:
       - app-network
 
+# Shared network for service communication
 networks:
   app-network:
     driver: bridge
-
-volumes:
-  backend-data:
-    driver: local
