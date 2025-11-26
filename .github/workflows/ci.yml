@@ -3,8 +3,10 @@ name: CI/CD Pipeline
 # Workflow triggers
 on:
   pull_request:
+    types: [opened, synchronize, reopened]
     branches:
-      - '*'
+      - main
+      - master
   push:
     branches:
       - main
