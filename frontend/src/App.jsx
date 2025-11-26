@@ -99,7 +99,13 @@ function TaskForm({ onSubmit, onCancel, loading, error, initialData, isEditing }
 }
 
 // TaskList Component
-function TaskList({ tasks, loading, error, onToggleComplete, toggleLoading, onDelete, deleteLoading, onEdit, editLoading }) {
+function TaskList({ 
+  tasks, loading, error, 
+  onToggleComplete, toggleLoading, 
+  onDelete, deleteLoading, 
+  onEdit, editLoading,
+  onDeleteAll, deleteAllLoading
+}) {
   if (loading) {
     return <div className="loading">Loading tasks...</div>;
   }
@@ -113,56 +119,70 @@ function TaskList({ tasks, loading, error, onToggleComplete, toggleLoading, onDe
   }
 
   return (
-    <div className="task-list">
-      {tasks.map((task) => (
-        <div key={task.id} className={`task-item ${task.completed ? 'completed' : ''}`}>
-          <div className="task-header">
-            <div className="task-header-left">
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onChange={() => onToggleComplete(task.id, task.completed)}
-                disabled={toggleLoading === task.id || deleteLoading === task.id || editLoading === task.id}
-                className="task-checkbox"
-                aria-label={`Mark task "${task.title}" as ${task.completed ? 'incomplete' : 'complete'}`}
-              />
-              <h3 className={task.completed ? 'task-title completed' : 'task-title'}>
-                {task.title}
-              </h3>
-            </div>
-            <div className="task-actions">
-              <span className="task-status">
-                {task.completed ? '✓ Completed' : '○ Incomplete'}
-              </span>
-              <button
-                onClick={() => onEdit(task)}
-                disabled={deleteLoading === task.id || toggleLoading === task.id || editLoading === task.id}
-                className="btn-edit"
-                aria-label={`Edit task "${task.title}"`}
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => onDelete(task.id)}
-                disabled={deleteLoading === task.id || toggleLoading === task.id || editLoading === task.id}
-                className="btn-delete"
-                aria-label={`Delete task "${task.title}"`}
-              >
-                {deleteLoading === task.id ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-          {task.description && (
-            <p className="task-description">{task.description}</p>
-          )}
-          <div className="task-footer">
-            <span className="task-date">
-              Created: {new Date(task.created_at).toLocaleDateString()}
-            </span>
-          </div>
+    <>
+      {tasks.length > 0 && (
+        <div className="delete-all-container">
+          <button
+            onClick={onDeleteAll}
+            disabled={deleteAllLoading || loading}
+            className="btn-delete-all"
+            aria-label="Delete all tasks"
+          >
+            {deleteAllLoading ? 'Deleting All...' : '🗑️ Delete All Tasks'}
+          </button>
         </div>
-      ))}
-    </div>
+      )}
+      <div className="task-list">
+        {tasks.map((task) => (
+          <div key={task.id} className={`task-item ${task.completed ? 'completed' : ''}`}>
+            <div className="task-header">
+              <div className="task-header-left">
+                <input
+                  type="checkbox"
+                  checked={task.completed}
+                  onChange={() => onToggleComplete(task.id, task.completed)}
+                  disabled={toggleLoading === task.id || deleteLoading === task.id || editLoading === task.id}
+                  className="task-checkbox"
+                  aria-label={`Mark task "${task.title}" as ${task.completed ? 'incomplete' : 'complete'}`}
+                />
+                <h3 className={task.completed ? 'task-title completed' : 'task-title'}>
+                  {task.title}
+                </h3>
+              </div>
+              <div className="task-actions">
+                <span className="task-status">
+                  {task.completed ? '✓ Completed' : '○ Incomplete'}
+                </span>
+                <button
+                  onClick={() => onEdit(task)}
+                  disabled={deleteLoading === task.id || toggleLoading === task.id || editLoading === task.id}
+                  className="btn-edit"
+                  aria-label={`Edit task "${task.title}"`}
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => onDelete(task.id)}
+                  disabled={deleteLoading === task.id || toggleLoading === task.id || editLoading === task.id}
+                  className="btn-delete"
+                  aria-label={`Delete task "${task.title}"`}
+                >
+                  {deleteLoading === task.id ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+            {task.description && (
+              <p className="task-description">{task.description}</p>
+            )}
+            <div className="task-footer">
+              <span className="task-date">
+                Created: {new Date(task.created_at).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -180,6 +200,8 @@ function App() {
   const [editingTask, setEditingTask] = useState(null); // Track which task is being edited
   const [editLoading, setEditLoading] = useState(null); // Track which task is being updated
   const [editError, setEditError] = useState('');
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
+  const [deleteAllError, setDeleteAllError] = useState('');
 
   // Fetch tasks on component mount
   useEffect(() => {
@@ -305,6 +327,33 @@ function App() {
     }
   };
 
+  // Delete all tasks
+  const deleteAllTasks = async () => {
+    if (!window.confirm('Are you sure you want to delete ALL tasks? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeleteAllLoading(true);
+    setDeleteAllError('');
+
+    try {
+      const response = await fetch(`${API_URL}/api/tasks`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      setTasks([]);
+    } catch (err) {
+      setDeleteAllError(err.message);
+      setTimeout(() => setDeleteAllError(''), 5000);
+    } finally {
+      setDeleteAllLoading(false);
+    }
+  };
+
   // Start editing a task
   const startEditTask = (task) => {
     setEditingTask(task);
@@ -393,6 +442,9 @@ function App() {
             {deleteError && (
               <div className="error" style={{ marginBottom: '1rem' }}>{deleteError}</div>
             )}
+            {deleteAllError && (
+              <div className="error" style={{ marginBottom: '1rem' }}>{deleteAllError}</div>
+            )}
             <TaskList 
               tasks={tasks} 
               loading={tasksLoading} 
@@ -403,6 +455,8 @@ function App() {
               deleteLoading={deleteLoading}
               onEdit={startEditTask}
               editLoading={editLoading}
+              onDeleteAll={deleteAllTasks}
+              deleteAllLoading={deleteAllLoading}
             />
           </div>
         </div>
