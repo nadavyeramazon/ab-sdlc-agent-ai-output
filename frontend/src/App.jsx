@@ -128,7 +128,7 @@ function TaskList({
             className="btn-delete-all"
             aria-label="Delete all tasks"
           >
-            {deleteAllLoading ? 'Deleting All...' : '🗑️ Delete All Tasks'}
+            {deleteAllLoading ? 'deleting all...' : '🗑️ Delete All Tasks'}
           </button>
         </div>
       )}
