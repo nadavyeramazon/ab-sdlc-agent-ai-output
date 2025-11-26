@@ -903,3 +903,124 @@ class TestTaskAPIEndpoints:
         assert persisted_task["updated_at"] >= original_updated_at
         assert persisted_task["title"] == trimmed_updated_title
         assert persisted_task["description"] == updated_description
+
+
+class TestDeleteAllTasksEndpoint:
+    """Unit tests for DELETE /api/tasks endpoint (Delete All Tasks feature)"""
+
+    def test_delete_all_tasks_returns_204_and_correct_response(self, client):
+        """
+        Test that DELETE /api/tasks returns HTTP 204 (No Content) status code.
+        
+        Verifies that:
+        1. The endpoint returns 204 status code on success
+        2. The response body is None (no content)
+        3. Proper RESTful API behavior for bulk delete operation
+        """
+        # Create some tasks
+        client.post("/api/tasks", json={"title": "Task 1", "description": "Desc 1"})
+        client.post("/api/tasks", json={"title": "Task 2", "description": "Desc 2"})
+        
+        # Delete all tasks
+        response = client.delete("/api/tasks")
+        
+        # Verify 204 status code
+        assert response.status_code == 204
+        
+        # Verify response body is None (no content)
+        # FastAPI TestClient returns empty response for 204
+        assert response.text == "" or response.text is None
+    
+    def test_delete_all_tasks_deletes_all_tasks_correctly(self, client):
+        """
+        Test that DELETE /api/tasks successfully deletes all tasks from the system.
+        
+        Verifies that:
+        1. Tasks exist before deletion
+        2. After DELETE /api/tasks, all tasks are removed
+        3. GET /api/tasks returns an empty array
+        4. Individual task retrieval returns 404 for all deleted tasks
+        """
+        # Clear any existing tasks first
+        existing_response = client.get("/api/tasks")
+        for task in existing_response.json()["tasks"]:
+            client.delete(f"/api/tasks/{task['id']}")
+        
+        # Create multiple tasks
+        task1_response = client.post("/api/tasks", json={
+            "title": "Task 1",
+            "description": "Description 1"
+        })
+        task1_id = task1_response.json()["id"]
+        
+        task2_response = client.post("/api/tasks", json={
+            "title": "Task 2",
+            "description": "Description 2"
+        })
+        task2_id = task2_response.json()["id"]
+        
+        task3_response = client.post("/api/tasks", json={
+            "title": "Task 3",
+            "description": "Description 3"
+        })
+        task3_id = task3_response.json()["id"]
+        
+        # Verify tasks exist
+        tasks_before = client.get("/api/tasks").json()["tasks"]
+        assert len(tasks_before) == 3
+        
+        # Delete all tasks
+        delete_response = client.delete("/api/tasks")
+        assert delete_response.status_code == 204
+        
+        # Verify all tasks are deleted
+        tasks_after = client.get("/api/tasks").json()["tasks"]
+        assert len(tasks_after) == 0
+        assert tasks_after == []
+        
+        # Verify individual tasks return 404
+        assert client.get(f"/api/tasks/{task1_id}").status_code == 404
+        assert client.get(f"/api/tasks/{task2_id}").status_code == 404
+        assert client.get(f"/api/tasks/{task3_id}").status_code == 404
+    
+    def test_delete_all_tasks_handles_empty_database(self, client):
+        """
+        Test that DELETE /api/tasks handles empty database gracefully.
+        
+        Verifies that:
+        1. Can call DELETE /api/tasks when no tasks exist
+        2. Returns 204 status code even with empty database
+        3. No errors occur
+        4. System remains functional after operation
+        5. Can still create tasks after deleting from empty database
+        """
+        # Clear all existing tasks
+        existing_response = client.get("/api/tasks")
+        for task in existing_response.json()["tasks"]:
+            client.delete(f"/api/tasks/{task['id']}")
+        
+        # Verify database is empty
+        tasks_before = client.get("/api/tasks").json()["tasks"]
+        assert len(tasks_before) == 0
+        
+        # Delete all tasks on empty database
+        response = client.delete("/api/tasks")
+        
+        # Verify 204 status code
+        assert response.status_code == 204
+        
+        # Verify database is still empty
+        tasks_after = client.get("/api/tasks").json()["tasks"]
+        assert len(tasks_after) == 0
+        
+        # Verify system remains functional - can create new tasks
+        new_task_response = client.post("/api/tasks", json={
+            "title": "New Task After Delete All",
+            "description": "Testing functionality"
+        })
+        assert new_task_response.status_code == 201
+        
+        # Verify task was created successfully
+        all_tasks = client.get("/api/tasks").json()["tasks"]
+        assert len(all_tasks) == 1
+        assert all_tasks[0]["title"] == "New Task After Delete All"
