@@ -814,6 +814,370 @@ describe('App Component', () => {
       });
     });
 
+    describe('Delete All Tasks Flow', () => {
+      it('should render Delete All button when tasks exist', async () => {
+        const mockTasks = [
+          {
+            id: '1',
+            title: 'Task 1',
+            description: 'Description 1',
+            completed: false,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+          },
+          {
+            id: '2',
+            title: 'Task 2',
+            description: 'Description 2',
+            completed: false,
+            created_at: '2024-01-02T00:00:00Z',
+            updated_at: '2024-01-02T00:00:00Z',
+          },
+        ];
+
+        global.fetch.mockImplementation((url) => {
+          if (url.includes('/api/tasks')) {
+            return Promise.resolve({
+              ok: true,
+              json: async () => ({ tasks: mockTasks }),
+            });
+          }
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ message: 'Default' }),
+          });
+        });
+
+        render(<App />);
+
+        await waitFor(() => {
+          expect(screen.getByText('Task 1')).toBeInTheDocument();
+        });
+
+        // Verify Delete All button is rendered
+        const deleteAllButton = screen.getByRole('button', { name: /delete all tasks/i });
+        expect(deleteAllButton).toBeInTheDocument();
+        expect(deleteAllButton).toHaveTextContent('🗑️ Delete All Tasks');
+      });
+
+      it('should have proper accessibility attributes on Delete All button', async () => {
+        const mockTasks = [
+          {
+            id: '1',
+            title: 'Task 1',
+            description: 'Description 1',
+            completed: false,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+          },
+        ];
+
+        global.fetch.mockImplementation((url) => {
+          if (url.includes('/api/tasks')) {
+            return Promise.resolve({
+              ok: true,
+              json: async () => ({ tasks: mockTasks }),
+            });
+          }
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ message: 'Default' }),
+          });
+        });
+
+        render(<App />);
+
+        await waitFor(() => {
+          expect(screen.getByText('Task 1')).toBeInTheDocument();
+        });
+
+        // Verify aria-label is present
+        const deleteAllButton = screen.getByRole('button', { name: /delete all tasks/i });
+        expect(deleteAllButton).toHaveAttribute('aria-label', 'Delete all tasks');
+      });
+
+      it('should show confirmation dialog when Delete All button is clicked', async () => {
+        const mockTasks = [
+          {
+            id: '1',
+            title: 'Task 1',
+            description: 'Description 1',
+            completed: false,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+          },
+        ];
+
+        global.fetch.mockImplementation((url) => {
+          if (url.includes('/api/tasks')) {
+            return Promise.resolve({
+              ok: true,
+              json: async () => ({ tasks: mockTasks }),
+            });
+          }
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ message: 'Default' }),
+          });
+        });
+
+        // Mock window.confirm
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+        const user = userEvent.setup();
+        render(<App />);
+
+        await waitFor(() => {
+          expect(screen.getByText('Task 1')).toBeInTheDocument();
+        });
+
+        // Click Delete All button
+        const deleteAllButton = screen.getByRole('button', { name: /delete all tasks/i });
+        await user.click(deleteAllButton);
+
+        // Verify confirmation dialog was shown
+        expect(confirmSpy).toHaveBeenCalledWith(
+          'Are you sure you want to delete ALL tasks? This action cannot be undone.'
+        );
+
+        confirmSpy.mockRestore();
+      });
+
+      it('should not delete tasks when user cancels confirmation dialog', async () => {
+        const mockTasks = [
+          {
+            id: '1',
+            title: 'Task 1',
+            description: 'Description 1',
+            completed: false,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+          },
+        ];
+
+        global.fetch.mockImplementation((url) => {
+          if (url.includes('/api/tasks')) {
+            return Promise.resolve({
+              ok: true,
+              json: async () => ({ tasks: mockTasks }),
+            });
+          }
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ message: 'Default' }),
+          });
+        });
+
+        // Mock window.confirm to return false (user cancels)
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+        const user = userEvent.setup();
+        render(<App />);
+
+        await waitFor(() => {
+          expect(screen.getByText('Task 1')).toBeInTheDocument();
+        });
+
+        // Click Delete All button
+        const deleteAllButton = screen.getByRole('button', { name: /delete all tasks/i });
+        await user.click(deleteAllButton);
+
+        // Verify tasks still exist (DELETE API should not be called)
+        expect(screen.getByText('Task 1')).toBeInTheDocument();
+        
+        // Verify DELETE method was not called
+        expect(global.fetch).not.toHaveBeenCalledWith(
+          expect.stringContaining('/api/tasks'),
+          expect.objectContaining({ method: 'DELETE' })
+        );
+
+        confirmSpy.mockRestore();
+      });
+
+      it('should successfully delete all tasks when user confirms', async () => {
+        let taskList = [
+          {
+            id: '1',
+            title: 'Task 1',
+            description: 'Description 1',
+            completed: false,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+          },
+          {
+            id: '2',
+            title: 'Task 2',
+            description: 'Description 2',
+            completed: false,
+            created_at: '2024-01-02T00:00:00Z',
+            updated_at: '2024-01-02T00:00:00Z',
+          },
+        ];
+
+        global.fetch.mockImplementation((url, options) => {
+          if (url.includes('/api/tasks') && options?.method === 'DELETE') {
+            taskList = [];
+            return Promise.resolve({
+              ok: true,
+              status: 200,
+            });
+          }
+          if (url.includes('/api/tasks')) {
+            return Promise.resolve({
+              ok: true,
+              json: async () => ({ tasks: taskList }),
+            });
+          }
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ message: 'Default' }),
+          });
+        });
+
+        // Mock window.confirm to return true (user confirms)
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+        const user = userEvent.setup();
+        render(<App />);
+
+        await waitFor(() => {
+          expect(screen.getByText('Task 1')).toBeInTheDocument();
+          expect(screen.getByText('Task 2')).toBeInTheDocument();
+        });
+
+        // Click Delete All button
+        const deleteAllButton = screen.getByRole('button', { name: /delete all tasks/i });
+        await user.click(deleteAllButton);
+
+        // Verify all tasks are removed from UI
+        await waitFor(() => {
+          expect(screen.queryByText('Task 1')).not.toBeInTheDocument();
+          expect(screen.queryByText('Task 2')).not.toBeInTheDocument();
+          expect(screen.getByText('No tasks yet')).toBeInTheDocument();
+        });
+
+        // Verify DELETE API was called
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/tasks'),
+          expect.objectContaining({ method: 'DELETE' })
+        );
+
+        confirmSpy.mockRestore();
+      });
+
+      it('should show loading state during delete all operation', async () => {
+        const mockTasks = [
+          {
+            id: '1',
+            title: 'Task 1',
+            description: 'Description 1',
+            completed: false,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+          },
+        ];
+
+        global.fetch.mockImplementation((url, options) => {
+          if (url.includes('/api/tasks') && options?.method === 'DELETE') {
+            // Simulate slow API response
+            return new Promise(resolve => setTimeout(() => resolve({
+              ok: true,
+              status: 200,
+            }), 100));
+          }
+          if (url.includes('/api/tasks')) {
+            return Promise.resolve({
+              ok: true,
+              json: async () => ({ tasks: mockTasks }),
+            });
+          }
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ message: 'Default' }),
+          });
+        });
+
+        // Mock window.confirm to return true
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+        const user = userEvent.setup();
+        render(<App />);
+
+        await waitFor(() => {
+          expect(screen.getByText('Task 1')).toBeInTheDocument();
+        });
+
+        // Click Delete All button
+        const deleteAllButton = screen.getByRole('button', { name: /delete all tasks/i });
+        await user.click(deleteAllButton);
+
+        // Verify loading state is shown
+        await waitFor(() => {
+          const button = screen.getByRole('button', { name: /deleting all.../i });
+          expect(button).toBeInTheDocument();
+          expect(button).toBeDisabled();
+        });
+
+        confirmSpy.mockRestore();
+      });
+
+      it('should display error message on API failure', async () => {
+        const mockTasks = [
+          {
+            id: '1',
+            title: 'Task 1',
+            description: 'Description 1',
+            completed: false,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+          },
+        ];
+
+        global.fetch.mockImplementation((url, options) => {
+          if (url.includes('/api/tasks') && options?.method === 'DELETE') {
+            return Promise.resolve({
+              ok: false,
+              status: 500,
+            });
+          }
+          if (url.includes('/api/tasks')) {
+            return Promise.resolve({
+              ok: true,
+              json: async () => ({ tasks: mockTasks }),
+            });
+          }
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ message: 'Default' }),
+          });
+        });
+
+        // Mock window.confirm to return true
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+        const user = userEvent.setup();
+        render(<App />);
+
+        await waitFor(() => {
+          expect(screen.getByText('Task 1')).toBeInTheDocument();
+        });
+
+        // Click Delete All button
+        const deleteAllButton = screen.getByRole('button', { name: /delete all tasks/i });
+        await user.click(deleteAllButton);
+
+        // Verify error message is displayed
+        await waitFor(() => {
+          expect(screen.getByText(/HTTP error! status: 500/i)).toBeInTheDocument();
+        });
+
+        // Tasks should still be visible after error
+        expect(screen.getByText('Task 1')).toBeInTheDocument();
+
+        confirmSpy.mockRestore();
+      });
+    });
+
     describe('Completion Toggle Flow', () => {
       it('should toggle task completion status', async () => {
         const task = {
