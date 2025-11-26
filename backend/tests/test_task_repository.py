@@ -160,3 +160,111 @@ class TestPersistenceAcrossRestarts:
         finally:
             if os.path.exists(temp_file):
                 os.remove(temp_file)
+
+
+class TestDeleteAllTasks:
+    """
+    Unit tests for delete_all() repository method.
+    
+    Tests the Delete All Tasks feature at the repository layer.
+    """
+    
+    def test_delete_all_successfully_deletes_all_tasks(self, temp_repo):
+        """
+        Test that delete_all() successfully removes all tasks from the repository.
+        
+        Verifies that:
+        1. Tasks exist before delete_all() is called
+        2. After delete_all(), get_all() returns an empty list
+        3. Individual task retrieval returns None for deleted tasks
+        """
+        # Create multiple tasks
+        task1 = temp_repo.create(TaskCreate(title="Task 1", description="Description 1"))
+        task2 = temp_repo.create(TaskCreate(title="Task 2", description="Description 2"))
+        task3 = temp_repo.create(TaskCreate(title="Task 3", description="Description 3"))
+        
+        # Verify tasks exist
+        all_tasks_before = temp_repo.get_all()
+        assert len(all_tasks_before) == 3
+        
+        # Delete all tasks
+        temp_repo.delete_all()
+        
+        # Verify all tasks are deleted
+        all_tasks_after = temp_repo.get_all()
+        assert len(all_tasks_after) == 0
+        assert all_tasks_after == []
+        
+        # Verify individual tasks cannot be retrieved
+        assert temp_repo.get_by_id(task1.id) is None
+        assert temp_repo.get_by_id(task2.id) is None
+        assert temp_repo.get_by_id(task3.id) is None
+    
+    def test_delete_all_returns_correct_count(self, temp_repo):
+        """
+        Test that delete_all() returns the correct count of deleted tasks.
+        
+        Verifies that:
+        1. delete_all() returns the number of tasks that were deleted
+        2. The count matches the number of tasks that existed before deletion
+        3. Works correctly with different quantities of tasks
+        """
+        # Test with no tasks
+        count_empty = temp_repo.delete_all()
+        assert count_empty == 0
+        
+        # Create 5 tasks
+        for i in range(5):
+            temp_repo.create(TaskCreate(title=f"Task {i}", description=f"Description {i}"))
+        
+        # Verify count before deletion
+        assert len(temp_repo.get_all()) == 5
+        
+        # Delete all and verify count
+        count_deleted = temp_repo.delete_all()
+        assert count_deleted == 5
+        
+        # Verify repository is empty
+        assert len(temp_repo.get_all()) == 0
+        
+        # Create 2 more tasks
+        temp_repo.create(TaskCreate(title="New Task 1", description="Desc 1"))
+        temp_repo.create(TaskCreate(title="New Task 2", description="Desc 2"))
+        
+        # Delete all again and verify count
+        count_deleted_2 = temp_repo.delete_all()
+        assert count_deleted_2 == 2
+        assert len(temp_repo.get_all()) == 0
+    
+    def test_delete_all_works_with_empty_database(self, temp_repo):
+        """
+        Test that delete_all() works correctly when database is already empty.
+        
+        Verifies that:
+        1. delete_all() can be called on an empty repository without errors
+        2. Returns count of 0 when no tasks exist
+        3. Repository remains in a valid state after the operation
+        4. Can still create tasks after calling delete_all() on empty database
+        """
+        # Verify repository starts empty
+        assert len(temp_repo.get_all()) == 0
+        
+        # Call delete_all() on empty repository
+        count = temp_repo.delete_all()
+        
+        # Verify count is 0
+        assert count == 0
+        
+        # Verify repository is still empty and functional
+        assert len(temp_repo.get_all()) == 0
+        
+        # Verify we can still create tasks after delete_all() on empty database
+        new_task = temp_repo.create(TaskCreate(title="Test Task", description="Test"))
+        assert new_task is not None
+        assert len(temp_repo.get_all()) == 1
+        
+        # Verify the created task is retrievable
+        retrieved_task = temp_repo.get_by_id(new_task.id)
+        assert retrieved_task is not None
+        assert retrieved_task.id == new_task.id
+        assert retrieved_task.title == "Test Task"
