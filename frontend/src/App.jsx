@@ -129,6 +129,7 @@ function TaskList({
       {tasks.length > 0 && (
         <div className="delete-all-container">
           <button
+            type="button"
             onClick={onDeleteAll}
             disabled={deleteAllLoading || loading}
             className="btn-delete-all"
