@@ -4,21 +4,23 @@ services:
   backend:
     build:
       context: ./backend
+    container_name: taskmanager-backend
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
-      - backend-data:/app/data
     working_dir: /app
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     environment:
       - ENV=development
     networks:
-      - app-network
+      - taskmanager-network
+    restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
+    container_name: taskmanager-frontend
     ports:
       - "3000:3000"
     volumes:
@@ -31,12 +33,10 @@ services:
     depends_on:
       - backend
     networks:
-      - app-network
+      - taskmanager-network
+    restart: unless-stopped
 
 networks:
-  app-network:
+  taskmanager-network:
     driver: bridge
-
-volumes:
-  backend-data:
-    driver: local
+    name: taskmanager-network
