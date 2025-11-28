@@ -592,9 +592,9 @@ describe('Delete All Functionality', () => {
       const deleteAllButton = screen.getByRole('button', { name: /delete all tasks/i });
       await user.click(deleteAllButton);
 
-      // Button should be disabled during operation
+      // Button should be disabled during operation - query by text since the name has changed
       await waitFor(() => {
-        const deletingButton = screen.getByRole('button', { name: /deleting all/i });
+        const deletingButton = screen.getByText('Deleting All...');
         expect(deletingButton).toBeDisabled();
       });
 
@@ -1020,9 +1020,9 @@ describe('Delete All Functionality', () => {
       // Try to click multiple times rapidly
       await user.click(deleteAllButton);
       
-      // Button should be disabled, but try to click again
+      // Button should be disabled and text should change
       await waitFor(() => {
-        const disabledButton = screen.getByRole('button', { name: /deleting all/i });
+        const disabledButton = screen.getByText('Deleting All...');
         expect(disabledButton).toBeDisabled();
       });
 
