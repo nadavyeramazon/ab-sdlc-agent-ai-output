@@ -18,6 +18,7 @@ The test suite includes:
 - ✅ **Task Display Tests** - Rendering tasks, empty states, completion styling
 - ✅ **Task Editing Tests** - Inline editing, validation, cancel functionality
 - ✅ **Task Deletion Tests** - Delete operations and UI updates
+- ✅ **Delete All Tests** - Bulk deletion with confirmation, loading states, and error handling
 - ✅ **Completion Toggle Tests** - Status changes and visual feedback
 - ✅ **Loading State Tests** - Loading indicators for all async operations
 - ✅ **Error Handling Tests** - Network errors, validation errors, 404 handling
@@ -58,7 +59,8 @@ Tests are organized in the `src/__tests__/` directory following React best pract
 frontend/
 ├── src/
 │   ├── __tests__/
-│   │   └── App.test.jsx          # Main application tests
+│   │   ├── App.test.jsx          # Main application tests
+│   │   └── DeleteAll.test.jsx    # Delete All functionality tests
 │   ├── test/
 │   │   └── setup.js              # Test configuration
 │   ├── App.jsx
@@ -122,6 +124,60 @@ The test suite is organized into the following sections:
 - ✅ **Property 10: Task ordering consistency** - Tasks always ordered by creation date (newest first)
   - Runs 100+ iterations with randomly generated task lists
   - Validates: Requirements 2.4
+
+### File: `src/__tests__/DeleteAll.test.jsx`
+
+Comprehensive test suite for the Delete All functionality covering 35+ test scenarios:
+
+#### 1. Delete All Button Rendering (5 tests)
+- ✅ Button not visible when task list is empty
+- ✅ Button renders when tasks exist
+- ✅ Button displays trash icon and text
+- ✅ Proper ARIA label for accessibility
+- ✅ Correct CSS class applied
+
+#### 2. Delete All User Interaction Flow (7 tests)
+- ✅ Shows confirmation dialog on button click
+- ✅ Does not delete when user cancels confirmation
+- ✅ Deletes all tasks when user confirms
+- ✅ Calls correct API endpoint (DELETE /api/tasks)
+- ✅ Clears task list in UI after successful deletion
+- ✅ Works with both completed and incomplete tasks
+- ✅ Shows empty state after deletion
+
+#### 3. Delete All Loading States (5 tests)
+- ✅ Shows "Deleting All..." text during operation
+- ✅ Disables button during deletion
+- ✅ Button disabled when tasks are loading
+- ✅ Re-enables button after successful deletion
+- ✅ Loading indicator visible to screen readers
+
+#### 4. Delete All Error Handling (6 tests)
+- ✅ Displays error message when deletion fails (500)
+- ✅ Handles network errors gracefully
+- ✅ Error message clears after 5-second timeout
+- ✅ Re-enables button after error
+- ✅ Tasks remain visible after error
+- ✅ Handles multiple consecutive errors correctly
+
+#### 5. Prevent Multiple Simultaneous Operations (2 tests)
+- ✅ Cannot trigger multiple delete all operations
+- ✅ Button disabled during operation prevents race conditions
+- ✅ Delete all disabled during task loading
+
+#### 6. Delete All Accessibility (5 tests)
+- ✅ Supports keyboard navigation (Enter key)
+- ✅ Supports keyboard navigation (Space key)
+- ✅ Proper button role for screen readers
+- ✅ Loading state announced to screen readers
+- ✅ Focus management for keyboard users
+
+#### 7. Integration with Other Features (5 tests)
+- ✅ Does not interfere with individual task deletion
+- ✅ Works correctly after creating new tasks
+- ✅ Not affected by task edit operations
+- ✅ Button visibility updates as tasks are added/removed
+- ✅ Maintains proper state across multiple operations
 
 ## Environment Variables
 
@@ -207,6 +263,18 @@ beforeEach(() => {
 });
 ```
 
+### Mocking window.confirm
+
+For Delete All tests, we mock `window.confirm` to simulate user interactions:
+
+```javascript
+// Mock user confirming deletion
+window.confirm = vi.fn(() => true);
+
+// Mock user canceling deletion
+window.confirm = vi.fn(() => false);
+```
+
 ### User Interactions
 
 Tests use `@testing-library/user-event` for realistic user interactions:
@@ -271,6 +339,37 @@ global.fetch.mockResolvedValueOnce({
       { id: '2', title: 'Task 2', completed: true, ... }
     ]
   }),
+});
+```
+
+### Testing Delete All Operation
+
+```javascript
+global.fetch.mockImplementation((url, options) => {
+  if (url.includes('/api/tasks') && options?.method === 'DELETE') {
+    return Promise.resolve({
+      ok: true,
+      status: 204,
+    });
+  }
+  // ... other mock responses
+});
+
+// Mock user confirmation
+window.confirm = vi.fn(() => true);
+
+const user = userEvent.setup();
+const deleteAllButton = screen.getByRole('button', { name: /delete all tasks/i });
+await user.click(deleteAllButton);
+
+// Verify confirmation dialog was shown
+expect(window.confirm).toHaveBeenCalledWith(
+  'Are you sure you want to delete ALL tasks? This action cannot be undone.'
+);
+
+// Verify tasks are removed
+await waitFor(() => {
+  expect(screen.getByText('No tasks yet')).toBeInTheDocument();
 });
 ```
 
@@ -423,5 +522,6 @@ When adding a new property test:
 
 **Test Framework**: Vitest + React Testing Library + fast-check  
 **Property Tests**: 1 correctness property with 100+ examples  
-**Integration Tests**: Complete user workflow coverage  
-**Last Updated**: 2024-01-23
+**Integration Tests**: Complete user workflow coverage including Delete All functionality  
+**Total Test Scenarios**: 70+ comprehensive test cases  
+**Last Updated**: 2024-11-28
