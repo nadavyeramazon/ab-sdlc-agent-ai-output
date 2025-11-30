@@ -830,6 +830,110 @@ class TestTaskAPIEndpoints:
         delete_response = client.delete(f"/api/tasks/{fake_id}")
         assert delete_response.status_code == 404
 
+    def test_delete_all_tasks_empty_list(self, client):
+        """Test DELETE /api/tasks when no tasks exist (should return 204)"""
+        # Clear all tasks first
+        existing_response = client.get("/api/tasks")
+        for task in existing_response.json()["tasks"]:
+            client.delete(f"/api/tasks/{task['id']}")
+        
+        # Verify no tasks exist
+        verify_response = client.get("/api/tasks")
+        assert len(verify_response.json()["tasks"]) == 0
+        
+        # Delete all tasks (empty list)
+        response = client.delete("/api/tasks")
+        
+        # Should return 204 No Content
+        assert response.status_code == 204
+
+    def test_delete_all_tasks_with_tasks(self, client):
+        """Test DELETE /api/tasks when tasks exist (should return 204 and clear all tasks)"""
+        # Clear all tasks first
+        existing_response = client.get("/api/tasks")
+        for task in existing_response.json()["tasks"]:
+            client.delete(f"/api/tasks/{task['id']}")
+        
+        # Create some tasks
+        client.post("/api/tasks", json={"title": "Task 1", "description": "Desc 1"})
+        client.post("/api/tasks", json={"title": "Task 2", "description": "Desc 2"})
+        client.post("/api/tasks", json={"title": "Task 3", "description": "Desc 3"})
+        
+        # Verify tasks were created
+        verify_response = client.get("/api/tasks")
+        assert len(verify_response.json()["tasks"]) == 3
+        
+        # Delete all tasks
+        response = client.delete("/api/tasks")
+        
+        # Should return 204 No Content
+        assert response.status_code == 204
+        
+        # Verify all tasks are deleted
+        after_response = client.get("/api/tasks")
+        assert len(after_response.json()["tasks"]) == 0
+
+    def test_delete_all_tasks_verify_list_empty(self, client):
+        """Test that after DELETE /api/tasks, the task list is empty"""
+        # Clear all tasks first
+        existing_response = client.get("/api/tasks")
+        for task in existing_response.json()["tasks"]:
+            client.delete(f"/api/tasks/{task['id']}")
+        
+        # Create multiple tasks
+        task1_response = client.post("/api/tasks", json={"title": "Task A", "description": "Description A"})
+        task2_response = client.post("/api/tasks", json={"title": "Task B", "description": "Description B"})
+        
+        task1_id = task1_response.json()["id"]
+        task2_id = task2_response.json()["id"]
+        
+        # Verify tasks exist
+        get_task1 = client.get(f"/api/tasks/{task1_id}")
+        get_task2 = client.get(f"/api/tasks/{task2_id}")
+        assert get_task1.status_code == 200
+        assert get_task2.status_code == 200
+        
+        # Delete all tasks
+        delete_response = client.delete("/api/tasks")
+        assert delete_response.status_code == 204
+        
+        # Verify task list is empty
+        list_response = client.get("/api/tasks")
+        assert list_response.status_code == 200
+        assert list_response.json()["tasks"] == []
+        
+        # Verify individual tasks no longer exist
+        get_task1_after = client.get(f"/api/tasks/{task1_id}")
+        get_task2_after = client.get(f"/api/tasks/{task2_id}")
+        assert get_task1_after.status_code == 404
+        assert get_task2_after.status_code == 404
+
+    def test_delete_all_tasks_wrong_method_get(self, client):
+        """Test that GET method returns 405 on /api/tasks collection endpoint"""
+        # Note: GET /api/tasks is a valid endpoint that returns all tasks,
+        # so this test verifies that the delete-all functionality uses DELETE method
+        # and that the behavior is correct for each HTTP method.
+        
+        # GET should return 200 (list tasks)
+        get_response = client.get("/api/tasks")
+        assert get_response.status_code == 200
+        
+        # POST should return 201 or 422 (create task)
+        post_response = client.post("/api/tasks", json={"title": "Test", "description": "Test"})
+        assert post_response.status_code == 201
+        
+        # DELETE should return 204 (delete all tasks)
+        delete_response = client.delete("/api/tasks")
+        assert delete_response.status_code == 204
+        
+        # PUT on collection endpoint should return 405 Method Not Allowed
+        put_response = client.put("/api/tasks", json={"title": "Test"})
+        assert put_response.status_code == 405
+        
+        # PATCH on collection endpoint should return 405 Method Not Allowed
+        patch_response = client.patch("/api/tasks", json={"title": "Test"})
+        assert patch_response.status_code == 405
+
     @given(
         st.text(min_size=1, max_size=200).filter(lambda s: s.strip()),  # original title
         st.text(max_size=1000),  # original description

@@ -160,3 +160,167 @@ class TestPersistenceAcrossRestarts:
         finally:
             if os.path.exists(temp_file):
                 os.remove(temp_file)
+
+
+class TestDeleteAllOperation:
+    """
+    Property-based tests for the delete_all operation.
+    
+    **Feature: task-manager-app, Delete All Tasks**
+    **Validates: Requirements for bulk deletion of tasks**
+    """
+    
+    @settings(max_examples=100)
+    @given(tasks_data=st.lists(task_create_strategy(), min_size=1, max_size=10))
+    def test_delete_all_returns_count(self, tasks_data):
+        """
+        Property: For any set of tasks in the repository, delete_all should
+        return the exact count of tasks that were deleted.
+        
+        **Feature: task-manager-app, Delete All Tasks**
+        **Validates: delete_all returns count of deleted tasks**
+        """
+        # Create a temporary file for persistence
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
+            temp_file = f.name
+        
+        try:
+            repo = TaskRepository(data_file=temp_file)
+            
+            # Create tasks
+            for task_data in tasks_data:
+                repo.create(task_data)
+            
+            # Get the count of tasks before deletion
+            tasks_before = repo.get_all()
+            expected_count = len(tasks_before)
+            
+            # Delete all tasks and verify return count
+            deleted_count = repo.delete_all()
+            
+            assert deleted_count == expected_count
+            assert deleted_count == len(tasks_data)
+            
+        finally:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+    
+    @settings(max_examples=100)
+    @given(tasks_data=st.lists(task_create_strategy(), min_size=1, max_size=10))
+    def test_delete_all_clears_all_tasks(self, tasks_data):
+        """
+        Property: For any set of tasks in the repository, after calling delete_all,
+        the repository should contain no tasks (get_all returns empty list).
+        
+        **Feature: task-manager-app, Delete All Tasks**
+        **Validates: delete_all removes all tasks from repository**
+        """
+        # Create a temporary file for persistence
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
+            temp_file = f.name
+        
+        try:
+            repo = TaskRepository(data_file=temp_file)
+            
+            # Create tasks
+            created_task_ids = []
+            for task_data in tasks_data:
+                task = repo.create(task_data)
+                created_task_ids.append(task.id)
+            
+            # Verify tasks were created
+            tasks_before = repo.get_all()
+            assert len(tasks_before) == len(tasks_data)
+            
+            # Delete all tasks
+            repo.delete_all()
+            
+            # Verify all tasks are deleted
+            tasks_after = repo.get_all()
+            assert len(tasks_after) == 0
+            assert tasks_after == []
+            
+            # Verify individual tasks no longer exist
+            for task_id in created_task_ids:
+                task = repo.get_by_id(task_id)
+                assert task is None
+            
+        finally:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+    
+    def test_delete_all_on_empty_repository(self):
+        """
+        Test: Calling delete_all on an empty repository should return 0
+        and the repository should remain empty.
+        
+        **Feature: task-manager-app, Delete All Tasks**
+        **Validates: delete_all on empty repository returns 0**
+        """
+        # Create a temporary file for persistence
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
+            temp_file = f.name
+        
+        try:
+            repo = TaskRepository(data_file=temp_file)
+            
+            # Verify repository is empty
+            tasks_before = repo.get_all()
+            assert len(tasks_before) == 0
+            
+            # Delete all tasks (on empty repository)
+            deleted_count = repo.delete_all()
+            
+            # Should return 0
+            assert deleted_count == 0
+            
+            # Verify repository is still empty
+            tasks_after = repo.get_all()
+            assert len(tasks_after) == 0
+            
+        finally:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+    
+    @settings(max_examples=100)
+    @given(tasks_data=st.lists(task_create_strategy(), min_size=1, max_size=10))
+    def test_delete_all_persists_across_restart(self, tasks_data):
+        """
+        Property: After calling delete_all, a new repository instance using the
+        same data file should also show empty tasks (deletion is persisted).
+        
+        **Feature: task-manager-app, Delete All Tasks**
+        **Validates: delete_all persists across repository restarts**
+        """
+        # Create a temporary file for persistence
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
+            temp_file = f.name
+        
+        try:
+            # Create first repository instance and add tasks
+            repo1 = TaskRepository(data_file=temp_file)
+            for task_data in tasks_data:
+                repo1.create(task_data)
+            
+            # Verify tasks were created
+            tasks_before = repo1.get_all()
+            assert len(tasks_before) == len(tasks_data)
+            
+            # Delete all tasks
+            repo1.delete_all()
+            
+            # Verify tasks are deleted in current instance
+            tasks_after_delete = repo1.get_all()
+            assert len(tasks_after_delete) == 0
+            
+            # Simulate restart by creating a new repository instance
+            repo2 = TaskRepository(data_file=temp_file)
+            
+            # Verify the new instance also shows empty tasks
+            tasks_in_new_repo = repo2.get_all()
+            assert len(tasks_in_new_repo) == 0
+            assert tasks_in_new_repo == []
+            
+        finally:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
