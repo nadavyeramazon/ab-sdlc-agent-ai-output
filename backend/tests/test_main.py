@@ -903,3 +903,242 @@ class TestTaskAPIEndpoints:
         assert persisted_task["updated_at"] >= original_updated_at
         assert persisted_task["title"] == trimmed_updated_title
         assert persisted_task["description"] == updated_description
+
+
+class TestDeleteAllTasksEndpoint:
+    """Test suite for DELETE /api/tasks endpoint (delete all tasks)"""
+
+    def test_delete_all_tasks_empty_list(self, client):
+        """Test DELETE /api/tasks with empty task list returns 204"""
+        # Clear all tasks first
+        existing_response = client.get("/api/tasks")
+        for task in existing_response.json()["tasks"]:
+            client.delete(f"/api/tasks/{task['id']}")
+        
+        # Verify list is empty
+        response = client.get("/api/tasks")
+        assert response.json()["tasks"] == []
+        
+        # Delete all (on empty list)
+        delete_response = client.delete("/api/tasks")
+        assert delete_response.status_code == 204
+        
+        # Verify still empty
+        response = client.get("/api/tasks")
+        assert response.json()["tasks"] == []
+
+    def test_delete_all_tasks_populated_list(self, client):
+        """Test DELETE /api/tasks removes all tasks and returns 204"""
+        # Clear all tasks first
+        existing_response = client.get("/api/tasks")
+        for task in existing_response.json()["tasks"]:
+            client.delete(f"/api/tasks/{task['id']}")
+        
+        # Create some tasks
+        client.post("/api/tasks", json={"title": "Task 1", "description": "Desc 1"})
+        client.post("/api/tasks", json={"title": "Task 2", "description": "Desc 2"})
+        client.post("/api/tasks", json={"title": "Task 3", "description": "Desc 3"})
+        
+        # Verify tasks exist
+        response = client.get("/api/tasks")
+        assert len(response.json()["tasks"]) == 3
+        
+        # Delete all tasks
+        delete_response = client.delete("/api/tasks")
+        assert delete_response.status_code == 204
+        
+        # Verify all tasks are deleted
+        response = client.get("/api/tasks")
+        assert response.json()["tasks"] == []
+
+    def test_delete_all_tasks_returns_no_content(self, client):
+        """Test DELETE /api/tasks returns no content body"""
+        # Create a task
+        client.post("/api/tasks", json={"title": "Task 1", "description": "Desc 1"})
+        
+        # Delete all tasks
+        delete_response = client.delete("/api/tasks")
+        
+        # Verify 204 status and empty/no content
+        assert delete_response.status_code == 204
+        assert delete_response.content == b'' or delete_response.text == ''
+
+    def test_delete_all_tasks_allows_new_tasks_after(self, client):
+        """Test that new tasks can be created after delete all"""
+        # Clear all tasks first
+        existing_response = client.get("/api/tasks")
+        for task in existing_response.json()["tasks"]:
+            client.delete(f"/api/tasks/{task['id']}")
+        
+        # Create some tasks
+        client.post("/api/tasks", json={"title": "Old Task 1", "description": "Desc 1"})
+        client.post("/api/tasks", json={"title": "Old Task 2", "description": "Desc 2"})
+        
+        # Delete all tasks
+        delete_response = client.delete("/api/tasks")
+        assert delete_response.status_code == 204
+        
+        # Create new tasks
+        create_response = client.post("/api/tasks", json={
+            "title": "New Task",
+            "description": "New Description"
+        })
+        assert create_response.status_code == 201
+        
+        # Verify only the new task exists
+        response = client.get("/api/tasks")
+        tasks = response.json()["tasks"]
+        assert len(tasks) == 1
+        assert tasks[0]["title"] == "New Task"
+
+    def test_delete_all_tasks_idempotent(self, client):
+        """Test that calling delete all twice works correctly"""
+        # Clear all tasks first
+        existing_response = client.get("/api/tasks")
+        for task in existing_response.json()["tasks"]:
+            client.delete(f"/api/tasks/{task['id']}")
+        
+        # Create some tasks
+        client.post("/api/tasks", json={"title": "Task 1", "description": "Desc 1"})
+        
+        # First delete all
+        delete_response1 = client.delete("/api/tasks")
+        assert delete_response1.status_code == 204
+        
+        # Second delete all (on empty list)
+        delete_response2 = client.delete("/api/tasks")
+        assert delete_response2.status_code == 204
+        
+        # Verify empty
+        response = client.get("/api/tasks")
+        assert response.json()["tasks"] == []
+
+    def test_delete_all_tasks_individual_tasks_not_found_after(self, client):
+        """Test that individual tasks return 404 after delete all"""
+        # Clear all tasks first
+        existing_response = client.get("/api/tasks")
+        for task in existing_response.json()["tasks"]:
+            client.delete(f"/api/tasks/{task['id']}")
+        
+        # Create some tasks and store their IDs
+        task_ids = []
+        for i in range(3):
+            response = client.post("/api/tasks", json={
+                "title": f"Task {i}",
+                "description": f"Description {i}"
+            })
+            task_ids.append(response.json()["id"])
+        
+        # Verify tasks exist
+        for task_id in task_ids:
+            response = client.get(f"/api/tasks/{task_id}")
+            assert response.status_code == 200
+        
+        # Delete all tasks
+        delete_response = client.delete("/api/tasks")
+        assert delete_response.status_code == 204
+        
+        # Verify individual tasks return 404
+        for task_id in task_ids:
+            response = client.get(f"/api/tasks/{task_id}")
+            assert response.status_code == 404
+
+    def test_delete_all_tasks_wrong_methods(self, client):
+        """Test that other methods on /api/tasks work correctly"""
+        # GET should return task list
+        get_response = client.get("/api/tasks")
+        assert get_response.status_code == 200
+        
+        # POST should create task
+        post_response = client.post("/api/tasks", json={
+            "title": "Test Task",
+            "description": "Test Description"
+        })
+        assert post_response.status_code == 201
+        
+        # PUT on collection endpoint should return 405
+        put_response = client.put("/api/tasks", json={"title": "Test"})
+        assert put_response.status_code == 405
+
+    @given(st.lists(
+        st.tuples(
+            st.text(min_size=1, max_size=200).filter(lambda s: s.strip()),
+            st.text(max_size=1000)
+        ),
+        min_size=0,
+        max_size=15
+    ))
+    @settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    def test_property_delete_all_removes_all_tasks(self, client, task_data_list):
+        """
+        Property: For any set of tasks, calling DELETE /api/tasks should result
+        in an empty task list.
+        """
+        # Clear all existing tasks first
+        existing_response = client.get("/api/tasks")
+        for task in existing_response.json()["tasks"]:
+            client.delete(f"/api/tasks/{task['id']}")
+        
+        # Create tasks
+        for title, description in task_data_list:
+            client.post("/api/tasks", json={
+                "title": title.strip(),
+                "description": description
+            })
+        
+        # Verify expected count before delete
+        before_response = client.get("/api/tasks")
+        # Count may be less than task_data_list if there are duplicates or validation issues
+        
+        # Delete all tasks
+        delete_response = client.delete("/api/tasks")
+        assert delete_response.status_code == 204
+        
+        # Verify empty after delete
+        after_response = client.get("/api/tasks")
+        assert after_response.json()["tasks"] == []
+
+    @given(st.lists(
+        st.tuples(
+            st.text(min_size=1, max_size=200).filter(lambda s: s.strip()),
+            st.text(max_size=1000)
+        ),
+        min_size=1,
+        max_size=10
+    ))
+    @settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    def test_property_delete_all_then_create_works(self, client, task_data_list):
+        """
+        Property: After calling DELETE /api/tasks, new tasks can be created
+        and will be the only tasks in the system.
+        """
+        # Clear all existing tasks first
+        existing_response = client.get("/api/tasks")
+        for task in existing_response.json()["tasks"]:
+            client.delete(f"/api/tasks/{task['id']}")
+        
+        # Create initial tasks
+        for title, description in task_data_list:
+            client.post("/api/tasks", json={
+                "title": title.strip(),
+                "description": description
+            })
+        
+        # Delete all tasks
+        delete_response = client.delete("/api/tasks")
+        assert delete_response.status_code == 204
+        
+        # Create a new task
+        new_task_response = client.post("/api/tasks", json={
+            "title": "Brand New Task",
+            "description": "This should be the only task"
+        })
+        assert new_task_response.status_code == 201
+        new_task_id = new_task_response.json()["id"]
+        
+        # Verify only the new task exists
+        all_tasks_response = client.get("/api/tasks")
+        tasks = all_tasks_response.json()["tasks"]
+        assert len(tasks) == 1
+        assert tasks[0]["id"] == new_task_id
+        assert tasks[0]["title"] == "Brand New Task"
