@@ -26,8 +26,10 @@ def client():
     This fixture is reused across all tests.
     """
     import os
+    import shutil
     import tempfile
 
+    import main
     from task_repository import TaskRepository
 
     # Create a temporary directory for test data
@@ -35,8 +37,6 @@ def client():
     test_data_file = os.path.join(temp_dir, "test_tasks.json")
 
     # Override the repository with test data file
-    import main
-
     main._task_repository = TaskRepository(data_file=test_data_file)
 
     client = TestClient(app)
@@ -44,8 +44,6 @@ def client():
     yield client
 
     # Cleanup
-    import shutil
-
     shutil.rmtree(temp_dir, ignore_errors=True)
     main._task_repository = None
 
@@ -732,7 +730,9 @@ class TestTaskAPIEndpoints:
     def test_delete_task_existing(self, client):
         """Test DELETE /api/tasks/{id} with existing task"""
         # Create a task
-        create_response = client.post("/api/tasks", json={"title": "Task to Delete", "description": "Will be deleted"})
+        create_response = client.post(
+            "/api/tasks", json={"title": "Task to Delete", "description": "Will be deleted"}
+        )
         task_id = create_response.json()["id"]
 
         # Delete the task
