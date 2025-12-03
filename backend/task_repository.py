@@ -161,3 +161,15 @@ class TaskRepository:
             self._save()
             return True
         return False
+    
+    def delete_all(self) -> int:
+        """
+        Delete all tasks and persist the change.
+        
+        Returns:
+            Number of tasks that were deleted
+        """
+        count = len(self._tasks)
+        self._tasks.clear()
+        self._save()
+        return count
