@@ -13,7 +13,7 @@ This project is a complete CRUD application for managing tasks with:
 - **Security**: CodeQL, Bandit, Safety, npm audit, Trivy, TruffleHog
 - **Automation**: GitHub Actions CI/CD with security scanning
 - **Dependency Management**: Dependabot for automated updates
-- **Orchestration**: Docker Compose for local development
+- **Orchestration**: Docker Compose V2 for local development
 - **Hot Reload**: Live updates during development for both frontend and backend
 
 ## 📁 Project Structure
@@ -22,7 +22,7 @@ This project is a complete CRUD application for managing tasks with:
 project-root/
 ├── .github/
 │   ├── workflows/
-│   │   ├── ci.yml                # CI/CD pipeline with linting
+│   │   ├── ci.yml                # CI/CD pipeline with linting & tests
 │   │   └── security.yml          # Security scanning workflow
 │   └── dependabot.yml            # Automated dependency updates
 ├── frontend/                      # React + Vite frontend
@@ -53,7 +53,7 @@ project-root/
 │   │   └── .gitkeep              # Preserve data directory
 │   ├── tests/                    # Test suite
 │   └── Dockerfile                # Backend Docker image
-├── docker-compose.yml             # Docker Compose orchestration
+├── docker-compose.yml             # Docker Compose V2 orchestration
 ├── .gitignore                    # Enhanced git ignore rules
 ├── LICENSE                       # Project license
 └── README.md                     # This file
@@ -62,7 +62,7 @@ project-root/
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Docker and Docker Compose installed
+- Docker 20.10+ with Docker Compose V2 installed
 - Git installed
 - Node.js 18+ (for local development without Docker)
 - Python 3.11+ (for local development without Docker)
@@ -75,7 +75,7 @@ project-root/
    cd ab-sdlc-agent-ai-output
    ```
 
-2. **Start the application**:
+2. **Start the application** (using Docker Compose V2 syntax):
    ```bash
    docker compose up
    ```
@@ -91,6 +91,36 @@ project-root/
    docker compose down
    ```
 
+### Docker Compose Commands (V2 Syntax)
+
+This project uses Docker Compose V2 syntax (with space, not hyphen):
+
+```bash
+# Start services
+docker compose up
+
+# Start in detached mode
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Check service status
+docker compose ps
+
+# Stop services
+docker compose down
+
+# Stop and remove volumes
+docker compose down -v
+
+# Rebuild images
+docker compose build
+
+# Validate configuration
+docker compose config
+```
+
 ### Run Locally (Without Docker)
 
 #### Backend Setup
@@ -103,7 +133,7 @@ uvicorn main:app --reload --port 8000
 #### Frontend Setup
 ```bash
 cd frontend
-npm install
+npm install    # Use 'npm install' NOT 'npm ci'
 npm run dev
 ```
 
@@ -197,6 +227,206 @@ npm run test:coverage
 3. Run linting: `black . && flake8 .`
 4. Run tests: `pytest`
 5. Check API docs: http://localhost:8000/docs
+
+## 🤖 CI/CD Pipeline
+
+### Overview
+
+The project includes a comprehensive CI/CD pipeline that automatically runs on every pull request and push to main/master branches. The pipeline ensures code quality, security, and functionality before merging changes.
+
+### Main CI Pipeline (`.github/workflows/ci.yml`)
+
+**Triggers:**
+- Pull request events (opened, synchronize, reopened)
+- Pushes to main/master branches
+
+**Pipeline Jobs:**
+
+#### 1. Backend Tests (15 min timeout)
+Validates Python backend code quality and functionality:
+
+**Steps:**
+- ✅ Python 3.11 environment setup
+- ✅ Pip dependency caching for faster builds
+- ✅ Install dependencies from `requirements.txt`
+- ✅ Verify backend imports
+- ✅ Code formatting checks (Black, isort)
+- ✅ Linting checks (Flake8)
+- ✅ Run test suite with pytest
+- ✅ Generate coverage reports
+- ✅ Upload coverage to Codecov
+
+**Commands executed:**
+```bash
+black --check .
+isort --check-only .
+flake8 .
+pytest tests/ -v --tb=short
+pytest tests/ --cov=. --cov-report=term --cov-report=xml
+```
+
+#### 2. Frontend Tests (15 min timeout)
+Validates React frontend code quality and functionality:
+
+**Steps:**
+- ✅ Node.js 18 environment setup
+- ✅ npm dependency caching for faster builds
+- ✅ Install dependencies with `npm install` (NOT `npm ci`)
+- ✅ ESLint code linting
+- ✅ Prettier format checking
+- ✅ Run test suite with Vitest
+- ✅ Generate coverage reports
+- ✅ Production build verification
+
+**Commands executed:**
+```bash
+npm install          # CRITICAL: Use 'npm install' NOT 'npm ci'
+npm run lint
+npm run format:check
+npm test             # Run tests, NOT 'npm run dev'
+npm run test:coverage
+npm run build
+```
+
+#### 3. Docker Build Verification (20 min timeout)
+Validates that Docker images can be built successfully:
+
+**Steps:**
+- ✅ Docker Buildx setup
+- ✅ Build backend Docker image
+- ✅ Build frontend Docker image
+- ✅ Verify image creation
+- ✅ Inspect image sizes
+- ✅ List built images
+
+**Images built:**
+- `task-manager-backend:${{ github.sha }}`
+- `task-manager-frontend:${{ github.sha }}`
+
+#### 4. Docker Compose Validation (20 min timeout)
+Validates multi-service orchestration and integration:
+
+**Dependencies:** Requires successful completion of backend-tests, frontend-tests, and docker-build
+
+**Steps:**
+- ✅ Validate docker-compose.yml syntax using V2 syntax
+- ✅ Start services with `docker compose up -d`
+- ✅ Wait for services to initialize (15 seconds)
+- ✅ Check service status with `docker compose ps`
+- ✅ Verify backend container logs
+- ✅ Verify frontend container logs
+- ✅ Test backend health endpoint (retry logic with 10 attempts)
+- ✅ Test frontend accessibility (retry logic with 10 attempts)
+- ✅ Test backend API endpoints (/, /tasks)
+- ✅ Show complete logs on failure
+- ✅ Cleanup with `docker compose down -v`
+
+**Health checks with retry logic:**
+```bash
+# Backend health check (10 retries, 3 second intervals)
+curl -f http://localhost:8000/health
+
+# Frontend accessibility check (10 retries, 3 second intervals)
+curl -f http://localhost:3000
+
+# API endpoint tests
+curl -f http://localhost:8000/
+curl -f http://localhost:8000/tasks
+```
+
+#### 5. CI Pipeline Success Summary
+Provides overall pipeline status and success message when all jobs pass.
+
+### CI/CD Best Practices Implemented
+
+**Performance Optimizations:**
+- ✅ Dependency caching (npm, pip) for faster builds
+- ✅ Parallel job execution where possible
+- ✅ Reasonable timeout limits (15-20 minutes)
+- ✅ Conditional step execution
+
+**Error Handling:**
+- ✅ Retry logic for health checks
+- ✅ Complete log output on failures
+- ✅ Always-run cleanup steps
+- ✅ Clear error messages and warnings
+
+**Test Execution:**
+- ✅ Run test commands (`pytest`, `npm test`) NOT server commands
+- ✅ Coverage reporting and upload
+- ✅ Multiple test types (unit, integration, property-based)
+- ✅ Build verification before deployment
+
+**Docker Integration:**
+- ✅ Docker Compose V2 syntax (`docker compose` with space)
+- ✅ Service health validation
+- ✅ Multi-service integration testing
+- ✅ Proper cleanup and volume removal
+
+**Package Management:**
+- ✅ Use `npm install` (NOT `npm ci`) to avoid lock file issues
+- ✅ Use `pip install -r requirements.txt` (NOT poetry/pipenv)
+- ✅ Lock files excluded from git (.gitignore)
+
+### Required GitHub Secrets
+
+None currently required. Future deployment workflows may need:
+- `AWS_ACCESS_KEY_ID` - AWS credentials for deployment
+- `AWS_SECRET_ACCESS_KEY` - AWS secret key
+- `DOCKER_USERNAME` - Docker Hub username
+- `DOCKER_PASSWORD` - Docker Hub password
+
+### Viewing Pipeline Results
+
+1. **GitHub Actions Tab**: View all workflow runs
+2. **Pull Request Checks**: See status checks on PRs
+3. **Commit Status**: See pipeline status on commits
+4. **Coverage Reports**: View on Codecov (if configured)
+
+### Security Pipeline (`.github/workflows/security.yml`)
+
+Runs on PRs, pushes, and weekly schedule (Mondays 8:00 AM UTC):
+
+1. **Python Security Analysis**
+   - Bandit security scanning
+   - Safety vulnerability checking
+   - Uploads security reports
+
+2. **JavaScript Security Analysis**
+   - ESLint security plugin
+   - npm audit for dependencies
+   - Uploads audit reports
+
+3. **CodeQL Analysis**
+   - Semantic code analysis for Python and JavaScript
+   - Security-extended query suite
+   - Uploads results to GitHub Security tab
+
+4. **Dependency Review** (PRs only)
+   - Blocks PRs with vulnerable dependencies
+   - License compliance checking (denies GPL-3.0, AGPL-3.0)
+   - Fails on moderate+ severity issues
+
+5. **Secret Scanning**
+   - TruffleHog for exposed credentials
+   - Scans entire git history
+   - Only verified secrets reported
+
+6. **Docker Security**
+   - Trivy container scanning
+   - CRITICAL and HIGH severity detection
+   - SARIF results uploaded to GitHub
+
+### Dependabot Configuration (`.github/dependabot.yml`)
+
+Automated dependency updates:
+- **Python packages**: Weekly updates (Monday 8:00 AM)
+- **npm packages**: Weekly updates (Monday 8:00 AM)
+- **GitHub Actions**: Weekly updates (Monday 8:00 AM)
+- **Docker base images**: Weekly updates (Monday 8:00 AM)
+- Grouped minor/patch updates
+- Automatic security updates
+- Proper labeling for easy review
 
 ## 🔒 Security
 
@@ -368,79 +598,6 @@ Health check endpoint.
 }
 ```
 
-## 🤖 CI/CD Pipeline
-
-### Main CI Pipeline (`.github/workflows/ci.yml`)
-
-Runs on all PRs and pushes to main/master:
-
-1. **Backend Tests**
-   - Python 3.11 setup and dependency caching
-   - Code quality checks (Black, isort, Flake8)
-   - Test suite execution with pytest
-   - Health check verification
-
-2. **Frontend Tests**
-   - Node.js 18 setup and dependency caching
-   - Code quality checks (ESLint, Prettier)
-   - Test suite execution with Vitest
-   - Production build verification
-
-3. **Docker Build Verification**
-   - Builds both frontend and backend images
-   - Verifies image integrity
-
-4. **Docker Compose Validation**
-   - Validates docker-compose.yml syntax
-   - Starts services and runs health checks
-   - Verifies service communication
-   - Tests both backend and frontend endpoints
-
-### Security Pipeline (`.github/workflows/security.yml`)
-
-Runs on PRs, pushes, and weekly schedule (Mondays 8:00 AM UTC):
-
-1. **Python Security Analysis**
-   - Bandit security scanning
-   - Safety vulnerability checking
-   - Uploads security reports
-
-2. **JavaScript Security Analysis**
-   - ESLint security plugin
-   - npm audit for dependencies
-   - Uploads audit reports
-
-3. **CodeQL Analysis**
-   - Semantic code analysis for Python and JavaScript
-   - Security-extended query suite
-   - Uploads results to GitHub Security tab
-
-4. **Dependency Review** (PRs only)
-   - Blocks PRs with vulnerable dependencies
-   - License compliance checking (denies GPL-3.0, AGPL-3.0)
-   - Fails on moderate+ severity issues
-
-5. **Secret Scanning**
-   - TruffleHog for exposed credentials
-   - Scans entire git history
-   - Only verified secrets reported
-
-6. **Docker Security**
-   - Trivy container scanning
-   - CRITICAL and HIGH severity detection
-   - SARIF results uploaded to GitHub
-
-### Dependabot Configuration (`.github/dependabot.yml`)
-
-Automated dependency updates:
-- **Python packages**: Weekly updates (Monday 8:00 AM)
-- **npm packages**: Weekly updates (Monday 8:00 AM)
-- **GitHub Actions**: Weekly updates (Monday 8:00 AM)
-- **Docker base images**: Weekly updates (Monday 8:00 AM)
-- Grouped minor/patch updates
-- Automatic security updates
-- Proper labeling for easy review
-
 ## 📦 Dependencies
 
 ### Frontend
@@ -478,7 +635,7 @@ Automated dependency updates:
 - **black 24.8.0** - Code formatting
 - **flake8 7.0.0** - Code linting
 - **isort 5.13.2** - Import sorting
-- **pylint 3.0.3** - Static analysis
+- **ruff 0.1.9** - Fast linting
 - **bandit 1.7.6** - Security linting
 - **safety 3.2.7** - Dependency scanning
 
@@ -577,6 +734,57 @@ docker compose restart backend
 
 ## 🐛 Troubleshooting
 
+### CI/CD Pipeline Issues
+
+**Pipeline Failures:**
+1. Check the specific job that failed in GitHub Actions tab
+2. Review the job logs for detailed error messages
+3. Run the same commands locally to reproduce
+4. Fix the issues and push again
+
+**Common CI Failures:**
+
+**Linting Failures:**
+```bash
+# Backend
+cd backend
+black --check . && isort --check-only . && flake8 .
+
+# Frontend
+cd frontend
+npm run lint && npm run format:check
+```
+
+**Test Failures:**
+```bash
+# Backend
+cd backend
+pytest tests/ -v
+
+# Frontend
+cd frontend
+npm test
+```
+
+**Docker Build Failures:**
+```bash
+# Test Docker builds locally
+docker build -t backend:test ./backend
+docker build -t frontend:test ./frontend
+```
+
+**Docker Compose Failures:**
+```bash
+# Validate configuration
+docker compose config
+
+# Test locally
+docker compose up -d
+docker compose ps
+docker compose logs
+docker compose down -v
+```
+
 ### Linting Errors
 
 **Python:**
@@ -607,23 +815,6 @@ npm run format         # Fix formatting
    - Frontend: `cd frontend && npm update`
 4. Fix code issues identified by scanners
 5. Re-run security workflow
-
-### CI/CD Pipeline Failures
-
-**Linting Failures:**
-- Run linting locally before pushing
-- Fix all linting errors
-- Ensure code follows project standards
-
-**Test Failures:**
-- Run tests locally: `pytest` or `npm test`
-- Check for environment-specific issues
-- Review test output for specific failures
-
-**Security Failures:**
-- Review security scan results
-- Update dependencies
-- Fix identified vulnerabilities
 
 ### Common Issues
 
@@ -684,6 +875,11 @@ npm run format         # Fix formatting
    git push origin feature/your-feature-name
    ```
 
+6. **Wait for CI/CD Pipeline**:
+   - All CI jobs must pass (backend-tests, frontend-tests, docker-build, docker-compose-validation)
+   - Security scans must pass
+   - Address any failures before requesting review
+
 ### Pull Request Requirements
 
 - ✅ All linting checks pass (Black, Flake8, isort, ESLint, Prettier)
@@ -691,8 +887,10 @@ npm run format         # Fix formatting
 - ✅ No security vulnerabilities introduced
 - ✅ Code coverage maintained or improved
 - ✅ Documentation updated if needed
-- ✅ CI/CD pipeline succeeds (all jobs green)
+- ✅ **CI/CD pipeline succeeds (all 4 jobs green)**
 - ✅ Security scans pass
+- ✅ Docker builds successful
+- ✅ Docker Compose validation passes
 
 ### Code Style Guidelines
 
