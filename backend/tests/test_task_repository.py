@@ -163,3 +163,202 @@ class TestPersistenceAcrossRestarts:
         finally:
             if os.path.exists(temp_file):
                 os.remove(temp_file)
+
+
+class TestDeleteAllMethod:
+    """Unit tests for TaskRepository delete_all method"""
+
+    def test_delete_all_empty_repository(self, temp_repo):
+        """Test delete_all on an empty repository returns 0"""
+        count = temp_repo.delete_all()
+        assert count == 0
+        assert temp_repo.get_all() == []
+
+    def test_delete_all_single_task(self, temp_repo):
+        """Test delete_all with a single task"""
+        # Create a task
+        task_data = TaskCreate(title="Test Task", description="Description")
+        temp_repo.create(task_data)
+
+        # Verify task exists
+        assert len(temp_repo.get_all()) == 1
+
+        # Delete all
+        count = temp_repo.delete_all()
+        assert count == 1
+        assert temp_repo.get_all() == []
+
+    def test_delete_all_multiple_tasks(self, temp_repo):
+        """Test delete_all with multiple tasks"""
+        # Create multiple tasks
+        for i in range(5):
+            task_data = TaskCreate(title=f"Task {i}", description=f"Description {i}")
+            temp_repo.create(task_data)
+
+        # Verify tasks exist
+        assert len(temp_repo.get_all()) == 5
+
+        # Delete all
+        count = temp_repo.delete_all()
+        assert count == 5
+        assert temp_repo.get_all() == []
+
+    def test_delete_all_persists_to_file(self):
+        """Test that delete_all persists the empty state to file"""
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
+            temp_file = f.name
+
+        try:
+            # Create repository and add tasks
+            repo1 = TaskRepository(data_file=temp_file)
+            task_data = TaskCreate(title="Task 1", description="Description")
+            repo1.create(task_data)
+
+            # Delete all
+            repo1.delete_all()
+
+            # Create new repository instance (simulates restart)
+            repo2 = TaskRepository(data_file=temp_file)
+
+            # Verify no tasks exist
+            assert repo2.get_all() == []
+
+        finally:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+
+    def test_delete_all_idempotent(self, temp_repo):
+        """Test that delete_all can be called multiple times safely"""
+        # Create tasks
+        task_data = TaskCreate(title="Task 1", description="Description")
+        temp_repo.create(task_data)
+
+        # First delete
+        count1 = temp_repo.delete_all()
+        assert count1 == 1
+        assert temp_repo.get_all() == []
+
+        # Second delete (on empty repository)
+        count2 = temp_repo.delete_all()
+        assert count2 == 0
+        assert temp_repo.get_all() == []
+
+        # Third delete
+        count3 = temp_repo.delete_all()
+        assert count3 == 0
+        assert temp_repo.get_all() == []
+
+    def test_delete_all_then_create_new_task(self, temp_repo):
+        """Test that new tasks can be created after delete_all"""
+        # Create and delete tasks
+        task_data1 = TaskCreate(title="Task 1", description="Description 1")
+        temp_repo.create(task_data1)
+        temp_repo.delete_all()
+
+        # Create new task after deletion
+        task_data2 = TaskCreate(title="Task 2", description="Description 2")
+        new_task = temp_repo.create(task_data2)
+
+        # Verify only the new task exists
+        all_tasks = temp_repo.get_all()
+        assert len(all_tasks) == 1
+        assert all_tasks[0].id == new_task.id
+        assert all_tasks[0].title == "Task 2"
+
+    def test_delete_all_with_completed_and_incomplete_tasks(self, temp_repo):
+        """Test delete_all removes both completed and incomplete tasks"""
+        from main import TaskUpdate
+
+        # Create incomplete task
+        task_data1 = TaskCreate(title="Incomplete Task", description="Not done")
+        task1 = temp_repo.create(task_data1)
+
+        # Create and complete a task
+        task_data2 = TaskCreate(title="Completed Task", description="Done")
+        task2 = temp_repo.create(task_data2)
+        update_data = TaskUpdate(completed=True)
+        temp_repo.update(task2.id, update_data)
+
+        # Verify we have 2 tasks
+        assert len(temp_repo.get_all()) == 2
+
+        # Delete all
+        count = temp_repo.delete_all()
+        assert count == 2
+        assert temp_repo.get_all() == []
+
+
+class TestDeleteAllProperties:
+    """Property-based tests for delete_all method"""
+
+    @settings(max_examples=100)
+    @given(tasks_data=st.lists(task_create_strategy(), min_size=0, max_size=20))
+    def test_property_delete_all_returns_correct_count(self, tasks_data):
+        """
+        Property: For any set of N tasks, delete_all should return N and
+        leave the repository empty.
+        """
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
+            temp_file = f.name
+
+        try:
+            repo = TaskRepository(data_file=temp_file)
+
+            # Create tasks
+            for task_data in tasks_data:
+                repo.create(task_data)
+
+            expected_count = len(tasks_data)
+
+            # Delete all
+            actual_count = repo.delete_all()
+
+            # Verify count matches
+            assert actual_count == expected_count
+
+            # Verify repository is empty
+            assert repo.get_all() == []
+
+        finally:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+
+    @settings(max_examples=100)
+    @given(
+        tasks_before=st.lists(task_create_strategy(), min_size=1, max_size=10),
+        tasks_after=st.lists(task_create_strategy(), min_size=1, max_size=10),
+    )
+    def test_property_delete_all_clean_slate(self, tasks_before, tasks_after):
+        """
+        Property: After delete_all, creating new tasks should result in a
+        clean slate with only the new tasks present.
+        """
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as f:
+            temp_file = f.name
+
+        try:
+            repo = TaskRepository(data_file=temp_file)
+
+            # Create first batch
+            for task_data in tasks_before:
+                repo.create(task_data)
+
+            # Delete all
+            repo.delete_all()
+
+            # Create second batch
+            new_task_ids = []
+            for task_data in tasks_after:
+                task = repo.create(task_data)
+                new_task_ids.append(task.id)
+
+            # Verify only second batch exists
+            all_tasks = repo.get_all()
+            assert len(all_tasks) == len(tasks_after)
+
+            retrieved_ids = {task.id for task in all_tasks}
+            assert retrieved_ids == set(new_task_ids)
+
+        finally:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
