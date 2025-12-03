@@ -1,9 +1,10 @@
+import uuid
+from datetime import datetime
+from typing import Optional
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime
 from pydantic import BaseModel, validator
-from typing import Optional
-import uuid
 
 # Initialize FastAPI application with redirect_slashes disabled
 # This ensures that routes with trailing slashes are not automatically redirected
@@ -22,121 +23,125 @@ app.add_middleware(
 
 # Task Manager Data Models
 
+
 class TaskCreate(BaseModel):
     """Request model for creating a new task."""
+
     title: str
     description: str = ""
-    
-    @validator('title')
+
+    @validator("title")
     def title_not_empty(cls, v):
         """
         Validate that title is not empty or whitespace-only.
         Automatically trims leading/trailing whitespace.
         Max length: 200 characters.
-        
+
         Args:
             v: The title value to validate
-            
+
         Returns:
             Trimmed title string
-            
+
         Raises:
             ValueError: If title is empty, whitespace-only, or exceeds 200 characters
         """
         if not v or not v.strip():
-            raise ValueError('Title cannot be empty')
+            raise ValueError("Title cannot be empty")
         if len(v.strip()) > 200:
-            raise ValueError('Title cannot exceed 200 characters')
+            raise ValueError("Title cannot exceed 200 characters")
         return v.strip()
-    
-    @validator('description')
+
+    @validator("description")
     def description_length(cls, v):
         """
         Validate that description does not exceed maximum length.
         Max length: 1000 characters.
-        
+
         Args:
             v: The description value to validate
-            
+
         Returns:
             Description string
-            
+
         Raises:
             ValueError: If description exceeds 1000 characters
         """
         if len(v) > 1000:
-            raise ValueError('Description cannot exceed 1000 characters')
+            raise ValueError("Description cannot exceed 1000 characters")
         return v
 
 
 class TaskUpdate(BaseModel):
     """Request model for updating an existing task."""
+
     title: Optional[str] = None
     description: Optional[str] = None
     completed: Optional[bool] = None
-    
-    @validator('title')
+
+    @validator("title")
     def title_not_empty(cls, v):
         """
         Validate that title is not empty or whitespace-only when provided.
         Automatically trims leading/trailing whitespace.
         Max length: 200 characters.
-        
+
         Args:
             v: The title value to validate (can be None)
-            
+
         Returns:
             Trimmed title string or None
-            
+
         Raises:
             ValueError: If title is empty, whitespace-only, or exceeds 200 characters
         """
         if v is not None:
             if not v or not v.strip():
-                raise ValueError('Title cannot be empty')
+                raise ValueError("Title cannot be empty")
             if len(v.strip()) > 200:
-                raise ValueError('Title cannot exceed 200 characters')
+                raise ValueError("Title cannot exceed 200 characters")
             return v.strip()
         return v
-    
-    @validator('description')
+
+    @validator("description")
     def description_length(cls, v):
         """
         Validate that description does not exceed maximum length when provided.
         Max length: 1000 characters.
-        
+
         Args:
             v: The description value to validate (can be None)
-            
+
         Returns:
             Description string or None
-            
+
         Raises:
             ValueError: If description exceeds 1000 characters
         """
         if v is not None and len(v) > 1000:
-            raise ValueError('Description cannot exceed 1000 characters')
+            raise ValueError("Description cannot exceed 1000 characters")
         return v
 
 
 class Task(BaseModel):
     """Complete task model with all fields."""
+
     id: str
     title: str
     description: str = ""
     completed: bool = False
     created_at: str
     updated_at: str
-    
+
     @classmethod
     def create_new(cls, task_data: TaskCreate) -> "Task":
         """
         Factory method to create a new Task from TaskCreate data.
         Automatically generates UUID and timestamps.
-        
+
         Args:
             task_data: TaskCreate instance with title and description
-            
+
         Returns:
             New Task instance with generated id and timestamps
         """
@@ -147,31 +152,31 @@ class Task(BaseModel):
             description=task_data.description,
             completed=False,
             created_at=now,
-            updated_at=now
+            updated_at=now,
         )
-    
+
     def update_from(self, update_data: TaskUpdate) -> "Task":
         """
         Create an updated copy of the task with new values.
         Only updates fields that are provided (not None).
         Automatically updates the updated_at timestamp.
-        
+
         Args:
             update_data: TaskUpdate instance with fields to update
-            
+
         Returns:
             New Task instance with updated values
         """
         updated_fields = {}
         if update_data.title is not None:
-            updated_fields['title'] = update_data.title
+            updated_fields["title"] = update_data.title
         if update_data.description is not None:
-            updated_fields['description'] = update_data.description
+            updated_fields["description"] = update_data.description
         if update_data.completed is not None:
-            updated_fields['completed'] = update_data.completed
-        
-        updated_fields['updated_at'] = datetime.utcnow().isoformat() + "Z"
-        
+            updated_fields["completed"] = update_data.completed
+
+        updated_fields["updated_at"] = datetime.utcnow().isoformat() + "Z"
+
         return self.copy(update=updated_fields)
 
 
@@ -186,11 +191,13 @@ def health_check():
 # Initialize task repository (lazy initialization to avoid circular import)
 _task_repository = None
 
+
 def get_task_repository():
     """Get or create the task repository instance."""
     global _task_repository
     if _task_repository is None:
         from task_repository import TaskRepository
+
         _task_repository = TaskRepository()
     return _task_repository
 
@@ -199,10 +206,10 @@ def get_task_repository():
 def get_all_tasks():
     """
     Retrieve all tasks.
-    
+
     Returns:
         JSON response containing list of all tasks ordered by creation date (newest first)
-        
+
     Example:
         Response: {
             "tasks": [
@@ -226,16 +233,16 @@ def get_all_tasks():
 def create_task(task_data: TaskCreate):
     """
     Create a new task.
-    
+
     Args:
         task_data: TaskCreate object with title and description
-        
+
     Returns:
         Created task object with generated ID and timestamps
-        
+
     Raises:
         HTTPException 422: If validation fails (empty title, too long, etc.)
-        
+
     Example:
         Request: {"title": "Buy groceries", "description": "Milk, eggs, bread"}
         Response: {
@@ -256,16 +263,16 @@ def create_task(task_data: TaskCreate):
 def get_task(task_id: str):
     """
     Retrieve a single task by ID.
-    
+
     Args:
         task_id: The unique identifier of the task
-        
+
     Returns:
         Task object if found
-        
+
     Raises:
         HTTPException 404: If task with given ID is not found
-        
+
     Example:
         Response: {
             "id": "123e4567-e89b-12d3-a456-426614174000",
@@ -287,18 +294,18 @@ def get_task(task_id: str):
 def update_task(task_id: str, task_data: TaskUpdate):
     """
     Update an existing task.
-    
+
     Args:
         task_id: The unique identifier of the task to update
         task_data: TaskUpdate object with fields to update
-        
+
     Returns:
         Updated task object
-        
+
     Raises:
         HTTPException 404: If task with given ID is not found
         HTTPException 422: If validation fails (empty title, too long, etc.)
-        
+
     Example:
         Request: {"title": "Buy groceries and cook", "completed": true}
         Response: {
@@ -321,16 +328,16 @@ def update_task(task_id: str, task_data: TaskUpdate):
 def delete_task(task_id: str):
     """
     Delete a task.
-    
+
     Args:
         task_id: The unique identifier of the task to delete
-        
+
     Returns:
         No content (204 status)
-        
+
     Raises:
         HTTPException 404: If task with given ID is not found
-        
+
     Example:
         Response: No content with 204 status code
     """

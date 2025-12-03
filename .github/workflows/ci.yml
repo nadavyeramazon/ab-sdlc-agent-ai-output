@@ -56,6 +56,17 @@ jobs:
         continue-on-error: false
       
       # Execute backend test suite with pytest
+      - name: Run linting checks
+        working-directory: ./backend
+        run: |
+          echo "Running Black formatter check..."
+          black --check .
+          echo "Running isort import check..."
+          isort --check-only .
+          echo "Running flake8 linting..."
+          flake8 .
+        continue-on-error: false
+      
       - name: Run backend tests
         working-directory: ./backend
         run: pytest -v
@@ -89,6 +100,15 @@ jobs:
       - name: Install dependencies
         working-directory: ./frontend
         run: npm install
+        continue-on-error: false
+      
+      - name: Run linting checks
+        working-directory: ./frontend
+        run: |
+          echo "Running ESLint..."
+          npm run lint
+          echo "Running Prettier check..."
+          npm run format:check
         continue-on-error: false
       
       # Execute frontend test suite

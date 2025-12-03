@@ -23,16 +23,16 @@ function TaskForm({ onSubmit, onCancel, loading, error, initialData, isEditing }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Client-side validation
     if (!title.trim()) {
       setValidationError('Title cannot be empty');
       return;
     }
-    
+
     setValidationError('');
     const success = await onSubmit({ title: title.trim(), description });
-    
+
     // Clear form after successful submission (only for create mode)
     if (success && !isEditing) {
       setTitle('');
@@ -63,7 +63,7 @@ function TaskForm({ onSubmit, onCancel, loading, error, initialData, isEditing }
           className={validationError ? 'input-error' : ''}
         />
       </div>
-      
+
       <div className="form-group">
         <label htmlFor="task-description">Description</label>
         <textarea
@@ -75,18 +75,14 @@ function TaskForm({ onSubmit, onCancel, loading, error, initialData, isEditing }
           rows="3"
         />
       </div>
-      
-      {validationError && (
-        <div className="form-error">{validationError}</div>
-      )}
-      
-      {error && (
-        <div className="form-error">{error}</div>
-      )}
-      
+
+      {validationError && <div className="form-error">{validationError}</div>}
+
+      {error && <div className="form-error">{error}</div>}
+
       <div className="form-actions">
         <button type="submit" disabled={loading} className="btn-primary">
-          {loading ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Task' : 'Create Task')}
+          {loading ? (isEditing ? 'Updating...' : 'Creating...') : isEditing ? 'Update Task' : 'Create Task'}
         </button>
         {onCancel && (
           <button type="button" onClick={handleCancel} disabled={loading} className="btn-secondary">
@@ -99,7 +95,17 @@ function TaskForm({ onSubmit, onCancel, loading, error, initialData, isEditing }
 }
 
 // TaskList Component
-function TaskList({ tasks, loading, error, onToggleComplete, toggleLoading, onDelete, deleteLoading, onEdit, editLoading }) {
+function TaskList({
+  tasks,
+  loading,
+  error,
+  onToggleComplete,
+  toggleLoading,
+  onDelete,
+  deleteLoading,
+  onEdit,
+  editLoading,
+}) {
   if (loading) {
     return <div className="loading">Loading tasks...</div>;
   }
@@ -126,14 +132,10 @@ function TaskList({ tasks, loading, error, onToggleComplete, toggleLoading, onDe
                 className="task-checkbox"
                 aria-label={`Mark task "${task.title}" as ${task.completed ? 'incomplete' : 'complete'}`}
               />
-              <h3 className={task.completed ? 'task-title completed' : 'task-title'}>
-                {task.title}
-              </h3>
+              <h3 className={task.completed ? 'task-title completed' : 'task-title'}>{task.title}</h3>
             </div>
             <div className="task-actions">
-              <span className="task-status">
-                {task.completed ? '✓ Completed' : '○ Incomplete'}
-              </span>
+              <span className="task-status">{task.completed ? '✓ Completed' : '○ Incomplete'}</span>
               <button
                 onClick={() => onEdit(task)}
                 disabled={deleteLoading === task.id || toggleLoading === task.id || editLoading === task.id}
@@ -152,13 +154,9 @@ function TaskList({ tasks, loading, error, onToggleComplete, toggleLoading, onDe
               </button>
             </div>
           </div>
-          {task.description && (
-            <p className="task-description">{task.description}</p>
-          )}
+          {task.description && <p className="task-description">{task.description}</p>}
           <div className="task-footer">
-            <span className="task-date">
-              Created: {new Date(task.created_at).toLocaleDateString()}
-            </span>
+            <span className="task-date">Created: {new Date(task.created_at).toLocaleDateString()}</span>
           </div>
         </div>
       ))}
@@ -193,11 +191,11 @@ function App() {
 
     try {
       const response = await fetch(`${API_URL}/api/tasks`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       setTasks(data.tasks || []);
     } catch (err) {
@@ -220,7 +218,7 @@ function App() {
         },
         body: JSON.stringify(taskData),
       });
-      
+
       if (!response.ok) {
         if (response.status === 422) {
           const errorData = await response.json();
@@ -228,7 +226,7 @@ function App() {
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const newTask = await response.json();
       setTasks([newTask, ...tasks]);
       return true;
@@ -253,20 +251,18 @@ function App() {
         },
         body: JSON.stringify({ completed: !currentStatus }),
       });
-      
+
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error('Task not found. It may have been deleted.');
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const updatedTask = await response.json();
-      
+
       // Update the task in the list
-      setTasks(tasks.map(task => 
-        task.id === taskId ? updatedTask : task
-      ));
+      setTasks(tasks.map((task) => (task.id === taskId ? updatedTask : task)));
     } catch (err) {
       setToggleError(err.message);
       // Optionally refresh the task list on error
@@ -285,18 +281,18 @@ function App() {
       const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
         method: 'DELETE',
       });
-      
+
       if (!response.ok) {
         if (response.status === 404) {
           // Task already deleted, just remove from UI
-          setTasks(tasks.filter(task => task.id !== taskId));
+          setTasks(tasks.filter((task) => task.id !== taskId));
           return;
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       // Remove task from UI immediately after successful deletion
-      setTasks(tasks.filter(task => task.id !== taskId));
+      setTasks(tasks.filter((task) => task.id !== taskId));
     } catch (err) {
       setDeleteError(err.message);
       setTimeout(() => setDeleteError(''), 5000); // Clear error after 5 seconds
@@ -326,7 +322,7 @@ function App() {
         },
         body: JSON.stringify(taskData),
       });
-      
+
       if (!response.ok) {
         if (response.status === 422) {
           const errorData = await response.json();
@@ -337,14 +333,12 @@ function App() {
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const updatedTask = await response.json();
-      
+
       // Update the task in the list
-      setTasks(tasks.map(task => 
-        task.id === editingTask.id ? updatedTask : task
-      ));
-      
+      setTasks(tasks.map((task) => (task.id === editingTask.id ? updatedTask : task)));
+
       // Clear editing state
       setEditingTask(null);
       return true;
@@ -366,36 +360,40 @@ function App() {
     <div className="app">
       <div className="container">
         <h1>Task Manager</h1>
-        
+
         {/* Task List Section */}
         <div className="task-manager-section">
           <h2>My Tasks</h2>
-          
+
           {/* Task Creation or Edit Form */}
           <div className="task-form-section">
             <h3>{editingTask ? 'Edit Task' : 'Create New Task'}</h3>
-            <TaskForm 
-              onSubmit={editingTask ? updateTask : createTask} 
+            <TaskForm
+              onSubmit={editingTask ? updateTask : createTask}
               onCancel={editingTask ? cancelEdit : null}
-              loading={editingTask ? editLoading !== null : createLoading} 
+              loading={editingTask ? editLoading !== null : createLoading}
               error={editingTask ? editError : createError}
               initialData={editingTask}
               isEditing={!!editingTask}
             />
           </div>
-          
+
           {/* Task List */}
           <div className="task-list-section">
             <h3>Task List</h3>
             {toggleError && (
-              <div className="error" style={{ marginBottom: '1rem' }}>{toggleError}</div>
+              <div className="error" style={{ marginBottom: '1rem' }}>
+                {toggleError}
+              </div>
             )}
             {deleteError && (
-              <div className="error" style={{ marginBottom: '1rem' }}>{deleteError}</div>
+              <div className="error" style={{ marginBottom: '1rem' }}>
+                {deleteError}
+              </div>
             )}
-            <TaskList 
-              tasks={tasks} 
-              loading={tasksLoading} 
+            <TaskList
+              tasks={tasks}
+              loading={tasksLoading}
               error={tasksError}
               onToggleComplete={toggleTaskComplete}
               toggleLoading={toggleLoading}

@@ -1,0 +1,21 @@
+[flake8]
+max-line-length = 120
+exclude = 
+    .git,
+    __pycache__,
+    .pytest_cache,
+    .hypothesis,
+    venv,
+    env,
+    dist,
+    build,
+    *.egg-info
+
+ignore = 
+    E203,
+    E501,
+    W503
+
+max-complexity = 10
+show-source = True
+statistics = True

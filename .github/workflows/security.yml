@@ -1,0 +1,223 @@
+name: Security Scanning
+
+# Run security checks on push and pull requests
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  schedule:
+    # Run weekly on Mondays at 8:00 AM UTC
+    - cron: '0 8 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  # Job 1: Python Security Scanning
+  python-security:
+    name: Python Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      # Bandit - Python security linter
+      - name: Run Bandit security scan
+        working-directory: ./backend
+        run: |
+          bandit -r . -f json -o bandit-report.json || true
+          bandit -r . -f screen
+        continue-on-error: true
+      
+      # Safety - Check for known security vulnerabilities in dependencies
+      - name: Run Safety vulnerability check
+        working-directory: ./backend
+        run: |
+          safety check --json --output safety-report.json || true
+          safety check
+        continue-on-error: true
+      
+      - name: Upload Bandit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-report
+          path: backend/bandit-report.json
+      
+      - name: Upload Safety results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: safety-report
+          path: backend/safety-report.json
+
+  # Job 2: JavaScript Security Scanning
+  javascript-security:
+    name: JavaScript Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm install
+      
+      # ESLint with security plugin
+      - name: Run ESLint security scan
+        working-directory: ./frontend
+        run: |
+          npm run lint || true
+        continue-on-error: true
+      
+      # npm audit for dependency vulnerabilities
+      - name: Run npm audit
+        working-directory: ./frontend
+        run: |
+          npm audit --json > npm-audit-report.json || true
+          npm audit
+        continue-on-error: true
+      
+      - name: Upload npm audit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npm-audit-report
+          path: frontend/npm-audit-report.json
+
+  # Job 3: CodeQL Analysis (GitHub's SAST tool)
+  codeql-analysis:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'python', 'javascript' ]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+      
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v4
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  # Job 4: Dependency Review (for PRs)
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+          deny-licenses: GPL-3.0, AGPL-3.0
+
+  # Job 5: Docker Security Scanning
+  docker-security:
+    name: Docker Image Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Build backend Docker image
+        run: docker build -t backend:scan ./backend
+      
+      - name: Build frontend Docker image
+        run: docker build -t frontend:scan ./frontend
+      
+      # Trivy - Container vulnerability scanner
+      - name: Run Trivy scan on backend image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'backend:scan'
+          format: 'sarif'
+          output: 'trivy-backend-results.sarif'
+          severity: 'CRITICAL,HIGH'
+      
+      - name: Upload Trivy backend results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: 'trivy-backend-results.sarif'
+          category: 'trivy-backend'
+      
+      - name: Run Trivy scan on frontend image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'frontend:scan'
+          format: 'sarif'
+          output: 'trivy-frontend-results.sarif'
+          severity: 'CRITICAL,HIGH'
+      
+      - name: Upload Trivy frontend results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: 'trivy-frontend-results.sarif'
+          category: 'trivy-frontend'
+
+  # Summary job
+  security-summary:
+    name: Security Scan Summary
+    runs-on: ubuntu-latest
+    needs: [python-security, javascript-security, codeql-analysis, docker-security]
+    if: always()
+    
+    steps:
+      - name: Check security scan results
+        run: |
+          echo "🔒 Security Scanning Complete"
+          echo "✅ Python security analysis completed"
+          echo "✅ JavaScript security analysis completed"
+          echo "✅ CodeQL analysis completed"
+          echo "✅ Docker security scanning completed"
+          echo ""
+          echo "📊 Review the Security tab for detailed findings"

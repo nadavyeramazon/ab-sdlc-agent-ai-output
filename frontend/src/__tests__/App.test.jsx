@@ -10,7 +10,7 @@ describe('App Component', () => {
   beforeEach(() => {
     // Clear all mocks before each test
     vi.clearAllMocks();
-    
+
     // Mock fetch for tasks endpoint by default
     global.fetch.mockImplementation((url) => {
       if (url.includes('/api/tasks')) {
@@ -34,17 +34,17 @@ describe('App Component', () => {
 
     it('should render key UI elements', () => {
       render(<App />);
-      
+
       // Check for main heading
       expect(screen.getByRole('heading', { name: /task manager/i })).toBeInTheDocument();
-      
+
       // Check for task section
       expect(screen.getByRole('heading', { name: /my tasks/i })).toBeInTheDocument();
     });
 
     it('should have correct initial state', async () => {
       render(<App />);
-      
+
       // Wait for tasks to load
       await waitFor(() => {
         expect(screen.getByText('No tasks yet')).toBeInTheDocument();
@@ -53,7 +53,7 @@ describe('App Component', () => {
 
     it('should render with proper CSS classes', () => {
       render(<App />);
-      
+
       expect(document.querySelector('.app')).toBeInTheDocument();
       expect(document.querySelector('.container')).toBeInTheDocument();
     });
@@ -64,9 +64,7 @@ describe('App Component', () => {
       render(<App />);
 
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/tasks')
-        );
+        expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/tasks'));
       });
     });
 
@@ -94,10 +92,16 @@ describe('App Component', () => {
     it('should display loading state while fetching tasks', async () => {
       global.fetch.mockImplementation((url) => {
         if (url.includes('/api/tasks')) {
-          return new Promise(resolve => setTimeout(() => resolve({
-            ok: true,
-            json: async () => ({ tasks: [] }),
-          }), 100));
+          return new Promise((resolve) =>
+            setTimeout(
+              () =>
+                resolve({
+                  ok: true,
+                  json: async () => ({ tasks: [] }),
+                }),
+              100
+            )
+          );
         }
         return Promise.resolve({
           ok: true,
@@ -318,8 +322,8 @@ describe('App Component', () => {
       /**
        * Feature: task-manager-app, Property 10: Task ordering consistency
        * Validates: Requirements 2.4
-       * 
-       * For any set of tasks, when retrieved via GET /api/tasks, 
+       *
+       * For any set of tasks, when retrieved via GET /api/tasks,
        * the tasks should be ordered by creation timestamp in descending order (newest first).
        */
       const fc = await import('fast-check');
@@ -333,19 +337,21 @@ describe('App Component', () => {
               title: fc.string({ minLength: 1, maxLength: 50 }),
               description: fc.string({ maxLength: 200 }),
               completed: fc.boolean(),
-              created_at: fc.integer({ min: new Date('2020-01-01').getTime(), max: new Date('2025-12-31').getTime() })
-                .map(timestamp => new Date(timestamp).toISOString()),
-              updated_at: fc.integer({ min: new Date('2020-01-01').getTime(), max: new Date('2025-12-31').getTime() })
-                .map(timestamp => new Date(timestamp).toISOString()),
+              created_at: fc
+                .integer({ min: new Date('2020-01-01').getTime(), max: new Date('2025-12-31').getTime() })
+                .map((timestamp) => new Date(timestamp).toISOString()),
+              updated_at: fc
+                .integer({ min: new Date('2020-01-01').getTime(), max: new Date('2025-12-31').getTime() })
+                .map((timestamp) => new Date(timestamp).toISOString()),
             }),
             { minLength: 2, maxLength: 10 }
           ),
           async (generatedTasks) => {
             // Sort tasks by created_at descending to match backend behavior
-            const sortedTasks = [...generatedTasks].sort((a, b) => 
-              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            const sortedTasks = [...generatedTasks].sort(
+              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
             );
-            
+
             // Mock the API to return the sorted tasks (matching backend behavior)
             global.fetch.mockImplementation((url) => {
               if (url.includes('/api/tasks')) {
@@ -364,21 +370,22 @@ describe('App Component', () => {
 
             try {
               // Wait for tasks to be rendered
-              await waitFor(() => {
-                const taskItems = document.querySelectorAll('.task-item');
-                expect(taskItems.length).toBe(generatedTasks.length);
-              }, { timeout: 3000 });
+              await waitFor(
+                () => {
+                  const taskItems = document.querySelectorAll('.task-item');
+                  expect(taskItems.length).toBe(generatedTasks.length);
+                },
+                { timeout: 3000 }
+              );
 
               // Get the rendered task titles in order
               const taskItems = document.querySelectorAll('.task-item');
-              const renderedTitles = Array.from(taskItems).map(
-                item => item.querySelector('.task-title').textContent
-              );
+              const renderedTitles = Array.from(taskItems).map((item) => item.querySelector('.task-title').textContent);
 
               // Sort the generated tasks by created_at descending (newest first)
               const expectedOrder = [...generatedTasks]
                 .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                .map(task => task.title);
+                .map((task) => task.title);
 
               // Verify the rendered order matches the expected order
               expect(renderedTitles).toEqual(expectedOrder);
@@ -397,7 +404,7 @@ describe('App Component', () => {
       it('should complete full task creation flow: form → API → list update', async () => {
         // Start with empty task list
         let taskList = [];
-        
+
         global.fetch.mockImplementation((url, options) => {
           if (url.includes('/api/tasks') && options?.method === 'POST') {
             const body = JSON.parse(options.body);
@@ -439,7 +446,7 @@ describe('App Component', () => {
         // Fill in the form
         const titleInput = screen.getByLabelText(/title/i);
         const descriptionInput = screen.getByLabelText(/description/i);
-        
+
         await user.type(titleInput, 'New Integration Test Task');
         await user.type(descriptionInput, 'This is a test description');
 
@@ -844,10 +851,12 @@ describe('App Component', () => {
             return Promise.resolve({
               ok: true,
               json: async () => ({
-                tasks: [{
-                  ...task,
-                  completed: currentCompleted,
-                }],
+                tasks: [
+                  {
+                    ...task,
+                    completed: currentCompleted,
+                  },
+                ],
               }),
             });
           }
@@ -1046,10 +1055,16 @@ describe('App Component', () => {
       it('should show loading indicator while fetching tasks', async () => {
         global.fetch.mockImplementation((url) => {
           if (url.includes('/api/tasks')) {
-            return new Promise(resolve => setTimeout(() => resolve({
-              ok: true,
-              json: async () => ({ tasks: [] }),
-            }), 100));
+            return new Promise((resolve) =>
+              setTimeout(
+                () =>
+                  resolve({
+                    ok: true,
+                    json: async () => ({ tasks: [] }),
+                  }),
+                100
+              )
+            );
           }
           return Promise.resolve({
             ok: true,
@@ -1078,10 +1093,16 @@ describe('App Component', () => {
 
         global.fetch.mockImplementation((url, options) => {
           if (url.includes('/api/tasks/1') && options?.method === 'DELETE') {
-            return new Promise(resolve => setTimeout(() => resolve({
-              ok: true,
-              status: 204,
-            }), 100));
+            return new Promise((resolve) =>
+              setTimeout(
+                () =>
+                  resolve({
+                    ok: true,
+                    status: 204,
+                  }),
+                100
+              )
+            );
           }
           if (url.includes('/api/tasks')) {
             return Promise.resolve({
