@@ -503,7 +503,8 @@ The project includes comprehensive security scanning via GitHub Actions (`.githu
 - ✅ **Create Tasks**: Add new tasks with title and description
 - ✅ **View Tasks**: Display all tasks ordered by creation date (newest first)
 - ✅ **Edit Tasks**: Update task title and description
-- ✅ **Delete Tasks**: Remove tasks from the list
+- ✅ **Delete Tasks**: Remove individual tasks from the list
+- ✅ **Delete All Tasks**: Remove all tasks at once (bulk deletion)
 - ✅ **Toggle Completion**: Mark tasks as complete or incomplete
 - ✅ **Data Persistence**: Tasks persist across application restarts
 - ✅ **Input Validation**: Client and server-side validation
@@ -525,6 +526,7 @@ The project includes comprehensive security scanning via GitHub Actions (`.githu
 ### Backend Features
 - ✅ RESTful API with FastAPI
 - ✅ Full CRUD operations
+- ✅ Bulk delete operations
 - ✅ Pydantic model validation
 - ✅ JSON file-based persistence
 - ✅ In-memory caching
@@ -569,6 +571,17 @@ Create a new task.
 
 **Response (201 Created):** Returns created task object
 
+**Error Responses:**
+- 422 Unprocessable Entity: Invalid input (empty title, too long, etc.)
+
+### GET /api/tasks/{task_id}
+Retrieve a single task by ID.
+
+**Response (200 OK):** Returns task object
+
+**Error Responses:**
+- 404 Not Found: Task with given ID not found
+
 ### PUT /api/tasks/{task_id}
 Update an existing task.
 
@@ -583,10 +596,49 @@ Update an existing task.
 
 **Response (200 OK):** Returns updated task object
 
+**Error Responses:**
+- 404 Not Found: Task with given ID not found
+- 422 Unprocessable Entity: Invalid input (empty title, too long, etc.)
+
 ### DELETE /api/tasks/{task_id}
-Delete a task.
+Delete a specific task by ID.
 
 **Response (204 No Content):** No response body
+
+**Error Responses:**
+- 404 Not Found: Task with given ID not found
+
+### DELETE /api/tasks
+Delete all tasks (bulk deletion).
+
+**Description:** Remove all tasks from the system in a single operation.
+
+**Request:** No request body required
+
+**Response (204 No Content):** No response body
+
+**Success Conditions:**
+- Returns 204 status code with empty response body
+- All tasks are removed from storage
+- Operation persists across application restarts
+- Safe to call on empty task list (idempotent)
+
+**Example curl command:**
+```bash
+curl -X DELETE http://localhost:8000/api/tasks
+```
+
+**Use Cases:**
+- Reset application to clean state
+- Clear all tasks during testing
+- Quick cleanup before starting fresh
+- Bulk task management
+
+**Notes:**
+- This endpoint is distinct from `DELETE /api/tasks/{task_id}` (single task deletion)
+- Operation is idempotent - can be called multiple times safely
+- No undo functionality - deleted tasks cannot be recovered
+- Works correctly even when task list is empty
 
 ### GET /health
 Health check endpoint.
@@ -672,6 +724,7 @@ This project uses comprehensive testing including:
 
 **Unit Tests:**
 - ✅ All API endpoints (GET, POST, PUT, DELETE)
+- ✅ Bulk delete operations (DELETE /api/tasks)
 - ✅ Request validation and error handling
 - ✅ HTTP status codes (200, 201, 204, 404, 422)
 - ✅ Task repository CRUD operations
@@ -683,6 +736,7 @@ This project uses comprehensive testing including:
 - ✅ Task retrieval completeness
 - ✅ Completion toggle idempotence
 - ✅ Delete operation correctness
+- ✅ Delete all operations
 - ✅ Update identity preservation
 - ✅ RESTful status codes
 
@@ -726,8 +780,12 @@ cp backup-tasks-20240115.json backend/data/tasks.json
 docker compose restart backend
 ```
 
-**Reset:**
+**Reset (Delete All Tasks):**
 ```bash
+# Using API endpoint
+curl -X DELETE http://localhost:8000/api/tasks
+
+# OR manually delete file
 rm backend/data/tasks.json
 docker compose restart backend
 ```
