@@ -120,7 +120,7 @@ function TaskList({ tasks, loading, error, onToggleComplete, toggleLoading, onDe
             onClick={onDeleteAll}
             disabled={deleteAllLoading || toggleLoading || deleteLoading || editLoading}
             className="btn-delete-all"
-            aria-label="Delete all tasks"
+            aria-label={deleteAllLoading ? "Deleting all tasks" : "Delete all tasks"}
           >
             {deleteAllLoading ? 'Deleting All...' : '🗑️ Delete All Tasks'}
           </button>
