@@ -346,3 +346,19 @@ def delete_task(task_id: str):
     if not success:
         raise HTTPException(status_code=404, detail="Task not found")
     return None
+
+
+@app.delete("/api/tasks", status_code=204)
+def delete_all_tasks():
+    """
+    Delete all tasks.
+
+    Returns:
+        No content (204 status)
+
+    Example:
+        Response: No content with 204 status code
+    """
+    repository = get_task_repository()
+    repository.delete_all()
+    return None
