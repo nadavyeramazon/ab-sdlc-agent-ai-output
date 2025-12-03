@@ -11,7 +11,7 @@ httpx==0.25.2
 hypothesis==6.148.2
 
 # Linting and code quality
-black==23.12.1
+black==24.8.0
 flake8==7.0.0
 isort==5.13.2
 pylint==3.0.3

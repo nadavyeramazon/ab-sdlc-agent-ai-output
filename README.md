@@ -475,12 +475,12 @@ Automated dependency updates:
 - pytest-cov 4.1.0 - Coverage reporting
 - httpx 0.25.2 - HTTP client for tests
 - hypothesis 6.148.2 - Property-based testing
-- **black 23.12.1** - Code formatting
+- **black 24.8.0** - Code formatting
 - **flake8 7.0.0** - Code linting
 - **isort 5.13.2** - Import sorting
 - **pylint 3.0.3** - Static analysis
 - **bandit 1.7.6** - Security linting
-- **safety 3.0.1** - Dependency scanning
+- **safety 3.2.7** - Dependency scanning
 
 ## ⚙️ Configuration Files
 
