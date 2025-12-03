@@ -317,6 +317,22 @@ def update_task(task_id: str, task_data: TaskUpdate):
     return task.dict()
 
 
+@app.delete("/api/tasks", status_code=204)
+def delete_all_tasks():
+    """
+    Delete all tasks.
+    
+    Returns:
+        No content (204 status)
+        
+    Example:
+        Response: No content with 204 status code
+    """
+    repository = get_task_repository()
+    repository.delete_all()
+    return None
+
+
 @app.delete("/api/tasks/{task_id}", status_code=204)
 def delete_task(task_id: str):
     """
