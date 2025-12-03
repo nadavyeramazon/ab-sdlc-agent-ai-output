@@ -1,7 +1,21 @@
+# Production dependencies
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 pydantic==2.5.0
 python-multipart==0.0.6
+
+# Testing dependencies
 pytest==7.4.3
+pytest-cov==4.1.0
 httpx==0.25.2
 hypothesis==6.148.2
+
+# Linting and code quality
+black==23.12.1
+flake8==7.0.0
+isort==5.13.2
+pylint==3.0.3
+
+# Security scanning
+bandit==1.7.6
+safety==3.2.7

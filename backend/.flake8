@@ -1,0 +1,25 @@
+[flake8]
+max-line-length = 120
+exclude = 
+    .git,
+    __pycache__,
+    .pytest_cache,
+    .hypothesis,
+    venv,
+    env,
+    dist,
+    build,
+    *.egg-info
+
+# Error codes to ignore
+ignore = 
+    E203,  # whitespace before ':'
+    E501,  # line too long (handled by black)
+    W503,  # line break before binary operator
+
+# Maximum complexity
+max-complexity = 10
+
+# Show source code for errors
+show-source = True
+statistics = True
