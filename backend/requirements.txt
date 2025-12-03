@@ -14,7 +14,7 @@ hypothesis==6.148.2
 black==24.8.0
 flake8==7.0.0
 isort==5.13.2
-pylint==3.0.3
+ruff==0.1.9
 
 # Security scanning
 bandit==1.7.6
