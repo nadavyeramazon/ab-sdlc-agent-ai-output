@@ -116,6 +116,7 @@ npm test
 - ✅ **View Tasks**: Display all tasks ordered by creation date (newest first)
 - ✅ **Edit Tasks**: Update task title and description
 - ✅ **Delete Tasks**: Remove tasks from the list
+- ✅ **Delete All Tasks**: Bulk delete all tasks at once
 - ✅ **Toggle Completion**: Mark tasks as complete or incomplete
 - ✅ **Data Persistence**: Tasks persist across application restarts
 - ✅ **Input Validation**: Client and server-side validation for data integrity
@@ -136,6 +137,7 @@ npm test
 ### Backend Features
 - ✅ RESTful API with FastAPI
 - ✅ Full CRUD operations for tasks
+- ✅ Bulk delete all tasks endpoint
 - ✅ Pydantic models for request/response validation
 - ✅ JSON file-based persistence with in-memory caching
 - ✅ Automatic data directory and file creation
@@ -254,8 +256,19 @@ Update an existing task.
 }
 ```
 
+### DELETE /api/tasks
+Delete all tasks (bulk deletion).
+
+**Response (204 No Content):**
+No response body.
+
+**Example:**
+```bash
+curl -X DELETE http://localhost:8000/api/tasks
+```
+
 ### DELETE /api/tasks/{task_id}
-Delete a task.
+Delete a specific task.
 
 **Response (204 No Content):**
 No response body.
@@ -366,9 +379,11 @@ The backend test suite includes:
 
 **Unit Tests:**
 - ✅ All API endpoints (GET, POST, PUT, DELETE)
+- ✅ Bulk delete all tasks endpoint (DELETE /api/tasks)
 - ✅ Request validation (empty titles, length limits)
 - ✅ HTTP status codes (200, 201, 204, 404, 422)
 - ✅ Task repository CRUD operations
+- ✅ Task repository delete_all operation
 - ✅ File persistence and data loading
 - ✅ Error handling for missing files and invalid data
 
@@ -382,6 +397,7 @@ The backend test suite includes:
 - ✅ **Property 7**: Invalid update rejection - empty title updates should be rejected
 - ✅ **Property 8**: RESTful status codes - operations return correct HTTP status codes
 - ✅ **Property 9**: Persistence across restarts - tasks survive backend restarts
+- ✅ **Property 11**: Delete all removes all tasks - bulk deletion clears all tasks
 
 For detailed backend testing documentation, see [backend/README_TESTS.md](backend/README_TESTS.md).
 
@@ -434,6 +450,12 @@ For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](fronte
 - [ ] Delete button removes task from list
 - [ ] Task removed immediately from UI
 - [ ] Deletion persists after page refresh
+
+**Bulk Task Deletion:**
+- [ ] DELETE /api/tasks removes all tasks
+- [ ] Returns 204 No Content status
+- [ ] Works on empty list (returns 204)
+- [ ] New tasks can be added after bulk deletion
 
 **Error Handling:**
 - [ ] Validation errors display clearly
@@ -583,11 +605,14 @@ docker compose restart backend
 
 **Reset Data:**
 ```bash
-# Delete all tasks
+# Delete all tasks (option 1: delete file)
 rm backend/data/tasks.json
 
 # Restart backend (will create empty file)
 docker compose restart backend
+
+# Delete all tasks (option 2: use API)
+curl -X DELETE http://localhost:8000/api/tasks
 ```
 
 ## 📦 Dependencies
