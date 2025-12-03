@@ -99,7 +99,7 @@ function TaskForm({ onSubmit, onCancel, loading, error, initialData, isEditing }
 }
 
 // TaskList Component
-function TaskList({ tasks, loading, error, onToggleComplete, toggleLoading, onDelete, deleteLoading, onEdit, editLoading }) {
+function TaskList({ tasks, loading, error, onToggleComplete, toggleLoading, onDelete, deleteLoading, onEdit, editLoading, onDeleteAll, deleteAllLoading }) {
   if (loading) {
     return <div className="loading">Loading tasks...</div>;
   }
@@ -114,6 +114,18 @@ function TaskList({ tasks, loading, error, onToggleComplete, toggleLoading, onDe
 
   return (
     <div className="task-list">
+      {tasks.length > 0 && (
+        <div className="delete-all-container">
+          <button
+            onClick={onDeleteAll}
+            disabled={deleteAllLoading || toggleLoading || deleteLoading || editLoading}
+            className="btn-delete-all"
+            aria-label="Delete all tasks"
+          >
+            {deleteAllLoading ? 'Deleting All...' : '🗑️ Delete All Tasks'}
+          </button>
+        </div>
+      )}
       {tasks.map((task) => (
         <div key={task.id} className={`task-item ${task.completed ? 'completed' : ''}`}>
           <div className="task-header">
@@ -180,6 +192,8 @@ function App() {
   const [editingTask, setEditingTask] = useState(null); // Track which task is being edited
   const [editLoading, setEditLoading] = useState(null); // Track which task is being updated
   const [editError, setEditError] = useState('');
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
+  const [deleteAllError, setDeleteAllError] = useState('');
 
   // Fetch tasks on component mount
   useEffect(() => {
@@ -305,6 +319,40 @@ function App() {
     }
   };
 
+  // Delete all tasks
+  const deleteAllTasks = async () => {
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      'Are you sure you want to delete ALL tasks? This action cannot be undone.'
+    );
+    
+    if (!confirmed) {
+      return;
+    }
+
+    setDeleteAllLoading(true);
+    setDeleteAllError('');
+
+    try {
+      const response = await fetch(`${API_URL}/api/tasks`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      // Clear all tasks from UI immediately after successful deletion
+      setTasks([]);
+    } catch (err) {
+      setDeleteAllError(`Failed to delete all tasks: ${err.message}`);
+      // Auto-dismiss error after 5 seconds
+      setTimeout(() => setDeleteAllError(''), 5000);
+    } finally {
+      setDeleteAllLoading(false);
+    }
+  };
+
   // Start editing a task
   const startEditTask = (task) => {
     setEditingTask(task);
@@ -393,6 +441,9 @@ function App() {
             {deleteError && (
               <div className="error" style={{ marginBottom: '1rem' }}>{deleteError}</div>
             )}
+            {deleteAllError && (
+              <div className="delete-all-error" style={{ marginBottom: '1rem' }}>{deleteAllError}</div>
+            )}
             <TaskList 
               tasks={tasks} 
               loading={tasksLoading} 
@@ -403,6 +454,8 @@ function App() {
               deleteLoading={deleteLoading}
               onEdit={startEditTask}
               editLoading={editLoading}
+              onDeleteAll={deleteAllTasks}
+              deleteAllLoading={deleteAllLoading}
             />
           </div>
         </div>
