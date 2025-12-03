@@ -11,15 +11,11 @@ exclude =
     build,
     *.egg-info
 
-# Error codes to ignore
 ignore = 
-    E203,  # whitespace before ':'
-    E501,  # line too long (handled by black)
-    W503,  # line break before binary operator
+    E203,
+    E501,
+    W503
 
-# Maximum complexity
 max-complexity = 10
-
-# Show source code for errors
 show-source = True
 statistics = True

@@ -1,9 +1,10 @@
+import uuid
+from datetime import datetime
+from typing import Optional
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime
 from pydantic import BaseModel, validator
-from typing import Optional
-import uuid
 
 # Initialize FastAPI application with redirect_slashes disabled
 # This ensures that routes with trailing slashes are not automatically redirected

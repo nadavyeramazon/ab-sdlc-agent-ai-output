@@ -12,7 +12,9 @@ This test suite covers:
 
 import pytest
 from fastapi.testclient import TestClient
-from datetime import datetime
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
+
 from main import app
 
 
@@ -23,8 +25,9 @@ def client():
     Create a TestClient instance for testing FastAPI endpoints.
     This fixture is reused across all tests.
     """
-    import tempfile
     import os
+    import tempfile
+
     from task_repository import TaskRepository
 
     # Create a temporary directory for test data
@@ -215,11 +218,6 @@ class TestEdgeCases:
             assert response.status_code == 200
             data = response.json()
             assert data["status"] == "healthy"
-
-
-# Property-Based Tests
-from hypothesis import given, strategies as st
-from hypothesis import settings, HealthCheck
 
 
 class TestTaskCreationProperties:
@@ -605,8 +603,8 @@ class TestTaskAPIEndpoints:
             client.delete(f"/api/tasks/{task['id']}")
 
         # Create some tasks
-        task1 = client.post("/api/tasks", json={"title": "Task 1", "description": "Desc 1"})
-        task2 = client.post("/api/tasks", json={"title": "Task 2", "description": "Desc 2"})
+        client.post("/api/tasks", json={"title": "Task 1", "description": "Desc 1"})
+        client.post("/api/tasks", json={"title": "Task 2", "description": "Desc 2"})
 
         response = client.get("/api/tasks")
         assert response.status_code == 200
