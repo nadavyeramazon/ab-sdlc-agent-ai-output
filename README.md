@@ -1,11 +1,11 @@
 # Task Manager Application
 
-A production-ready full-stack task management application with comprehensive linting, security scanning, and best practices. Features a React frontend and Python FastAPI backend, orchestrated with Docker Compose for local development.
+A production-ready full-stack task management application with comprehensive linting, security scanning, and best practices. Features a React frontend with a modern green color theme and Python FastAPI backend, orchestrated with Docker Compose for local development.
 
 ## 🎯 Overview
 
 This project is a complete CRUD application for managing tasks with:
-- **Frontend**: React 18 + Vite with responsive UI
+- **Frontend**: React 18 + Vite with responsive UI and modern green theme
 - **Backend**: Python FastAPI with RESTful API
 - **Data Persistence**: JSON file-based storage with in-memory caching
 - **Testing**: Comprehensive test suite with property-based testing (Hypothesis & fast-check)
@@ -29,7 +29,7 @@ project-root/
 │   ├── src/
 │   │   ├── App.jsx               # Main task manager component
 │   │   ├── App.test.jsx          # Comprehensive test suite
-│   │   ├── App.css               # Task manager styling
+│   │   ├── App.css               # Task manager styling (green theme)
 │   │   ├── main.jsx              # React entry point
 │   │   └── test/
 │   │       └── setup.js          # Test configuration
@@ -499,25 +499,124 @@ The project includes comprehensive security scanning via GitHub Actions (`.githu
 
 ## 🎨 Features
 
+### UI Design & Theme
+
+The application features a modern, clean interface with a **green color theme**:
+
+**Color Palette:**
+- **Primary Green** (`#10b981`): Main interactive elements, buttons, gradients
+- **Dark Green** (`#047857`): Gradient accents, hover states
+- **Teal** (`#14b8a6`): Edit buttons and secondary actions
+- **Semantic Colors**: Red for delete operations, gray for disabled states
+
+**Design Highlights:**
+- ✅ **Gradient Background**: Beautiful green gradient (`#10b981` to `#047857`)
+- ✅ **Modern UI Components**: Rounded corners, smooth shadows, hover effects
+- ✅ **Consistent Theme**: All interactive elements use green color scheme
+- ✅ **Accessibility**: High contrast, proper focus states, semantic colors
+- ✅ **Responsive Design**: Mobile-friendly layout with adaptive components
+- ✅ **Visual Feedback**: Loading states, hover effects, disabled states
+- ✅ **Professional Look**: Clean typography, proper spacing, smooth transitions
+
+**Theme Colors Mapping:**
+- Background gradient: `#10b981` → `#047857`
+- Primary buttons: `#10b981` (hover: `#059669`)
+- Edit buttons: `#14b8a6` (hover: `#0d9488`)
+- Delete buttons: `#fc8181` (hover: `#f56565`)
+- Delete All button: Red outline (`#dc2626`) with hover inversion
+- Input focus: `#10b981` border with soft shadow
+- Task hover: `#10b981` border with soft shadow
+- Checkbox accent: `#10b981`
+- Loading spinner: `#10b981`
+
 ### Task Management Features
 - ✅ **Create Tasks**: Add new tasks with title and description
 - ✅ **View Tasks**: Display all tasks ordered by creation date (newest first)
-- ✅ **Edit Tasks**: Update task title and description
+- ✅ **Edit Tasks**: Update task title and description inline
 - ✅ **Delete Tasks**: Remove individual tasks from the list
-- ✅ **Delete All Tasks**: Remove all tasks at once (bulk deletion)
+- ✅ **Delete All Tasks**: Bulk deletion with confirmation dialog (NEW)
 - ✅ **Toggle Completion**: Mark tasks as complete or incomplete
 - ✅ **Data Persistence**: Tasks persist across application restarts
 - ✅ **Input Validation**: Client and server-side validation
-- ✅ **Error Handling**: User-friendly error messages
+- ✅ **Error Handling**: User-friendly error messages with auto-dismiss
+- ✅ **Visual Distinction**: Completed tasks styled differently
+
+### Delete All Tasks Feature
+
+**Overview:**
+The Delete All Tasks button provides a quick way to clear all tasks from the application in a single operation.
+
+**Button Appearance:**
+- 🗑️ **Icon & Label**: "🗑️ Delete All Tasks"
+- **Color Scheme**: Red outline with white background
+- **Hover Effect**: Inverts to solid red background with white text
+- **Location**: Top-right of task list (above tasks)
+- **Visibility**: Only shown when tasks exist (hidden on empty list)
+
+**User Experience:**
+1. **Button Display**: Appears at the top-right of the task list when tasks exist
+2. **Click Action**: Shows confirmation dialog before deleting
+3. **Confirmation Dialog**: Browser native dialog with warning message
+4. **Confirmation Message**: "Are you sure you want to delete ALL tasks? This action cannot be undone."
+5. **Cancel Option**: User can cancel operation (no changes made)
+6. **Loading State**: Button shows "Deleting All..." during operation
+7. **Success**: All tasks removed, empty state message displayed
+8. **Error Handling**: Error message displayed if operation fails
+9. **Auto-dismiss**: Error messages automatically clear after 5 seconds
+
+**Button States:**
+- **Normal**: Red outline, white background, hover transforms to red fill
+- **Loading**: Shows "Deleting All..." text, button disabled
+- **Disabled**: Grayed out when tasks are loading or during operation
+- **Hidden**: Not visible when task list is empty
+
+**Safety Features:**
+- ✅ Requires user confirmation before executing
+- ✅ Clear warning message about permanent deletion
+- ✅ No accidental deletions (confirmation required)
+- ✅ Error recovery with clear error messages
+- ✅ Disabled state prevents multiple simultaneous operations
+- ✅ Button hidden when no tasks exist (prevents confusion)
+
+**Technical Implementation:**
+- **API Endpoint**: `DELETE /api/tasks` (bulk delete)
+- **Frontend State**: `deleteAllLoading` and `deleteAllError` states
+- **Confirmation**: Uses native `window.confirm()` dialog
+- **Optimistic UI**: Immediately clears tasks on success
+- **Error Recovery**: Shows error message, retains tasks on failure
+- **Responsive**: Full-width on mobile devices
+
+**Example Usage:**
+```bash
+# Using the UI
+1. Click "🗑️ Delete All Tasks" button
+2. Confirm in the dialog ("OK")
+3. All tasks are removed
+
+# Using the API directly
+curl -X DELETE http://localhost:8000/api/tasks
+```
+
+**Test Coverage:**
+- ✅ Button visibility (shows/hides based on task count)
+- ✅ Confirmation dialog display
+- ✅ Cancel confirmation (no deletion)
+- ✅ Successful deletion (all tasks removed)
+- ✅ Loading state during operation
+- ✅ Error handling and display
+- ✅ Button disabled states
+- ✅ Error message auto-dismiss
+- ✅ Mobile responsive layout
 
 ### Frontend Features
-- ✅ Responsive task management UI
+- ✅ Responsive task management UI with green theme
 - ✅ Task creation form with validation
 - ✅ Inline task editing
 - ✅ Visual distinction for completed tasks
 - ✅ Loading state indicators
 - ✅ Error handling with user messages
 - ✅ Empty state messaging
+- ✅ Delete All functionality with confirmation
 - ✅ Hot Module Replacement (HMR)
 - ✅ Environment-based configuration
 - ✅ ESLint + Prettier integration
@@ -633,12 +732,21 @@ curl -X DELETE http://localhost:8000/api/tasks
 - Clear all tasks during testing
 - Quick cleanup before starting fresh
 - Bulk task management
+- Remove all tasks with single click in UI
+
+**Frontend Integration:**
+- 🗑️ Delete All Tasks button in UI (top-right of task list)
+- Confirmation dialog before deletion
+- Loading state during operation
+- Error handling with user feedback
+- Button only visible when tasks exist
 
 **Notes:**
 - This endpoint is distinct from `DELETE /api/tasks/{task_id}` (single task deletion)
 - Operation is idempotent - can be called multiple times safely
 - No undo functionality - deleted tasks cannot be recovered
 - Works correctly even when task list is empty
+- Requires user confirmation in UI to prevent accidental deletions
 
 ### GET /health
 Health check endpoint.
@@ -744,17 +852,43 @@ See [backend/README_TESTS.md](backend/README_TESTS.md) for details.
 
 ### Frontend Test Coverage
 
+**Unit Tests:**
+- ✅ Component rendering
+- ✅ UI element visibility
+- ✅ Loading states
+- ✅ Error handling
+- ✅ Empty state display
+- ✅ Task list display
+- ✅ Delete All button visibility
+- ✅ Delete All confirmation dialog
+- ✅ Delete All loading states
+- ✅ Delete All error handling
+
 **Integration Tests:**
 - ✅ Task creation flow
 - ✅ Task editing flow
 - ✅ Task deletion flow
+- ✅ Delete All flow (with confirmation)
+- ✅ Delete All cancellation
 - ✅ Task completion toggle
-- ✅ Error handling
-- ✅ Loading states
-- ✅ Empty state display
+- ✅ Error handling for failed API calls
+- ✅ Loading state behaviors
+- ✅ Empty state transitions
 
 **Property-Based Tests:**
 - ✅ Task ordering consistency
+
+**Delete All Feature Tests:**
+- ✅ Button not shown when no tasks exist
+- ✅ Button shown when tasks exist
+- ✅ Confirmation dialog displayed on click
+- ✅ Tasks not deleted when confirmation cancelled
+- ✅ All tasks deleted when confirmation accepted
+- ✅ Loading state during operation
+- ✅ Error message displayed on failure
+- ✅ Error message auto-dismisses after 5 seconds
+- ✅ Button hidden after successful deletion
+- ✅ Button disabled during loading
 
 See [frontend/TEST_GUIDE.md](frontend/TEST_GUIDE.md) for details.
 
@@ -782,6 +916,11 @@ docker compose restart backend
 
 **Reset (Delete All Tasks):**
 ```bash
+# Using UI Delete All button (recommended)
+# 1. Open app in browser
+# 2. Click "🗑️ Delete All Tasks" button
+# 3. Confirm in dialog
+
 # Using API endpoint
 curl -X DELETE http://localhost:8000/api/tasks
 
@@ -895,6 +1034,11 @@ npm run format         # Fix formatting
 - Check linting first
 - Verify all dependencies installed
 - Review test output carefully
+
+**Delete All button not appearing:**
+- Verify tasks exist in the list
+- Check browser console for errors
+- Refresh the page
 
 ## 📝 Contributing
 
