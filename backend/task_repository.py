@@ -1,5 +1,4 @@
-"""
-Task Repository for file-based persistence.
+"""Task Repository for file-based persistence.
 
 This module provides a TaskRepository class that handles CRUD operations
 for tasks with JSON file-based persistence and in-memory caching.
@@ -8,14 +7,14 @@ for tasks with JSON file-based persistence and in-memory caching.
 import json
 import os
 from pathlib import Path
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
-from main import Task, TaskCreate, TaskUpdate
+if TYPE_CHECKING:
+    from main import Task, TaskCreate, TaskUpdate
 
 
 class TaskRepository:
-    """
-    Repository for managing task persistence with file-based storage.
+    """Repository for managing task persistence with file-based storage.
 
     Uses an in-memory cache for performance and writes through to a JSON file
     for persistence. Handles file I/O errors gracefully and ensures data
@@ -23,20 +22,19 @@ class TaskRepository:
     """
 
     def __init__(self, data_file: str = "/app/data/tasks.json"):
-        """
-        Initialize the task repository.
+        """Initialize the task repository.
 
         Args:
             data_file: Path to the JSON file for task storage
         """
         self.data_file = data_file
-        self._tasks: dict[str, Task] = {}
+        self._tasks: dict[str, "Task"] = {}
         self._ensure_data_directory()
         self._load()
 
     def _ensure_data_directory(self) -> None:
-        """
-        Ensure the data directory exists.
+        """Ensure the data directory exists.
+
         Creates the directory if it doesn't exist.
         """
         data_dir = Path(self.data_file).parent
@@ -47,11 +45,13 @@ class TaskRepository:
             raise
 
     def _load(self) -> None:
-        """
-        Load tasks from the JSON file into memory cache.
+        """Load tasks from the JSON file into memory cache.
+
         Creates an empty file if it doesn't exist.
         Handles file I/O errors gracefully.
         """
+        from main import Task
+
         try:
             if os.path.exists(self.data_file):
                 with open(self.data_file, "r") as f:
@@ -72,8 +72,8 @@ class TaskRepository:
             raise
 
     def _save(self) -> None:
-        """
-        Save tasks from memory cache to the JSON file.
+        """Save tasks from memory cache to the JSON file.
+
         Handles file I/O errors gracefully.
         """
         try:
@@ -85,9 +85,8 @@ class TaskRepository:
             print(f"Error saving tasks to {self.data_file}: {e}")
             raise
 
-    def get_all(self) -> List[Task]:
-        """
-        Retrieve all tasks.
+    def get_all(self) -> List["Task"]:
+        """Retrieve all tasks.
 
         Returns:
             List of all tasks, ordered by creation date (newest first)
@@ -97,9 +96,8 @@ class TaskRepository:
         tasks.sort(key=lambda t: t.created_at, reverse=True)
         return tasks
 
-    def get_by_id(self, task_id: str) -> Optional[Task]:
-        """
-        Retrieve a single task by ID.
+    def get_by_id(self, task_id: str) -> Optional["Task"]:
+        """Retrieve a single task by ID.
 
         Args:
             task_id: The unique identifier of the task
@@ -109,9 +107,8 @@ class TaskRepository:
         """
         return self._tasks.get(task_id)
 
-    def create(self, task_data: TaskCreate) -> Task:
-        """
-        Create a new task and persist it.
+    def create(self, task_data: "TaskCreate") -> "Task":
+        """Create a new task and persist it.
 
         Args:
             task_data: TaskCreate object with title and description
@@ -119,14 +116,15 @@ class TaskRepository:
         Returns:
             The newly created Task object
         """
+        from main import Task
+
         task = Task.create_new(task_data)
         self._tasks[task.id] = task
         self._save()
         return task
 
-    def update(self, task_id: str, task_data: TaskUpdate) -> Optional[Task]:
-        """
-        Update an existing task and persist the changes.
+    def update(self, task_id: str, task_data: "TaskUpdate") -> Optional["Task"]:
+        """Update an existing task and persist the changes.
 
         Args:
             task_id: The unique identifier of the task to update
@@ -145,8 +143,7 @@ class TaskRepository:
         return updated_task
 
     def delete(self, task_id: str) -> bool:
-        """
-        Delete a task and persist the change.
+        """Delete a task and persist the change.
 
         Args:
             task_id: The unique identifier of the task to delete
@@ -161,8 +158,7 @@ class TaskRepository:
         return False
 
     def delete_all(self) -> int:
-        """
-        Delete all tasks from the repository.
+        """Delete all tasks from the repository.
 
         Returns:
             The count of tasks deleted
