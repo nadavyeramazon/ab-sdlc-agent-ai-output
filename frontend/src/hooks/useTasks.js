@@ -22,7 +22,7 @@ export function useTasks() {
   const fetchTasks = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const data = await taskApi.getAllTasks();
       setTasks(data.tasks || []);
@@ -40,7 +40,7 @@ export function useTasks() {
    */
   const createTask = async (taskData) => {
     setError(null);
-    
+
     try {
       const newTask = await taskApi.createTask(taskData);
       // Optimistic update: add new task to the beginning of the list
@@ -60,21 +60,21 @@ export function useTasks() {
    */
   const updateTask = async (taskId, taskData) => {
     setError(null);
-    
+
     // Store original tasks for rollback on error
     const originalTasks = [...tasks];
-    
+
     // Optimistic update: update task in the list immediately
-    setTasks(tasks.map((task) => 
-      task.id === taskId ? { ...task, ...taskData } : task
-    ));
-    
+    setTasks(
+      tasks.map((task) => (task.id === taskId ? { ...task, ...taskData } : task))
+    );
+
     try {
       const updatedTask = await taskApi.updateTask(taskId, taskData);
       // Replace optimistic update with actual server response
-      setTasks(tasks.map((task) => 
-        task.id === taskId ? updatedTask : task
-      ));
+      setTasks(
+        tasks.map((task) => (task.id === taskId ? updatedTask : task))
+      );
       return true;
     } catch (err) {
       // Rollback on error
@@ -91,13 +91,13 @@ export function useTasks() {
    */
   const deleteTask = async (taskId) => {
     setError(null);
-    
+
     // Store original tasks for rollback on error
     const originalTasks = [...tasks];
-    
+
     // Optimistic update: remove task from list immediately
     setTasks(tasks.filter((task) => task.id !== taskId));
-    
+
     try {
       await taskApi.deleteTask(taskId);
       return true;
@@ -121,6 +121,30 @@ export function useTasks() {
     return updateTask(taskId, { completed: !currentStatus });
   };
 
+  /**
+   * Delete all tasks with optimistic update
+   * @returns {Promise<{success: boolean, deletedCount: number}>}
+   */
+  const deleteAllTasks = async () => {
+    setError(null);
+
+    // Store original tasks for rollback
+    const originalTasks = [...tasks];
+
+    // Optimistic update: clear all tasks
+    setTasks([]);
+
+    try {
+      const result = await taskApi.deleteAllTasks();
+      return { success: true, deletedCount: result.deletedCount };
+    } catch (err) {
+      // Rollback on error
+      setTasks(originalTasks);
+      setError(err.message);
+      return { success: false, deletedCount: 0 };
+    }
+  };
+
   // Fetch tasks on mount
   useEffect(() => {
     fetchTasks();
@@ -135,5 +159,6 @@ export function useTasks() {
     updateTask,
     deleteTask,
     toggleTaskComplete,
+    deleteAllTasks,
   };
 }
