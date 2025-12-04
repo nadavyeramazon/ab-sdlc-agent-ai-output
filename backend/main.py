@@ -1,10 +1,10 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 # Initialize FastAPI application with redirect_slashes disabled
 # This ensures that routes with trailing slashes are not automatically redirected
@@ -30,7 +30,8 @@ class TaskCreate(BaseModel):
     title: str
     description: str = ""
 
-    @validator("title")
+    @field_validator("title")
+    @classmethod
     def title_not_empty(cls, v):
         """
         Validate that title is not empty or whitespace-only.
@@ -52,7 +53,8 @@ class TaskCreate(BaseModel):
             raise ValueError("Title cannot exceed 200 characters")
         return v.strip()
 
-    @validator("description")
+    @field_validator("description")
+    @classmethod
     def description_length(cls, v):
         """
         Validate that description does not exceed maximum length.
@@ -79,7 +81,8 @@ class TaskUpdate(BaseModel):
     description: Optional[str] = None
     completed: Optional[bool] = None
 
-    @validator("title")
+    @field_validator("title")
+    @classmethod
     def title_not_empty(cls, v):
         """
         Validate that title is not empty or whitespace-only when provided.
@@ -103,7 +106,8 @@ class TaskUpdate(BaseModel):
             return v.strip()
         return v
 
-    @validator("description")
+    @field_validator("description")
+    @classmethod
     def description_length(cls, v):
         """
         Validate that description does not exceed maximum length when provided.
@@ -145,7 +149,7 @@ class Task(BaseModel):
         Returns:
             New Task instance with generated id and timestamps
         """
-        now = datetime.utcnow().isoformat() + "Z"
+        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
         return cls(
             id=str(uuid.uuid4()),
             title=task_data.title,
@@ -175,9 +179,9 @@ class Task(BaseModel):
         if update_data.completed is not None:
             updated_fields["completed"] = update_data.completed
 
-        updated_fields["updated_at"] = datetime.utcnow().isoformat() + "Z"
+        updated_fields["updated_at"] = datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
-        return self.copy(update=updated_fields)
+        return self.model_copy(update=updated_fields)
 
 
 @app.get("/health")
@@ -226,7 +230,7 @@ def get_all_tasks():
     """
     repository = get_task_repository()
     tasks = repository.get_all()
-    return {"tasks": [task.dict() for task in tasks]}
+    return {"tasks": [task.model_dump() for task in tasks]}
 
 
 @app.post("/api/tasks", status_code=201)
@@ -256,7 +260,7 @@ def create_task(task_data: TaskCreate):
     """
     repository = get_task_repository()
     task = repository.create(task_data)
-    return task.dict()
+    return task.model_dump()
 
 
 @app.get("/api/tasks/{task_id}")
@@ -287,7 +291,7 @@ def get_task(task_id: str):
     task = repository.get_by_id(task_id)
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
-    return task.dict()
+    return task.model_dump()
 
 
 @app.put("/api/tasks/{task_id}")
@@ -321,7 +325,7 @@ def update_task(task_id: str, task_data: TaskUpdate):
     task = repository.update(task_id, task_data)
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
-    return task.dict()
+    return task.model_dump()
 
 
 @app.delete("/api/tasks/{task_id}", status_code=204)

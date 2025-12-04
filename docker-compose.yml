@@ -1,16 +1,19 @@
 version: '3.8'
 
 services:
+  # ============================================
+  # Development Services (Default)
+  # ============================================
   backend:
     build:
       context: ./backend
+      target: development
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
       - backend-data:/app/data
     working_dir: /app
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     environment:
       - ENV=development
     networks:
@@ -19,19 +22,52 @@ services:
   frontend:
     build:
       context: ./frontend
+      target: development
     ports:
       - "3000:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
     working_dir: /app
-    command: npm run dev -- --host 0.0.0.0 --port 3000
     environment:
       - VITE_API_URL=http://localhost:8000
     depends_on:
       - backend
     networks:
       - app-network
+
+  # ============================================
+  # Production Services (--profile production)
+  # ============================================
+  backend-prod:
+    build:
+      context: ./backend
+      target: production
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend-data:/app/data
+    environment:
+      - ENV=production
+    networks:
+      - app-network
+    profiles:
+      - production
+
+  frontend-prod:
+    build:
+      context: ./frontend
+      target: production
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_URL=http://backend-prod:8000
+    depends_on:
+      - backend-prod
+    networks:
+      - app-network
+    profiles:
+      - production
 
 networks:
   app-network:

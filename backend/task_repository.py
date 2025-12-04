@@ -22,13 +22,25 @@ class TaskRepository:
     directory exists.
     """
 
-    def __init__(self, data_file: str = "/app/data/tasks.json"):
+    def __init__(self, data_file: Optional[str] = None):
         """
         Initialize the task repository.
 
         Args:
-            data_file: Path to the JSON file for task storage
+            data_file: Path to the JSON file for task storage.
+                      If None, uses DATA_FILE environment variable or defaults to
+                      ./data/tasks.json (local) or /app/data/tasks.json (Docker)
         """
+        if data_file is None:
+            # Check for environment variable first
+            data_file = os.environ.get("DATA_FILE")
+            if data_file is None:
+                # Use local path if /app doesn't exist (local dev), otherwise Docker path
+                if os.path.exists("/app"):
+                    data_file = "/app/data/tasks.json"
+                else:
+                    # Use relative path for local development
+                    data_file = os.path.join(os.path.dirname(__file__), "data", "tasks.json")
         self.data_file = data_file
         self._tasks: dict[str, Task] = {}
         self._ensure_data_directory()
@@ -57,7 +69,7 @@ class TaskRepository:
                 with open(self.data_file, "r") as f:
                     data = json.load(f)
                     # Convert list of dicts to dict of Task objects
-                    self._tasks = {task_dict["id"]: Task(**task_dict) for task_dict in data}
+                    self._tasks = {task_dict["id"]: Task.model_validate(task_dict) for task_dict in data}
             else:
                 # Initialize empty file
                 self._tasks = {}
@@ -78,7 +90,7 @@ class TaskRepository:
         """
         try:
             # Convert dict of Task objects to list of dicts
-            tasks_list = [task.dict() for task in self._tasks.values()]
+            tasks_list = [task.model_dump() for task in self._tasks.values()]
             with open(self.data_file, "w") as f:
                 json.dump(tasks_list, f, indent=2)
         except Exception as e:

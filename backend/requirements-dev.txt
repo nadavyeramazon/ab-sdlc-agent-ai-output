@@ -1,0 +1,13 @@
+# Development dependencies - inherit production dependencies
+-r requirements.txt
+
+# Testing
+pytest==8.3.4
+hypothesis==6.122.3
+httpx==0.28.1
+pytest-cov==6.0.0
+
+# Code quality and linting
+black==24.10.0
+ruff==0.8.4
+flake8==7.1.1

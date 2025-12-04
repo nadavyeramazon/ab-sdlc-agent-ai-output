@@ -200,6 +200,16 @@ npm run test:coverage
 
 ## 🔒 Security
 
+### Security Remediation
+
+**📋 [View Security Remediation Report](SECURITY_REMEDIATION.md)**
+
+All CRITICAL and HIGH severity vulnerabilities in application dependencies have been resolved. See the [Security Remediation Report](SECURITY_REMEDIATION.md) for:
+- Complete list of resolved CVEs
+- Updated dependency versions
+- System-level vulnerabilities requiring administrator action
+- Verification results and testing status
+
 ### Security Scanning Workflow
 
 The project includes comprehensive security scanning via GitHub Actions (`.github/workflows/security.yml`):
@@ -449,9 +459,9 @@ Automated dependency updates:
 - React-DOM 18.2.0 - React rendering
 
 **Development:**
-- Vite 4.3.0 - Build tool and dev server
-- @vitejs/plugin-react 4.0.0 - React plugin
-- Vitest 1.0.4 - Test framework
+- Vite 5.4.11 - Build tool and dev server (updated for security)
+- @vitejs/plugin-react 4.3.4 - React plugin (updated for compatibility)
+- Vitest 2.1.8 - Test framework (updated for security)
 - @testing-library/react 14.1.2 - Testing utilities
 - @testing-library/user-event 14.5.1 - User interaction
 - @testing-library/jest-dom 6.1.5 - DOM matchers
@@ -465,10 +475,11 @@ Automated dependency updates:
 
 ### Backend
 **Production:**
-- FastAPI 0.104.1 - Web framework
+- FastAPI 0.115.6 - Web framework (updated for security)
+- Starlette 0.41.3 - ASGI framework (updated for CVE-2024-47874)
 - Uvicorn[standard] 0.24.0 - ASGI server
 - Pydantic 2.5.0 - Data validation
-- python-multipart 0.0.6 - File upload support
+- python-multipart 0.0.18 - File upload support (updated for CVE-2024-53981, CVE-2024-24762)
 
 **Development & Testing:**
 - pytest 7.4.3 - Test framework

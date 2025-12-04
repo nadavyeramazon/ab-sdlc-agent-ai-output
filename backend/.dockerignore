@@ -1,0 +1,26 @@
+# Test directories and files
+tests/
+__pycache__/
+.pytest_cache/
+.hypothesis/
+*.pyc
+
+# Version control
+.git/
+
+# Development files
+*.md
+.env
+.env.*
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+*.egg-info/
+dist/
+build/

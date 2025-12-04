@@ -30,7 +30,7 @@ describe('App Component', () => {
     it('should render without crashing', async () => {
       render(<App />);
       expect(screen.getByText('Task Manager')).toBeInTheDocument();
-      
+
       // Wait for initial fetch to complete
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalled();
@@ -45,7 +45,7 @@ describe('App Component', () => {
 
       // Check for task section
       expect(screen.getByRole('heading', { name: /my tasks/i })).toBeInTheDocument();
-      
+
       // Wait for initial fetch to complete
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalled();
@@ -66,7 +66,7 @@ describe('App Component', () => {
 
       expect(document.querySelector('.app')).toBeInTheDocument();
       expect(document.querySelector('.container')).toBeInTheDocument();
-      
+
       // Wait for initial fetch to complete
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalled();
