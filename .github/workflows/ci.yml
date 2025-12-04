@@ -92,7 +92,7 @@ jobs:
       - name: Run health check
         working-directory: ./backend
         run: |
-          python -c "from main import app; print('Backend imports successfully')"
+          python -c "from app.main import app; print('Backend imports successfully')"
         continue-on-error: false
       
       - name: Run backend tests
@@ -184,6 +184,7 @@ jobs:
     name: Docker Build Verification
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: [backend-linting, frontend-linting]
     
     steps:
       - name: Checkout code
