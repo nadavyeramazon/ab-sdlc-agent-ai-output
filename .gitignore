@@ -1,8 +1,7 @@
 # Dependencies
 node_modules/
 
-# Lock files - DO NOT COMMIT
-package-lock.json
+# Lock files - yarn.lock and poetry.lock not used
 yarn.lock
 poetry.lock
 Pipfile.lock
