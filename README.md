@@ -110,7 +110,8 @@ npm test
 - ✅ **Create Tasks**: Add new tasks with title and description
 - ✅ **View Tasks**: Display all tasks ordered by creation date (newest first)
 - ✅ **Edit Tasks**: Update task title and description
-- ✅ **Delete Tasks**: Remove tasks from the list
+- ✅ **Delete Tasks**: Remove individual tasks from the list
+- ✅ **Delete All Tasks**: Clear all tasks at once
 - ✅ **Toggle Completion**: Mark tasks as complete or incomplete
 - ✅ **Data Persistence**: Tasks persist across application restarts
 - ✅ **Input Validation**: Client and server-side validation for data integrity
@@ -250,7 +251,7 @@ Update an existing task.
 ```
 
 ### DELETE /api/tasks/{task_id}
-Delete a task.
+Delete a specific task by ID.
 
 **Response (204 No Content):**
 No response body.
@@ -261,6 +262,39 @@ No response body.
   "detail": "Task not found"
 }
 ```
+
+### DELETE /api/tasks
+Delete all tasks at once.
+
+**Request Body:** None
+
+**Response (200 OK):**
+```json
+{
+  "message": "All tasks deleted",
+  "deletedCount": 5
+}
+```
+
+**Example Usage:**
+```bash
+# Delete all tasks using curl
+curl -X DELETE http://localhost:8000/api/tasks
+
+# Expected response
+{
+  "message": "All tasks deleted",
+  "deletedCount": 5
+}
+```
+
+**Use Cases:**
+- Clear all test data during development
+- Reset the task list quickly
+- Bulk cleanup operations
+- Starting fresh with an empty task list
+
+**Note:** This operation cannot be undone. All tasks are permanently deleted from the database.
 
 ### GET /health
 Returns the health status of the backend.
@@ -383,6 +417,7 @@ The backend test suite includes:
 
 **Unit Tests:**
 - ✅ All API endpoints (GET, POST, PUT, DELETE)
+- ✅ DELETE all tasks endpoint with empty list and existing tasks
 - ✅ Request validation (empty titles, length limits)
 - ✅ HTTP status codes (200, 201, 204, 404, 422)
 - ✅ Task repository CRUD operations
@@ -451,6 +486,8 @@ For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](fronte
 - [ ] Delete button removes task from list
 - [ ] Task removed immediately from UI
 - [ ] Deletion persists after page refresh
+- [ ] Delete all button clears all tasks
+- [ ] Delete all returns count of deleted tasks
 
 **Error Handling:**
 - [ ] Validation errors display clearly
@@ -824,7 +861,10 @@ docker compose restart mysql
 
 **Reset Data:**
 ```bash
-# Connect to MySQL and delete all tasks
+# Delete all tasks using the API
+curl -X DELETE http://localhost:8000/api/tasks
+
+# Or connect to MySQL and delete all tasks
 docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "DELETE FROM tasks;"
 
 # Or drop and recreate the database
