@@ -10,6 +10,8 @@ function TaskList({
   deleteLoading,
   onEdit,
   editLoading,
+  onDeleteAll,
+  deleteAllLoading,
 }) {
   if (loading) {
     return <div className="loading">Loading tasks...</div>;
@@ -24,23 +26,38 @@ function TaskList({
   }
 
   return (
-    <div className="task-list">
-      {tasks.map((task) => {
-        const isDisabled =
-          toggleLoading === task.id || deleteLoading === task.id || editLoading === task.id;
-        
-        return (
-          <TaskItem
-            key={task.id}
-            task={task}
-            onToggle={onToggleComplete}
-            onDelete={onDelete}
-            onEdit={onEdit}
-            disabled={isDisabled}
-          />
-        );
-      })}
-    </div>
+    <>
+      <div className="delete-all-container">
+        <button
+          onClick={onDeleteAll}
+          disabled={deleteAllLoading || loading}
+          className="btn-delete-all"
+          aria-label="Delete all tasks"
+        >
+          {deleteAllLoading ? 'Deleting All...' : '🗑️ Delete All Tasks'}
+        </button>
+      </div>
+      <div className="task-list">
+        {tasks.map((task) => {
+          const isDisabled =
+            toggleLoading === task.id ||
+            deleteLoading === task.id ||
+            editLoading === task.id ||
+            deleteAllLoading;
+
+          return (
+            <TaskItem
+              key={task.id}
+              task={task}
+              onToggle={onToggleComplete}
+              onDelete={onDelete}
+              onEdit={onEdit}
+              disabled={isDisabled}
+            />
+          );
+        })}
+      </div>
+    </>
   );
 }
 

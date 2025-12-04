@@ -15,6 +15,7 @@ function App() {
     updateTask,
     deleteTask,
     toggleTaskComplete,
+    deleteAllTasks,
   } = useTasks();
 
   // Local state for edit mode
@@ -25,19 +26,20 @@ function App() {
   const [createError, setCreateError] = useState('');
   const [toggleLoading, setToggleLoading] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
 
   // Handle task creation
   const handleCreateTask = async (taskData) => {
     setCreateLoading(true);
     setCreateError('');
-    
+
     const success = await createTask(taskData);
-    
+
     setCreateLoading(false);
     if (!success) {
       setCreateError(error || 'Failed to create task');
     }
-    
+
     return success;
   };
 
@@ -51,7 +53,7 @@ function App() {
     const success = await updateTask(editingTask.id, taskData);
 
     setEditLoading(false);
-    
+
     if (success) {
       setEditingTask(null);
     } else {
@@ -73,6 +75,20 @@ function App() {
     setToggleLoading(taskId);
     await toggleTaskComplete(taskId, currentStatus);
     setToggleLoading(null);
+  };
+
+  // Handle delete all tasks
+  const handleDeleteAllTasks = async () => {
+    if (
+      !window.confirm(
+        'Are you sure you want to delete ALL tasks? This action cannot be undone.'
+      )
+    ) {
+      return;
+    }
+    setDeleteAllLoading(true);
+    await deleteAllTasks();
+    setDeleteAllLoading(false);
   };
 
   // Start editing a task
@@ -125,6 +141,8 @@ function App() {
               deleteLoading={deleteLoading}
               onEdit={startEditTask}
               editLoading={editLoading}
+              onDeleteAll={handleDeleteAllTasks}
+              deleteAllLoading={deleteAllLoading}
             />
           </div>
         </div>
