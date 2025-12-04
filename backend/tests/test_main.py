@@ -98,9 +98,12 @@ def client() -> Generator[TestClient, None, None]:
     global mock_tasks
     mock_tasks = {}
 
-    # Mock the repository initialization
+    # Create a single mock repository instance to reuse
+    mock_repo = create_mock_repository()
+
+    # Mock the repository initialization and dependency
     with patch('app.repositories.task_repository.TaskRepository._initialize_database'):
-        with patch('app.dependencies.get_task_repository', side_effect=create_mock_repository):
+        with patch('app.dependencies.get_task_repository', return_value=mock_repo):
             test_app = create_app()
             test_client = TestClient(test_app)
             yield test_client
