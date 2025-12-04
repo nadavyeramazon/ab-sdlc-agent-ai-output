@@ -22,6 +22,7 @@ dist/
 build/
 *.kiro
 *backend/.hypothesis*
+**/.venv/**
 
 # Testing
 .pytest_cache/

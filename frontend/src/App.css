@@ -5,9 +5,9 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f5f7fa;
@@ -58,21 +58,21 @@ h1 {
   .app {
     padding: 1rem 0.5rem;
   }
-  
+
   .container {
     padding: 1.5rem;
   }
-  
+
   .app-header {
     flex-direction: column;
     gap: 0.75rem;
   }
-  
+
   .app-logo {
     width: 48px;
     height: 48px;
   }
-  
+
   h1 {
     font-size: 2rem;
     margin-bottom: 0;
@@ -229,7 +229,8 @@ h1 {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -310,7 +311,7 @@ h1 {
   .form-actions {
     flex-direction: column;
   }
-  
+
   .btn-primary,
   .btn-secondary {
     width: 100%;
@@ -411,7 +412,7 @@ h1 {
     flex-direction: column;
     gap: 0.75rem;
   }
-  
+
   .task-title {
     font-size: 1rem;
   }
@@ -497,7 +498,7 @@ h1 {
     width: 100%;
     justify-content: flex-start;
   }
-  
+
   .btn-edit,
   .btn-delete {
     flex: 1;
@@ -548,7 +549,7 @@ h1 {
   .task-description {
     font-size: 0.875rem;
   }
-  
+
   .no-tasks {
     padding: 2rem 1rem;
     font-size: 1rem;

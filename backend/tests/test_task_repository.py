@@ -11,8 +11,8 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from main import TaskCreate
-from task_repository import TaskRepository
+from app.models.task import TaskCreate
+from app.repositories.task_repository import TaskRepository
 
 
 # Custom strategies for generating test data

@@ -1,61 +1,27 @@
 """
-FastAPI Task Manager Application.
+Task management route module.
 
-This module provides a RESTful API for managing tasks with CRUD operations.
+This module provides RESTful API endpoints for task CRUD operations.
 """
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter, HTTPException, Depends
 
-from models import TaskCreate, TaskUpdate
-from task_repository import TaskRepository
+from app.models.task import TaskCreate, TaskUpdate
+from app.services.task_service import TaskService
+from app.dependencies import get_task_service
 
-# Initialize FastAPI application with redirect_slashes disabled
-# This ensures that routes with trailing slashes are not automatically redirected
-# and will return 404 if not explicitly defined
-app = FastAPI(
-    title="Task Manager API",
-    description="A RESTful API for managing tasks",
-    version="1.0.0",
-    redirect_slashes=False,
-)
-
-# Configure CORS middleware to allow frontend access
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # React frontend
-    allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
-)
-
-# Initialize task repository (lazy initialization)
-_task_repository: TaskRepository | None = None
+router = APIRouter(tags=["Tasks"])
 
 
-def get_task_repository() -> TaskRepository:
-    """Get or create the task repository instance."""
-    global _task_repository
-    if _task_repository is None:
-        _task_repository = TaskRepository()
-    return _task_repository
-
-
-@app.get("/health", tags=["Health"])
-def health_check() -> dict[str, str]:
-    """
-    Health check endpoint for monitoring.
-
-    Returns:
-        Dictionary with status information
-    """
-    return {"status": "healthy"}
-
-
-@app.get("/api/tasks", tags=["Tasks"])
-def get_all_tasks() -> dict[str, list[dict]]:
+@router.get("/tasks")
+def get_all_tasks(
+    service: TaskService = Depends(get_task_service)
+) -> dict[str, list[dict]]:
     """
     Retrieve all tasks.
+
+    Args:
+        service: Injected TaskService instance
 
     Returns:
         JSON response containing list of all tasks ordered by creation date (newest first)
@@ -74,18 +40,21 @@ def get_all_tasks() -> dict[str, list[dict]]:
             ]
         }
     """
-    repository = get_task_repository()
-    tasks = repository.get_all()
+    tasks = service.get_all_tasks()
     return {"tasks": [task.model_dump() for task in tasks]}
 
 
-@app.post("/api/tasks", status_code=201, tags=["Tasks"])
-def create_task(task_data: TaskCreate) -> dict:
+@router.post("/tasks", status_code=201)
+def create_task(
+    task_data: TaskCreate,
+    service: TaskService = Depends(get_task_service)
+) -> dict:
     """
     Create a new task.
 
     Args:
         task_data: TaskCreate object with title and description
+        service: Injected TaskService instance
 
     Returns:
         Created task object with generated ID and timestamps
@@ -104,18 +73,21 @@ def create_task(task_data: TaskCreate) -> dict:
             "updated_at": "2024-01-15T10:30:00.000000Z"
         }
     """
-    repository = get_task_repository()
-    task = repository.create(task_data)
+    task = service.create_task(task_data)
     return task.model_dump()
 
 
-@app.get("/api/tasks/{task_id}", tags=["Tasks"])
-def get_task(task_id: str) -> dict:
+@router.get("/tasks/{task_id}")
+def get_task(
+    task_id: str,
+    service: TaskService = Depends(get_task_service)
+) -> dict:
     """
     Retrieve a single task by ID.
 
     Args:
         task_id: The unique identifier of the task
+        service: Injected TaskService instance
 
     Returns:
         Task object if found
@@ -133,21 +105,25 @@ def get_task(task_id: str) -> dict:
             "updated_at": "2024-01-15T10:30:00.000000Z"
         }
     """
-    repository = get_task_repository()
-    task = repository.get_by_id(task_id)
+    task = service.get_task_by_id(task_id)
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
     return task.model_dump()
 
 
-@app.put("/api/tasks/{task_id}", tags=["Tasks"])
-def update_task(task_id: str, task_data: TaskUpdate) -> dict:
+@router.put("/tasks/{task_id}")
+def update_task(
+    task_id: str,
+    task_data: TaskUpdate,
+    service: TaskService = Depends(get_task_service)
+) -> dict:
     """
     Update an existing task.
 
     Args:
         task_id: The unique identifier of the task to update
         task_data: TaskUpdate object with fields to update
+        service: Injected TaskService instance
 
     Returns:
         Updated task object
@@ -167,20 +143,23 @@ def update_task(task_id: str, task_data: TaskUpdate) -> dict:
             "updated_at": "2024-01-15T10:35:00.000000Z"
         }
     """
-    repository = get_task_repository()
-    task = repository.update(task_id, task_data)
+    task = service.update_task(task_id, task_data)
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
     return task.model_dump()
 
 
-@app.delete("/api/tasks/{task_id}", status_code=204, tags=["Tasks"])
-def delete_task(task_id: str) -> None:
+@router.delete("/tasks/{task_id}", status_code=204)
+def delete_task(
+    task_id: str,
+    service: TaskService = Depends(get_task_service)
+) -> None:
     """
     Delete a task.
 
     Args:
         task_id: The unique identifier of the task to delete
+        service: Injected TaskService instance
 
     Returns:
         No content (204 status)
@@ -191,8 +170,7 @@ def delete_task(task_id: str) -> None:
     Example:
         Response: No content with 204 status code
     """
-    repository = get_task_repository()
-    success = repository.delete(task_id)
+    success = service.delete_task(task_id)
     if not success:
         raise HTTPException(status_code=404, detail="Task not found")
     return None

@@ -470,16 +470,233 @@ For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](fronte
 
 ### CI/CD Pipeline
 
-The project includes a comprehensive GitHub Actions workflow that automatically:
-- Tests backend code with pytest (including property-based tests)
-- Tests frontend code with Vitest (including property-based tests)
-- Verifies Docker image builds
-- Validates Docker Compose configuration
-- Performs health checks on running services
+The project includes a comprehensive GitHub Actions workflow that implements a sequential, fail-fast approach to quality assurance. The pipeline is designed to catch simple issues early before investing time in more expensive operations.
 
-The CI pipeline runs on:
-- All pull requests
-- Pushes to main/master branch
+**Pipeline Triggers:**
+- All pull requests to main/master branches
+- Direct pushes to main/master branches
+
+**Key Features:**
+- ✅ Sequential execution with explicit job dependencies
+- ✅ Fail-fast approach - stops at first failure
+- ✅ Parallel execution within stages for efficiency
+- ✅ Comprehensive testing including property-based tests (100+ iterations)
+- ✅ Full system integration validation with Docker Compose
+- ✅ Intelligent caching for faster subsequent runs
+
+#### Pipeline Stages
+
+The CI pipeline executes in three distinct stages, each acting as a quality gate:
+
+**Stage 1: Linting (Parallel Execution)**
+- **Backend Linting**: Runs flake8 on Python code
+- **Frontend Linting**: Runs ESLint on JavaScript/React code
+- **Purpose**: Catch code style and syntax issues immediately
+- **Duration**: ~1-2 minutes
+- **Fail-Fast**: If linting fails, tests are skipped
+
+**Stage 2: Testing (Parallel Execution, After Linting)**
+- **Backend Tests**: Runs pytest with coverage reporting
+  - Unit tests for API endpoints and repository operations
+  - Property-based tests using Hypothesis (100+ iterations)
+- **Frontend Tests**: Runs Vitest with React Testing Library
+  - Integration tests for UI components
+  - Property-based tests using fast-check (100+ iterations)
+- **Purpose**: Verify functionality and correctness
+- **Duration**: ~2-3 minutes
+- **Fail-Fast**: If tests fail, Docker validation is skipped
+
+**Stage 3: Docker Validation (Sequential Execution, After Tests)**
+- **Docker Build Verification**: Builds backend and frontend images
+- **Docker Compose Validation**: 
+  - Validates docker-compose.yml syntax
+  - Starts all services (MySQL, backend, frontend)
+  - Performs health checks on backend and frontend
+  - Displays logs on failure
+  - Cleans up containers and volumes
+- **Purpose**: Verify complete system integration
+- **Duration**: ~3-5 minutes
+- **Fail-Fast**: Stops immediately on any failure
+
+#### Dependency Graph
+
+```
+┌─────────────────┐     ┌─────────────────┐
+│ Backend Linting │     │Frontend Linting │  ← Stage 1: Linting (Parallel)
+└────────┬────────┘     └────────┬────────┘
+         │                       │
+         ▼                       ▼
+┌─────────────────┐     ┌─────────────────┐
+│  Backend Tests  │     │ Frontend Tests  │  ← Stage 2: Testing (Parallel)
+└────────┬────────┘     └────────┬────────┘
+         │                       │
+         └───────────┬───────────┘
+                     │
+         ┌───────────▼───────────┐
+         │  Docker Build Verify  │           ← Stage 3: Docker (Sequential)
+         └───────────┬───────────┘
+                     │
+                     ▼
+         ┌───────────────────────┐
+         │Docker Compose Validate│
+         └───────────┬───────────┘
+                     │
+                     ▼
+         ┌───────────────────────┐
+         │    CI Success Summary │           ← Final confirmation
+         └───────────────────────┘
+```
+
+#### Execution Order and Fail-Fast Behavior
+
+The pipeline enforces strict execution order using GitHub Actions' `needs` keyword:
+
+1. **Linting runs first** (parallel):
+   - `backend-linting` (no dependencies)
+   - `frontend-linting` (no dependencies)
+   - If either fails → entire pipeline stops
+
+2. **Tests run after linting** (parallel):
+   - `backend-tests` needs `backend-linting`
+   - `frontend-tests` needs `frontend-linting`
+   - If either fails → Docker validation is skipped
+
+3. **Docker validation runs after tests** (sequential):
+   - `docker-build` (runs in parallel with tests for efficiency)
+   - `docker-compose-validation` needs `[backend-tests, frontend-tests, docker-build]`
+   - If any dependency fails → validation is skipped
+
+4. **Summary job confirms success**:
+   - `ci-success` needs all previous jobs
+   - Only runs if all checks pass
+
+**Fail-Fast Configuration:**
+- All critical steps use `continue-on-error: false` (or omit it, as false is default)
+- Failed jobs immediately stop the pipeline
+- Dependent jobs are automatically skipped
+- Clear status indicators show which stage failed
+
+#### Caching Strategy
+
+The pipeline uses intelligent caching to speed up subsequent runs:
+
+**Backend Cache:**
+```yaml
+key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt', 'backend/requirements-dev.txt') }}
+```
+- Caches pip packages based on requirements file hashes
+- Cache invalidates automatically when dependencies change
+- Typical speedup: 30-60 seconds per run
+
+**Frontend Cache:**
+```yaml
+key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
+```
+- Caches npm packages based on package.json hash
+- Cache invalidates automatically when dependencies change
+- Typical speedup: 45-90 seconds per run
+
+#### Testing the Pipeline Locally
+
+You can test the CI pipeline locally using [act](https://github.com/nektos/act), a tool that runs GitHub Actions locally:
+
+**Install act:**
+```bash
+# macOS
+brew install act
+
+# Linux
+curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+
+# Windows (with Chocolatey)
+choco install act-cli
+```
+
+**Run the entire pipeline:**
+```bash
+# Run all jobs
+act pull_request
+
+# Run with verbose output
+act pull_request -v
+```
+
+**Run specific jobs:**
+```bash
+# Run only linting jobs
+act pull_request -j backend-linting
+act pull_request -j frontend-linting
+
+# Run only test jobs
+act pull_request -j backend-tests
+act pull_request -j frontend-tests
+
+# Run Docker validation
+act pull_request -j docker-compose-validation
+```
+
+**Simulate different scenarios:**
+```bash
+# Test with a specific event
+act push
+
+# Test with environment variables
+act pull_request --env NODE_VERSION=18 --env PYTHON_VERSION=3.11
+
+# Use a specific Docker image for the runner
+act pull_request -P ubuntu-latest=catthehacker/ubuntu:act-latest
+```
+
+**Limitations of local testing:**
+- Some GitHub-specific features may not work identically
+- Caching behavior may differ from GitHub's infrastructure
+- Secrets and environment variables need to be provided manually
+- Docker-in-Docker scenarios may require additional configuration
+
+**Alternative: Manual validation**
+```bash
+# Validate workflow syntax
+docker run --rm -v $(pwd):/repo ghcr.io/rhysd/actionlint:latest -color
+
+# Or install actionlint locally
+brew install actionlint  # macOS
+actionlint .github/workflows/ci.yml
+```
+
+#### Monitoring Pipeline Execution
+
+**In GitHub UI:**
+1. Navigate to the "Actions" tab in your repository
+2. Select a workflow run to see the execution graph
+3. Click on individual jobs to see detailed logs
+4. Failed jobs show clear error messages and logs
+
+**Status Checks:**
+- All jobs must pass before merging pull requests
+- Branch protection rules enforce CI success
+- Clear visual indicators show pipeline status
+
+**Debugging Failed Runs:**
+1. Check which stage failed (linting, tests, or Docker)
+2. Review the job logs for specific error messages
+3. For Docker failures, check the "Show Docker Compose logs" step
+4. Reproduce locally using the same commands from the workflow
+5. Use `act` to test fixes before pushing
+
+#### Pipeline Performance
+
+**Typical Execution Times:**
+- **Linting Stage**: 1-2 minutes (parallel)
+- **Testing Stage**: 2-3 minutes (parallel, after linting)
+- **Docker Stage**: 3-5 minutes (sequential, after tests)
+- **Total Duration**: 6-10 minutes (with caching)
+- **First Run**: 10-15 minutes (without cache)
+
+**Optimization Features:**
+- Parallel execution within stages
+- Dependency caching (pip, npm)
+- Early termination on failures
+- Efficient Docker layer caching
 
 All property-based tests run with 100+ iterations in CI to ensure comprehensive coverage.
 

@@ -1,12 +1,12 @@
 """
-Data models for the Task Manager application.
+Task data models for the Task Manager application.
 
-This module contains all Pydantic models used for request/response validation
-and data representation.
+This module contains Pydantic models for task-related operations including
+request validation, response serialization, and data representation.
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from pydantic import BaseModel, field_validator
@@ -137,7 +137,7 @@ class Task(BaseModel):
         Returns:
             New Task instance with generated id and timestamps
         """
-        now = datetime.utcnow().isoformat() + "Z"
+        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         return cls(
             id=str(uuid.uuid4()),
             title=task_data.title,
@@ -167,6 +167,6 @@ class Task(BaseModel):
         if update_data.completed is not None:
             updated_fields["completed"] = update_data.completed
 
-        updated_fields["updated_at"] = datetime.utcnow().isoformat() + "Z"
+        updated_fields["updated_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
         return self.model_copy(update=updated_fields)

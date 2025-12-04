@@ -12,7 +12,7 @@ from typing import List, Optional
 import mysql.connector
 from mysql.connector import Error
 
-from models import Task, TaskCreate, TaskUpdate
+from app.models.task import Task, TaskCreate, TaskUpdate
 
 
 class TaskRepository:

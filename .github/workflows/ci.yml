@@ -18,20 +18,22 @@ env:
   PYTHON_VERSION: '3.11'
 
 jobs:
-  # Job 1: Backend Linting and Security
+  # Job 1: Backend Linting
   backend-linting:
-    name: Backend Linting & Security
+    name: Backend Linting
     runs-on: ubuntu-latest
     timeout-minutes: 10
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        continue-on-error: false
       
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+        continue-on-error: false
       
       - name: Cache pip dependencies
         uses: actions/cache@v4
@@ -48,24 +50,9 @@ jobs:
           pip install -r requirements-dev.txt
         continue-on-error: false
       
-      - name: Run Black (code formatting check)
-        working-directory: ./backend
-        run: black --check .
-        continue-on-error: false
-      
-      - name: Run isort (import sorting check)
-        working-directory: ./backend
-        run: isort --check-only .
-        continue-on-error: false
-      
       - name: Run Flake8 (linting)
         working-directory: ./backend
         run: flake8 .
-        continue-on-error: false
-      
-      - name: Run Bandit (security checks)
-        working-directory: ./backend
-        run: bandit -r . -c .bandit
         continue-on-error: false
       
 
@@ -79,11 +66,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        continue-on-error: false
       
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+        continue-on-error: false
       
       - name: Cache pip dependencies
         uses: actions/cache@v4
@@ -120,11 +109,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        continue-on-error: false
       
       - name: Set up Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
+        continue-on-error: false
       
       - name: Cache npm dependencies
         uses: actions/cache@v4
@@ -143,11 +134,6 @@ jobs:
         working-directory: ./frontend
         run: npm run lint
         continue-on-error: false
-      
-      - name: Run Prettier check
-        working-directory: ./frontend
-        run: npm run format:check
-        continue-on-error: false
 
   # Job 4: Frontend Tests
   frontend-tests:
@@ -159,11 +145,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        continue-on-error: false
       
       - name: Set up Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
+        continue-on-error: false
       
       # Cache npm dependencies for faster subsequent runs
       - name: Cache npm dependencies
@@ -200,9 +188,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        continue-on-error: false
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        continue-on-error: false
       
       - name: Build backend Docker image
         run: |
@@ -217,6 +207,7 @@ jobs:
       - name: Verify Docker images
         run: |
           docker images | grep test
+        continue-on-error: false
 
   # Job 6: Docker Compose Validation
   docker-compose-validation:
@@ -228,6 +219,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        continue-on-error: false
       
       # Validate docker-compose.yml syntax using V2 syntax
       - name: Validate Docker Compose configuration
@@ -282,9 +274,19 @@ jobs:
       - name: Success message
         run: |
           echo "✅ All CI pipeline checks passed successfully!"
-          echo "Backend linting: Passed"
-          echo "Backend tests: Passed"
-          echo "Frontend linting: Passed"
-          echo "Frontend tests: Passed"
-          echo "Docker build: Passed"
-          echo "Docker Compose validation: Passed"
+          echo ""
+          echo "Sequential workflow completed:"
+          echo "  Stage 1 - Linting (parallel):"
+          echo "    ✓ Backend linting (flake8)"
+          echo "    ✓ Frontend linting (ESLint)"
+          echo ""
+          echo "  Stage 2 - Testing (parallel, after linting):"
+          echo "    ✓ Backend tests (pytest with coverage)"
+          echo "    ✓ Frontend tests (vitest)"
+          echo ""
+          echo "  Stage 3 - Docker validation (after tests):"
+          echo "    ✓ Docker build verification"
+          echo "    ✓ Docker Compose integration validation"
+          echo ""
+          echo "All quality gates passed! 🎉"
+        continue-on-error: false

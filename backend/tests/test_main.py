@@ -20,7 +20,7 @@ from fastapi.testclient import TestClient
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from main import app
+from app.main import app, create_app
 
 
 # Test client fixture
@@ -39,9 +39,9 @@ def client() -> Generator[TestClient, None, None]:
     os.environ["DB_NAME"] = "taskmanager"
 
     # Reset the global repository instance
-    import main
+    from app import dependencies
 
-    main._task_repository = None
+    dependencies._task_repository = None
 
     test_client = TestClient(app)
 
@@ -49,7 +49,86 @@ def client() -> Generator[TestClient, None, None]:
 
     # Cleanup
     shutil.rmtree(temp_dir, ignore_errors=True)
-    main._task_repository = None
+    dependencies._task_repository = None
+
+
+class TestApplicationInitialization:
+    """Integration tests for application initialization and configuration"""
+
+    def test_app_starts_successfully(self) -> None:
+        """Test that app starts successfully using create_app factory"""
+        app_instance = create_app()
+
+        assert app_instance is not None
+        assert app_instance.title == "Task Manager API"
+        assert app_instance.description == "A RESTful API for managing tasks"
+        assert app_instance.version == "1.0.0"
+
+    def test_all_routes_are_registered(self) -> None:
+        """Test that all routes are registered correctly"""
+        app_instance = create_app()
+        client = TestClient(app_instance)
+
+        # Test health route is registered
+        response = client.get("/health")
+        assert response.status_code == 200
+
+        # Test task routes are registered with /api prefix
+        response = client.get("/api/tasks")
+        assert response.status_code == 200
+
+        # Test individual task route
+        response = client.post("/api/tasks", json={"title": "Test", "description": "Test"})
+        assert response.status_code == 201
+        task_id = response.json()["id"]
+
+        response = client.get(f"/api/tasks/{task_id}")
+        assert response.status_code == 200
+
+        response = client.put(f"/api/tasks/{task_id}", json={"title": "Updated"})
+        assert response.status_code == 200
+
+        response = client.delete(f"/api/tasks/{task_id}")
+        assert response.status_code == 204
+
+    def test_cors_is_configured(self) -> None:
+        """Test that CORS middleware is configured correctly"""
+        app_instance = create_app()
+        client = TestClient(app_instance)
+
+        # Make request with Origin header
+        response = client.get("/api/tasks", headers={"Origin": "http://localhost:3000"})
+
+        # Check CORS headers are present
+        assert "access-control-allow-origin" in response.headers
+        assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
+
+    def test_openapi_docs_accessible(self) -> None:
+        """Test that OpenAPI documentation is accessible"""
+        app_instance = create_app()
+        client = TestClient(app_instance)
+
+        # Test OpenAPI JSON endpoint
+        response = client.get("/openapi.json")
+        assert response.status_code == 200
+
+        openapi_spec = response.json()
+        assert openapi_spec["info"]["title"] == "Task Manager API"
+        assert openapi_spec["info"]["description"] == "A RESTful API for managing tasks"
+        assert openapi_spec["info"]["version"] == "1.0.0"
+
+        # Verify routes are documented
+        assert "/health" in openapi_spec["paths"]
+        assert "/api/tasks" in openapi_spec["paths"]
+        assert "/api/tasks/{task_id}" in openapi_spec["paths"]
+
+        # Test Swagger UI endpoint
+        response = client.get("/docs")
+        assert response.status_code == 200
+
+        # Test ReDoc endpoint
+        response = client.get("/redoc")
+        assert response.status_code == 200
 
 
 class TestHealthEndpoint:
