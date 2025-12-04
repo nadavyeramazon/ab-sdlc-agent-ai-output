@@ -67,11 +67,17 @@ def create_mock_repository():
             return True
         return False
 
+    def delete_all():
+        count = len(mock_tasks)
+        mock_tasks.clear()
+        return count
+
     repo.get_all = get_all
     repo.get_by_id = get_by_id
     repo.create = create
     repo.update = update
     repo.delete = delete
+    repo.delete_all = delete_all
 
     return repo
 
@@ -199,3 +205,126 @@ class TestPersistenceAcrossRestarts:
                 assert loaded.updated_at == expected["updated_at"]
 
         mock_tasks = {}
+
+
+class TestDeleteAllTasks:
+    """
+    Unit tests for delete_all method in TaskRepository.
+    Tests the ability to delete all tasks from the database.
+    """
+
+    def test_delete_all_with_no_tasks(self, test_repo):
+        """Test delete_all returns 0 when no tasks exist."""
+        count = test_repo.delete_all()
+        assert count == 0
+        assert len(test_repo.get_all()) == 0
+
+    def test_delete_all_with_single_task(self, test_repo):
+        """Test delete_all removes single task and returns count 1."""
+        # Create a task
+        task_data = TaskCreate(title="Test Task", description="Description")
+        test_repo.create(task_data)
+
+        # Verify task exists
+        assert len(test_repo.get_all()) == 1
+
+        # Delete all tasks
+        count = test_repo.delete_all()
+
+        # Verify count and that no tasks remain
+        assert count == 1
+        assert len(test_repo.get_all()) == 0
+
+    def test_delete_all_with_multiple_tasks(self, test_repo):
+        """Test delete_all removes all tasks and returns correct count."""
+        # Create multiple tasks
+        task_count = 5
+        for i in range(task_count):
+            task_data = TaskCreate(
+                title=f"Task {i}",
+                description=f"Description {i}"
+            )
+            test_repo.create(task_data)
+
+        # Verify tasks exist
+        assert len(test_repo.get_all()) == task_count
+
+        # Delete all tasks
+        count = test_repo.delete_all()
+
+        # Verify count and that no tasks remain
+        assert count == task_count
+        assert len(test_repo.get_all()) == 0
+
+    @settings(max_examples=10, deadline=2000)
+    @given(tasks_data=st.lists(task_create_strategy(), min_size=1, max_size=10))
+    def test_delete_all_property_removes_all_tasks(self, tasks_data):
+        """
+        Property: delete_all removes all tasks regardless of count.
+        For any set of tasks, delete_all should remove all tasks and
+        return the correct count.
+        """
+        global mock_tasks
+        mock_tasks = {}
+
+        with patch('app.repositories.task_repository.TaskRepository._initialize_database'):
+            repo = create_mock_repository()
+
+            # Create tasks
+            for task_data in tasks_data:
+                repo.create(task_data)
+
+            expected_count = len(tasks_data)
+
+            # Delete all tasks
+            deleted_count = repo.delete_all()
+
+            # Verify count matches
+            assert deleted_count == expected_count
+
+            # Verify no tasks remain
+            assert len(repo.get_all()) == 0
+
+        mock_tasks = {}
+
+    def test_delete_all_idempotent(self, test_repo):
+        """Test that calling delete_all multiple times is safe."""
+        # Create some tasks
+        for i in range(3):
+            task_data = TaskCreate(title=f"Task {i}", description="Description")
+            test_repo.create(task_data)
+
+        # First delete_all
+        count1 = test_repo.delete_all()
+        assert count1 == 3
+        assert len(test_repo.get_all()) == 0
+
+        # Second delete_all (no tasks)
+        count2 = test_repo.delete_all()
+        assert count2 == 0
+        assert len(test_repo.get_all()) == 0
+
+    def test_delete_all_with_completed_and_incomplete_tasks(self, test_repo):
+        """Test delete_all removes both completed and incomplete tasks."""
+        # Create completed tasks
+        for i in range(3):
+            task_data = TaskCreate(title=f"Completed {i}", description="Done")
+            task = test_repo.create(task_data)
+            # Mark as completed
+            from app.models.task import TaskUpdate
+            test_repo.update(task.id, TaskUpdate(completed=True))
+
+        # Create incomplete tasks
+        for i in range(2):
+            task_data = TaskCreate(title=f"Incomplete {i}", description="Not done")
+            test_repo.create(task_data)
+
+        # Verify all tasks exist
+        assert len(test_repo.get_all()) == 5
+
+        # Delete all tasks
+        count = test_repo.delete_all()
+
+        # Verify all tasks removed
+        assert count == 5
+        assert len(test_repo.get_all()) == 0
