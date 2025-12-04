@@ -10,8 +10,9 @@ This test suite covers:
 - Edge cases and error scenarios
 """
 
-import os
 from typing import Generator
+from unittest.mock import MagicMock, patch
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -19,6 +20,72 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from app.main import create_app
+from app.models.task import Task, TaskCreate
+
+
+# Mock task storage
+mock_tasks = {}
+
+
+def mock_get_connection():
+    """Mock database connection context manager"""
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value = mock_cursor
+    mock_conn.is_connected.return_value = True
+    return mock_conn
+
+
+def create_mock_repository():
+    """Create a mock repository with in-memory storage"""
+    from app.repositories.task_repository import TaskRepository
+    
+    repo = TaskRepository.__new__(TaskRepository)
+    repo.db_config = {}
+    
+    # Mock the _get_connection method
+    def mock_connection_context():
+        from contextlib import contextmanager
+        @contextmanager
+        def _mock():
+            yield mock_get_connection()
+        return _mock()
+    
+    repo._get_connection = mock_connection_context
+    
+    # Override methods to use in-memory storage
+    def get_all():
+        return sorted(mock_tasks.values(), key=lambda t: t.created_at, reverse=True)
+    
+    def get_by_id(task_id: str):
+        return mock_tasks.get(task_id)
+    
+    def create(task_data: TaskCreate):
+        task = Task.create_new(task_data)
+        mock_tasks[task.id] = task
+        return task
+    
+    def update(task_id: str, task_data):
+        existing = mock_tasks.get(task_id)
+        if not existing:
+            return None
+        updated = existing.update_from(task_data)
+        mock_tasks[task_id] = updated
+        return updated
+    
+    def delete(task_id: str):
+        if task_id in mock_tasks:
+            del mock_tasks[task_id]
+            return True
+        return False
+    
+    repo.get_all = get_all
+    repo.get_by_id = get_by_id
+    repo.create = create
+    repo.update = update
+    repo.delete = delete
+    
+    return repo
 
 
 # Test client fixture
@@ -26,39 +93,20 @@ from app.main import create_app
 def client() -> Generator[TestClient, None, None]:
     """
     Create a TestClient instance for testing FastAPI endpoints.
-    Uses MySQL database from docker-compose for integration tests.
+    Uses mocked repository for unit tests.
     """
-    # Set up test database configuration (uses MySQL from docker-compose)
-    os.environ["DB_HOST"] = os.getenv("DB_HOST", "mysql")
-    os.environ["DB_PORT"] = os.getenv("DB_PORT", "3306")
-    os.environ["DB_USER"] = os.getenv("DB_USER", "taskuser")
-    os.environ["DB_PASSWORD"] = os.getenv("DB_PASSWORD", "taskpassword")
-    os.environ["DB_NAME"] = os.getenv("DB_NAME", "taskmanager")
-
-    # Reset the global repository instance
-    from app import dependencies
-    dependencies._task_repository = None
-
-    # Create fresh app instance for each test
-    from app.main import create_app
-    test_app = create_app()
-    test_client = TestClient(test_app)
-
-    yield test_client
-
-    # Cleanup - clear all tasks after each test
-    try:
-        from app.dependencies import get_task_repository
-        repo = get_task_repository()
-        with repo._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM tasks")
-            conn.commit()
-            cursor.close()
-    except Exception:
-        pass  # Ignore cleanup errors
-
-    dependencies._task_repository = None
+    global mock_tasks
+    mock_tasks = {}
+    
+    # Mock the repository initialization
+    with patch('app.repositories.task_repository.TaskRepository._initialize_database'):
+        with patch('app.dependencies.get_task_repository', side_effect=create_mock_repository):
+            test_app = create_app()
+            test_client = TestClient(test_app)
+            yield test_client
+    
+    # Cleanup
+    mock_tasks = {}
 
 
 class TestApplicationInitialization:

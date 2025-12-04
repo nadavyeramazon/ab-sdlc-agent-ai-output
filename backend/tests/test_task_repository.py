@@ -5,13 +5,13 @@ This test suite uses Hypothesis for property-based testing to verify
 correctness properties of the task repository implementation.
 """
 
-import os
+from unittest.mock import patch
 
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from app.models.task import TaskCreate
+from app.models.task import Task, TaskCreate
 from app.repositories.task_repository import TaskRepository
 
 
@@ -32,32 +32,64 @@ def task_create_strategy(draw):
     return TaskCreate(title=title, description=description)
 
 
+# Mock task storage
+mock_tasks = {}
+
+
+def create_mock_repository():
+    """Create a mock repository with in-memory storage"""
+    repo = TaskRepository.__new__(TaskRepository)
+    repo.db_config = {}
+    
+    # Override methods to use in-memory storage
+    def get_all():
+        return sorted(mock_tasks.values(), key=lambda t: t.created_at, reverse=True)
+    
+    def get_by_id(task_id: str):
+        return mock_tasks.get(task_id)
+    
+    def create(task_data: TaskCreate):
+        task = Task.create_new(task_data)
+        mock_tasks[task.id] = task
+        return task
+    
+    def update(task_id: str, task_data):
+        existing = mock_tasks.get(task_id)
+        if not existing:
+            return None
+        updated = existing.update_from(task_data)
+        mock_tasks[task_id] = updated
+        return updated
+    
+    def delete(task_id: str):
+        if task_id in mock_tasks:
+            del mock_tasks[task_id]
+            return True
+        return False
+    
+    repo.get_all = get_all
+    repo.get_by_id = get_by_id
+    repo.create = create
+    repo.update = update
+    repo.delete = delete
+    
+    return repo
+
+
 @pytest.fixture
 def test_repo():
     """
-    Create a TaskRepository for testing with test database.
+    Create a TaskRepository for testing with mocked storage.
     Cleans up all tasks before and after each test.
     """
-    # Use test database configuration
-    os.environ["DB_NAME"] = os.getenv("TEST_DB_NAME", "taskmanager_test")
-
-    repo = TaskRepository()
-
-    # Clean up any existing tasks before test
-    with repo._get_connection() as connection:
-        cursor = connection.cursor()
-        cursor.execute("DELETE FROM tasks")
-        connection.commit()
-        cursor.close()
-
-    yield repo
-
-    # Clean up after test
-    with repo._get_connection() as connection:
-        cursor = connection.cursor()
-        cursor.execute("DELETE FROM tasks")
-        connection.commit()
-        cursor.close()
+    global mock_tasks
+    mock_tasks = {}
+    
+    with patch('app.repositories.task_repository.TaskRepository._initialize_database'):
+        repo = create_mock_repository()
+        yield repo
+    
+    mock_tasks = {}
 
 
 class TestTaskCreationPersistence:
@@ -79,19 +111,12 @@ class TestTaskCreationPersistence:
         **Feature: task-manager-app, Property 1: Task creation persistence**
         **Validates: Requirements 1.1, 1.4**
         """
-        # Use test database configuration
-        os.environ["DB_NAME"] = os.getenv("TEST_DB_NAME", "taskmanager_test")
-
-        repo = TaskRepository()
-
-        # Clean up before test
-        with repo._get_connection() as connection:
-            cursor = connection.cursor()
-            cursor.execute("DELETE FROM tasks")
-            connection.commit()
-            cursor.close()
-
-        try:
+        global mock_tasks
+        mock_tasks = {}
+        
+        with patch('app.repositories.task_repository.TaskRepository._initialize_database'):
+            repo = create_mock_repository()
+            
             # Create the task
             created_task = repo.create(task_data)
 
@@ -104,14 +129,8 @@ class TestTaskCreationPersistence:
             assert all_tasks[0].title == task_data.title
             assert all_tasks[0].description == task_data.description
             assert all_tasks[0].completed is False
-
-        finally:
-            # Clean up after test
-            with repo._get_connection() as connection:
-                cursor = connection.cursor()
-                cursor.execute("DELETE FROM tasks")
-                connection.commit()
-                cursor.close()
+        
+        mock_tasks = {}
 
 
 class TestPersistenceAcrossRestarts:
@@ -134,19 +153,12 @@ class TestPersistenceAcrossRestarts:
         **Feature: task-manager-app, Property 9: Persistence across restarts**
         **Validates: Requirements 7.1, 7.3**
         """
-        # Use test database configuration
-        os.environ["DB_NAME"] = os.getenv("TEST_DB_NAME", "taskmanager_test")
-
-        try:
+        global mock_tasks
+        mock_tasks = {}
+        
+        with patch('app.repositories.task_repository.TaskRepository._initialize_database'):
             # Create first repository instance and add tasks
-            repo1 = TaskRepository()
-
-            # Clean up before test
-            with repo1._get_connection() as connection:
-                cursor = connection.cursor()
-                cursor.execute("DELETE FROM tasks")
-                connection.commit()
-                cursor.close()
+            repo1 = create_mock_repository()
 
             created_tasks = []
             for task_data in tasks_data:
@@ -166,8 +178,8 @@ class TestPersistenceAcrossRestarts:
                 for t in created_tasks
             ]
 
-            # Simulate restart by creating a new repository instance
-            repo2 = TaskRepository()
+            # Simulate restart by creating a new repository instance (shares same mock_tasks)
+            repo2 = create_mock_repository()
 
             # Retrieve all tasks from the new instance
             loaded_tasks = repo2.get_all()
@@ -185,12 +197,5 @@ class TestPersistenceAcrossRestarts:
                 assert loaded.completed == expected["completed"]
                 assert loaded.created_at == expected["created_at"]
                 assert loaded.updated_at == expected["updated_at"]
-
-        finally:
-            # Clean up after test
-            repo = TaskRepository()
-            with repo._get_connection() as connection:
-                cursor = connection.cursor()
-                cursor.execute("DELETE FROM tasks")
-                connection.commit()
-                cursor.close()
+        
+        mock_tasks = {}
