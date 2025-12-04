@@ -16,11 +16,11 @@ export const taskApi = {
    */
   async getAllTasks() {
     const response = await fetch(`${API_URL}/api/tasks`);
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     return response.json();
   },
 
@@ -103,6 +103,24 @@ export const taskApi = {
       }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
+  },
+
+  /**
+   * Delete all tasks
+   * @returns {Promise<null>}
+   * @throws {Error} If request fails
+   */
+  async deleteAllTasks() {
+    const response = await fetch(`${API_URL}/api/tasks`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // 204 No Content - no body to parse
+    return null;
   },
 
   /**
