@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './App.css';
+import logo from './assets/logo.png';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -365,7 +366,10 @@ function App() {
   return (
     <div className="app">
       <div className="container">
-        <h1>Task Manager</h1>
+        <div className="app-header">
+          <img src={logo} alt="Task Manager Logo" className="app-logo" />
+          <h1>Task Manager</h1>
+        </div>
         
         {/* Task List Section */}
         <div className="task-manager-section">

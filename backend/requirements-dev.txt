@@ -1,0 +1,15 @@
+# Development dependencies
+-r requirements.txt
+
+# Testing dependencies
+pytest-cov==4.1.0
+
+# Code quality and linting
+black==23.12.1
+flake8==7.0.0
+isort==5.13.2
+mypy==1.8.0
+
+# Security scanning (for CI/local dev only, not for Docker image)
+bandit==1.7.6
+# Note: safety has Pydantic v1 dependency conflict, use with caution or skip for now

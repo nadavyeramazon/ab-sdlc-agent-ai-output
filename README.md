@@ -1,5 +1,7 @@
 # Task Manager Application
 
+> A production-ready task management application with comprehensive linting, testing, and security configurations.
+
 A full-stack task management application with a React frontend and Python FastAPI backend, orchestrated with Docker Compose for local development. Create, view, update, and delete tasks with persistent storage.
 
 ## 🎯 Overview
@@ -7,7 +9,7 @@ A full-stack task management application with a React frontend and Python FastAP
 This project is a complete CRUD application for managing tasks with:
 - **Frontend**: React 18 + Vite with responsive UI
 - **Backend**: Python FastAPI with RESTful API
-- **Data Persistence**: JSON file-based storage with in-memory caching
+- **Database**: MySQL 8.0 for persistent data storage
 - **Testing**: Comprehensive test suite with property-based testing (Hypothesis & fast-check)
 - **Orchestration**: Docker Compose for local development
 - **Hot Reload**: Live updates during development for both frontend and backend
@@ -32,22 +34,14 @@ project-root/
 │   └── Dockerfile                # Frontend Docker image
 ├── backend/                       # Python FastAPI backend
 │   ├── main.py                   # FastAPI application with task endpoints
-│   ├── task_repository.py        # Data persistence layer
+│   ├── task_repository.py        # Data persistence layer (MySQL)
 │   ├── test_main.py              # API endpoint tests with property tests
 │   ├── test_task_repository.py   # Repository tests with property tests
-│   ├── requirements.txt          # Backend dependencies (includes hypothesis)
+│   ├── requirements.txt          # Backend dependencies (includes mysql-connector-python)
 │   ├── pytest.ini                # Pytest configuration
 │   ├── README_TESTS.md           # Backend testing documentation
-│   ├── data/                     # Persistent storage directory
-│   │   └── tasks.json            # Task data (created automatically)
+│   ├── .env.example              # Environment variable template
 │   └── Dockerfile                # Backend Docker image
-├── .kiro/                         # Kiro spec-driven development
-│   └── specs/
-│       └── task-manager-app/
-│           ├── requirements.md   # Feature requirements
-│           ├── design.md         # Design document with correctness properties
-│           └── tasks.md          # Implementation plan
-├── docker-compose.yml             # Docker Compose orchestration
 ├── .github/
 │   └── workflows/
 │       └── ci.yml                # CI/CD pipeline
@@ -81,6 +75,7 @@ project-root/
    - Backend API: http://localhost:8000
    - API Health: http://localhost:8000/health
    - API Docs: http://localhost:8000/docs (Interactive Swagger UI)
+   - MySQL: localhost:3306 (user: taskuser, password: taskpassword, database: taskmanager)
 
 4. **Stop the application**:
    ```bash
@@ -284,6 +279,28 @@ FastAPI provides automatic interactive API documentation:
 
 ## ⚙️ Environment Configuration
 
+### Backend Environment Variables
+
+The backend uses environment variables for database configuration. When running with Docker Compose, these are set automatically in `docker-compose.yml`:
+
+**Available Variables:**
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DB_HOST` | MySQL host | `mysql` |
+| `DB_PORT` | MySQL port | `3306` |
+| `DB_USER` | MySQL user | `taskuser` |
+| `DB_PASSWORD` | MySQL password | `taskpassword` |
+| `DB_NAME` | MySQL database | `taskmanager` |
+| `TEST_DB_NAME` | Test database name | `taskmanager_test` |
+
+For local development without Docker, create a `.env` file in the `backend/` directory:
+
+```bash
+cd backend
+cp .env.example .env
+```
+
 ### Frontend Environment Variables
 
 The frontend uses Vite's environment variable system. Create a `.env` file in the `frontend/` directory:
@@ -468,14 +485,6 @@ All property-based tests run with 100+ iterations in CI to ensure comprehensive 
 
 ## 🔧 Development
 
-### Development Workflow
-
-This project follows a spec-driven development approach. All features are documented in `.kiro/specs/task-manager-app/`:
-
-1. **requirements.md**: Feature requirements with acceptance criteria
-2. **design.md**: Architecture, data models, and correctness properties
-3. **tasks.md**: Implementation plan with task checklist
-
 **Recommended Workflow:**
 1. Review requirements and design documents
 2. Implement feature following tasks.md
@@ -536,58 +545,85 @@ docker compose build backend
 
 ### Storage Approach
 
-The application uses a simple JSON file-based persistence strategy:
+The application uses MySQL 8.0 for persistent data storage:
 
-**Storage Location:**
-- File: `backend/data/tasks.json`
-- Format: JSON array of task objects
-- Created automatically on first run
+**Database Schema:**
+- **Database**: `taskmanager`
+- **Table**: `tasks`
+- **Columns**:
+  - `id` VARCHAR(36) PRIMARY KEY - UUID
+  - `title` VARCHAR(200) NOT NULL - Task title
+  - `description` TEXT - Task description
+  - `completed` BOOLEAN DEFAULT FALSE - Completion status
+  - `created_at` VARCHAR(30) NOT NULL - ISO timestamp
+  - `updated_at` VARCHAR(30) NOT NULL - ISO timestamp
 
 **Architecture:**
-- **In-Memory Cache**: Tasks loaded into memory on startup
-- **Write-Through**: All modifications immediately written to disk
-- **Lazy Loading**: Data loaded on first API request
+- **Connection Pooling**: Context manager for efficient connection handling
+- **Auto-Initialization**: Database schema created automatically on startup
+- **Transaction Safety**: All writes committed immediately
+- **Error Handling**: Graceful handling of connection and query errors
 
 **Benefits:**
-- ✅ No external database required
-- ✅ Easy to inspect and debug (human-readable JSON)
-- ✅ Simple backup and restore (copy the file)
-- ✅ Suitable for single-instance deployment
-- ✅ Fast reads from in-memory cache
+- ✅ ACID compliance for data integrity
+- ✅ Concurrent access support
+- ✅ Standard SQL queries
+- ✅ Scalable storage
+- ✅ Production-ready database engine
+- ✅ Easy backup and restore with MySQL tools
 
 **Docker Volume:**
-The `backend/data` directory is mounted as a Docker volume, ensuring:
-- Tasks persist across container restarts
+MySQL data is stored in a Docker volume (`mysql-data`), ensuring:
+- Data persists across container restarts
 - Data survives `docker compose down`
-- Hot reload doesn't affect data
+- Can be backed up using Docker volume commands
 
-**Future Scalability:**
-The repository pattern allows easy migration to a database (PostgreSQL, MongoDB, etc.) without changing the API interface.
+**Database Connection:**
+The backend connects to MySQL using:
+- Host: `mysql` (Docker service name)
+- Port: 3306
+- Credentials configured via environment variables
 
 ### Backup and Restore
 
-**Backup:**
+**Backup Database:**
 ```bash
-# Copy the tasks file
-cp backend/data/tasks.json backup-tasks-$(date +%Y%m%d).json
+# Backup using mysqldump
+docker compose exec mysql mysqldump -u taskuser -ptaskpassword taskmanager > backup-$(date +%Y%m%d).sql
+
+# Or backup the entire volume
+docker run --rm -v ab-sdlc-agent-ai-output_mysql-data:/data -v $(pwd):/backup ubuntu tar czf /backup/mysql-backup-$(date +%Y%m%d).tar.gz /data
 ```
 
-**Restore:**
+**Restore Database:**
 ```bash
-# Replace with backup
-cp backup-tasks-20240115.json backend/data/tasks.json
+# Restore from SQL dump
+docker compose exec -T mysql mysql -u taskuser -ptaskpassword taskmanager < backup-20240115.sql
 
-# Restart backend to reload
-docker compose restart backend
+# Or restore from volume backup
+docker run --rm -v ab-sdlc-agent-ai-output_mysql-data:/data -v $(pwd):/backup ubuntu tar xzf /backup/mysql-backup-20240115.tar.gz -C /
+docker compose restart mysql
 ```
 
 **Reset Data:**
 ```bash
-# Delete all tasks
-rm backend/data/tasks.json
+# Connect to MySQL and delete all tasks
+docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "DELETE FROM tasks;"
 
-# Restart backend (will create empty file)
+# Or drop and recreate the database
+docker compose exec mysql mysql -u root -prootpassword -e "DROP DATABASE taskmanager; CREATE DATABASE taskmanager;"
 docker compose restart backend
+```
+
+**Access MySQL CLI:**
+```bash
+# Connect to MySQL command line
+docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
+
+# Then you can run SQL commands:
+# SELECT * FROM tasks;
+# DESCRIBE tasks;
+# etc.
 ```
 
 ## 📦 Dependencies
@@ -609,9 +645,10 @@ docker compose restart backend
 
 ### Backend
 - **Production:**
-  - FastAPI 0.100.0 - Web framework
-  - Uvicorn[standard] 0.23.0 - ASGI server
-  - Pydantic 2.0+ - Data validation
+  - FastAPI 0.104.1 - Web framework
+  - Uvicorn[standard] 0.24.0 - ASGI server
+  - Pydantic 2.5.0 - Data validation
+  - mysql-connector-python 8.2.0 - MySQL database driver
   
 - **Development:**
   - pytest 7.4.0 - Test framework
@@ -633,10 +670,11 @@ docker compose restart backend
 - Check if data directory exists: `ls -la backend/data/`
 
 ### Tasks not persisting
-- Verify data directory is mounted: `docker compose config`
-- Check file permissions: `ls -la backend/data/`
-- Verify tasks.json exists: `cat backend/data/tasks.json`
-- Check backend logs for file I/O errors: `docker compose logs backend`
+- Verify MySQL is running: `docker compose ps mysql`
+- Check MySQL logs: `docker compose logs mysql`
+- Verify database connection: `docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "SELECT COUNT(*) FROM tasks;"`
+- Check backend logs for database errors: `docker compose logs backend`
+- Ensure MySQL is healthy before backend starts: `docker compose config`
 
 ### CORS errors
 - Verify backend CORS is configured for `http://localhost:3000`
@@ -647,7 +685,8 @@ docker compose restart backend
 - Verify backend is running: `curl http://localhost:8000/health`
 - Check API endpoint: `curl http://localhost:8000/api/tasks`
 - Review backend logs: `docker compose logs backend`
-- Verify tasks.json is readable: `cat backend/data/tasks.json`
+- Check MySQL connection: `docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "SELECT * FROM tasks;"`
+- Verify MySQL service is healthy: `docker compose ps`
 
 ### Tests failing
 **Frontend:**
@@ -678,11 +717,13 @@ docker compose restart backend
 
 ### Design Decisions
 
-**File-Based Storage:**
-- Chosen for simplicity and ease of debugging
-- No external database setup required
-- Suitable for single-user or low-traffic scenarios
-- Easy migration path to database via repository pattern
+**MySQL Database:**
+- Production-ready relational database
+- ACID compliance for data integrity
+- Supports concurrent access and transactions
+- Standard SQL for queries
+- Easy to scale and backup
+- Repository pattern allows swapping to other databases
 
 **No Authentication:**
 - MVP scope focuses on core CRUD functionality
@@ -709,20 +750,15 @@ docker compose restart backend
 - Clear separation of concerns (repository pattern)
 
 ### Limitations
-- Single-instance deployment (no horizontal scaling)
-- File-based storage (not suitable for high concurrency)
 - No authentication or authorization
 - No real-time updates (polling required)
 - No task sharing or collaboration features
+- Basic MySQL configuration (not optimized for high load)
+- Single MySQL instance (no replication or clustering)
 
 ## 🤝 Contributing
 
 ### Development Process
-
-1. **Review Specifications**:
-   - Read `.kiro/specs/task-manager-app/requirements.md`
-   - Review `.kiro/specs/task-manager-app/design.md`
-   - Check `.kiro/specs/task-manager-app/tasks.md` for implementation plan
 
 2. **Create Feature Branch**:
    ```bash
@@ -782,13 +818,6 @@ This is a demonstration project for educational purposes.
 - [Hypothesis Documentation](https://hypothesis.readthedocs.io/) - Python property-based testing
 - [fast-check Documentation](https://fast-check.dev/) - JavaScript property-based testing
 - [Property-Based Testing Guide](https://hypothesis.works/articles/what-is-property-based-testing/)
-
-### Project Documentation
-- [Requirements Document](.kiro/specs/task-manager-app/requirements.md)
-- [Design Document](.kiro/specs/task-manager-app/design.md)
-- [Implementation Tasks](.kiro/specs/task-manager-app/tasks.md)
-- [Backend Testing Guide](backend/README_TESTS.md)
-- [Frontend Testing Guide](frontend/TEST_GUIDE.md)
 
 ---
 

@@ -1,163 +1,239 @@
 """
-Task Repository for file-based persistence.
+Task Repository for MySQL-based persistence.
 
 This module provides a TaskRepository class that handles CRUD operations
-for tasks with JSON file-based persistence and in-memory caching.
+for tasks with MySQL database persistence.
 """
 
-import json
 import os
+from contextlib import contextmanager
 from typing import List, Optional
-from pathlib import Path
-from main import Task, TaskCreate, TaskUpdate
+
+import mysql.connector
+from mysql.connector import Error
+
+from models import Task, TaskCreate, TaskUpdate
 
 
 class TaskRepository:
     """
-    Repository for managing task persistence with file-based storage.
-    
-    Uses an in-memory cache for performance and writes through to a JSON file
-    for persistence. Handles file I/O errors gracefully and ensures data
-    directory exists.
+    Repository for managing task persistence with MySQL database.
+
+    Handles database connections, table initialization, and CRUD operations.
+    Uses environment variables for database configuration.
     """
-    
-    def __init__(self, data_file: str = "/app/data/tasks.json"):
+
+    def __init__(self):
         """
         Initialize the task repository.
-        
-        Args:
-            data_file: Path to the JSON file for task storage
+        Reads database configuration from environment variables.
         """
-        self.data_file = data_file
-        self._tasks: dict[str, Task] = {}
-        self._ensure_data_directory()
-        self._load()
-    
-    def _ensure_data_directory(self) -> None:
+        self.db_config = {
+            "host": os.getenv("DB_HOST", "localhost"),
+            "port": int(os.getenv("DB_PORT", "3306")),
+            "user": os.getenv("DB_USER", "taskuser"),
+            "password": os.getenv("DB_PASSWORD", "taskpassword"),
+            "database": os.getenv("DB_NAME", "taskmanager"),
+        }
+        self._initialize_database()
+
+    @contextmanager
+    def _get_connection(self):
         """
-        Ensure the data directory exists.
-        Creates the directory if it doesn't exist.
+        Context manager for database connections.
+        Ensures connections are properly closed after use.
+
+        Yields:
+            MySQL connection object
         """
-        data_dir = Path(self.data_file).parent
+        connection = None
         try:
-            data_dir.mkdir(parents=True, exist_ok=True)
-        except Exception as e:
-            print(f"Error creating data directory: {e}")
+            connection = mysql.connector.connect(**self.db_config)
+            yield connection
+        except Error as e:
+            print(f"Database connection error: {e}")
             raise
-    
-    def _load(self) -> None:
+        finally:
+            if connection and connection.is_connected():
+                connection.close()
+
+    def _initialize_database(self) -> None:
         """
-        Load tasks from the JSON file into memory cache.
-        Creates an empty file if it doesn't exist.
-        Handles file I/O errors gracefully.
+        Initialize the database schema.
+        Creates the tasks table if it doesn't exist.
         """
+        create_table_query = """
+        CREATE TABLE IF NOT EXISTS tasks (
+            id VARCHAR(36) PRIMARY KEY,
+            title VARCHAR(200) NOT NULL,
+            description TEXT,
+            completed BOOLEAN DEFAULT FALSE,
+            created_at VARCHAR(30) NOT NULL,
+            updated_at VARCHAR(30) NOT NULL
+        )
+        """
+
         try:
-            if os.path.exists(self.data_file):
-                with open(self.data_file, 'r') as f:
-                    data = json.load(f)
-                    # Convert list of dicts to dict of Task objects
-                    self._tasks = {
-                        task_dict['id']: Task(**task_dict)
-                        for task_dict in data
-                    }
-            else:
-                # Initialize empty file
-                self._tasks = {}
-                self._save()
-        except json.JSONDecodeError as e:
-            print(f"Error decoding JSON from {self.data_file}: {e}")
-            # Start with empty tasks on corrupt file
-            self._tasks = {}
-            self._save()
-        except Exception as e:
-            print(f"Error loading tasks from {self.data_file}: {e}")
+            with self._get_connection() as connection:
+                cursor = connection.cursor()
+                cursor.execute(create_table_query)
+                connection.commit()
+                cursor.close()
+        except Error as e:
+            print(f"Error initializing database: {e}")
             raise
-    
-    def _save(self) -> None:
-        """
-        Save tasks from memory cache to the JSON file.
-        Handles file I/O errors gracefully.
-        """
-        try:
-            # Convert dict of Task objects to list of dicts
-            tasks_list = [task.dict() for task in self._tasks.values()]
-            with open(self.data_file, 'w') as f:
-                json.dump(tasks_list, f, indent=2)
-        except Exception as e:
-            print(f"Error saving tasks to {self.data_file}: {e}")
-            raise
-    
+
     def get_all(self) -> List[Task]:
         """
         Retrieve all tasks.
-        
+
         Returns:
             List of all tasks, ordered by creation date (newest first)
         """
-        tasks = list(self._tasks.values())
-        # Sort by created_at descending (newest first)
-        tasks.sort(key=lambda t: t.created_at, reverse=True)
-        return tasks
-    
+        query = "SELECT id, title, description, completed, created_at, updated_at FROM tasks ORDER BY created_at DESC"
+
+        try:
+            with self._get_connection() as connection:
+                cursor = connection.cursor(dictionary=True)
+                cursor.execute(query)
+                results = cursor.fetchall()
+                cursor.close()
+
+                return [Task(**row) for row in results]
+        except Error as e:
+            print(f"Error retrieving all tasks: {e}")
+            raise
+
     def get_by_id(self, task_id: str) -> Optional[Task]:
         """
         Retrieve a single task by ID.
-        
+
         Args:
             task_id: The unique identifier of the task
-            
+
         Returns:
             Task object if found, None otherwise
         """
-        return self._tasks.get(task_id)
-    
+        query = "SELECT id, title, description, completed, created_at, updated_at FROM tasks WHERE id = %s"
+
+        try:
+            with self._get_connection() as connection:
+                cursor = connection.cursor(dictionary=True)
+                cursor.execute(query, (task_id,))
+                result = cursor.fetchone()
+                cursor.close()
+
+                if result:
+                    return Task(**result)
+                return None
+        except Error as e:
+            print(f"Error retrieving task {task_id}: {e}")
+            raise
+
     def create(self, task_data: TaskCreate) -> Task:
         """
         Create a new task and persist it.
-        
+
         Args:
             task_data: TaskCreate object with title and description
-            
+
         Returns:
             The newly created Task object
         """
         task = Task.create_new(task_data)
-        self._tasks[task.id] = task
-        self._save()
-        return task
-    
+
+        query = """
+        INSERT INTO tasks (id, title, description, completed, created_at, updated_at)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        """
+
+        try:
+            with self._get_connection() as connection:
+                cursor = connection.cursor()
+                cursor.execute(
+                    query,
+                    (
+                        task.id,
+                        task.title,
+                        task.description,
+                        task.completed,
+                        task.created_at,
+                        task.updated_at,
+                    ),
+                )
+                connection.commit()
+                cursor.close()
+
+                return task
+        except Error as e:
+            print(f"Error creating task: {e}")
+            raise
+
     def update(self, task_id: str, task_data: TaskUpdate) -> Optional[Task]:
         """
         Update an existing task and persist the changes.
-        
+
         Args:
             task_id: The unique identifier of the task to update
             task_data: TaskUpdate object with fields to update
-            
+
         Returns:
             Updated Task object if found, None otherwise
         """
-        existing_task = self._tasks.get(task_id)
+        existing_task = self.get_by_id(task_id)
         if existing_task is None:
             return None
-        
+
         updated_task = existing_task.update_from(task_data)
-        self._tasks[task_id] = updated_task
-        self._save()
-        return updated_task
-    
+
+        query = """
+        UPDATE tasks
+        SET title = %s, description = %s, completed = %s, updated_at = %s
+        WHERE id = %s
+        """
+
+        try:
+            with self._get_connection() as connection:
+                cursor = connection.cursor()
+                cursor.execute(
+                    query,
+                    (
+                        updated_task.title,
+                        updated_task.description,
+                        updated_task.completed,
+                        updated_task.updated_at,
+                        task_id,
+                    ),
+                )
+                connection.commit()
+                cursor.close()
+
+                return updated_task
+        except Error as e:
+            print(f"Error updating task {task_id}: {e}")
+            raise
+
     def delete(self, task_id: str) -> bool:
         """
         Delete a task and persist the change.
-        
+
         Args:
             task_id: The unique identifier of the task to delete
-            
+
         Returns:
             True if task was deleted, False if task was not found
         """
-        if task_id in self._tasks:
-            del self._tasks[task_id]
-            self._save()
-            return True
-        return False
+        query = "DELETE FROM tasks WHERE id = %s"
+
+        try:
+            with self._get_connection() as connection:
+                cursor = connection.cursor()
+                cursor.execute(query, (task_id,))
+                rows_affected = cursor.rowcount
+                connection.commit()
+                cursor.close()
+
+                return rows_affected > 0
+        except Error as e:
+            print(f"Error deleting task {task_id}: {e}")
+            raise
