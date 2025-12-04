@@ -18,16 +18,22 @@ function TaskList({
     return <div className="loading">Loading tasks...</div>;
   }
 
-  if (error) {
+  // Only show error-only state if there are no tasks to display
+  // (e.g., initial fetch error)
+  if (error && tasks.length === 0) {
     return <div className="error">{error}</div>;
   }
 
-  if (tasks.length === 0) {
+  // Show empty state when no tasks and no error
+  if (tasks.length === 0 && !error) {
     return <div className="no-tasks">No tasks yet</div>;
   }
 
   return (
     <div>
+      {/* Show error inline when there are tasks (e.g., after failed operation with rollback) */}
+      {error && <div className="error">{error}</div>}
+
       <div className="task-list-header">
         <div></div>
         <button
