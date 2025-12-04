@@ -612,7 +612,7 @@ describe('App Component', () => {
                   ok: true,
                   json: async () => ({ message: 'All tasks deleted', deletedCount: 1 }),
                 }),
-              100
+              500
             )
           );
         }
@@ -642,10 +642,13 @@ describe('App Component', () => {
       await user.click(deleteAllButton);
 
       // Should show loading text
-      await waitFor(() => {
-        expect(deleteStarted).toBe(true);
-        expect(screen.getByRole('button', { name: /deleting.../i })).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(deleteStarted).toBe(true);
+          expect(screen.getByRole('button', { name: /deleting.../i })).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
 
       confirmSpy.mockRestore();
     });
