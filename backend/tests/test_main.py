@@ -11,8 +11,6 @@ This test suite covers:
 """
 
 import os
-import shutil
-import tempfile
 from typing import Generator
 
 import pytest
@@ -20,7 +18,7 @@ from fastapi.testclient import TestClient
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from app.main import app, create_app
+from app.main import create_app
 
 
 # Test client fixture
@@ -28,27 +26,38 @@ from app.main import app, create_app
 def client() -> Generator[TestClient, None, None]:
     """
     Create a TestClient instance for testing FastAPI endpoints.
-    This fixture is reused across all tests.
+    Uses MySQL database from docker-compose for integration tests.
     """
-    # Set up test database configuration
-    temp_dir = tempfile.mkdtemp()
-    os.environ["DB_HOST"] = "localhost"
-    os.environ["DB_PORT"] = "3306"
-    os.environ["DB_USER"] = "taskuser"
-    os.environ["DB_PASSWORD"] = "taskpassword"
-    os.environ["DB_NAME"] = "taskmanager"
+    # Set up test database configuration (uses MySQL from docker-compose)
+    os.environ["DB_HOST"] = os.getenv("DB_HOST", "mysql")
+    os.environ["DB_PORT"] = os.getenv("DB_PORT", "3306")
+    os.environ["DB_USER"] = os.getenv("DB_USER", "taskuser")
+    os.environ["DB_PASSWORD"] = os.getenv("DB_PASSWORD", "taskpassword")
+    os.environ["DB_NAME"] = os.getenv("DB_NAME", "taskmanager")
 
     # Reset the global repository instance
     from app import dependencies
-
     dependencies._task_repository = None
 
-    test_client = TestClient(app)
+    # Create fresh app instance for each test
+    from app.main import create_app
+    test_app = create_app()
+    test_client = TestClient(test_app)
 
     yield test_client
 
-    # Cleanup
-    shutil.rmtree(temp_dir, ignore_errors=True)
+    # Cleanup - clear all tasks after each test
+    try:
+        from app.dependencies import get_task_repository
+        repo = get_task_repository()
+        with repo._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM tasks")
+            conn.commit()
+            cursor.close()
+    except Exception:
+        pass  # Ignore cleanup errors
+    
     dependencies._task_repository = None
 
 
