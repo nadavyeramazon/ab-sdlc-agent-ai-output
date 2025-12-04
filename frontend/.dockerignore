@@ -1,0 +1,29 @@
+# Dependencies (installed during build)
+node_modules/
+
+# Version control
+.git/
+
+# Documentation
+*.md
+
+# Test files and coverage
+tests/
+coverage/
+__tests__/
+
+# Development files
+.env
+.env.*
+.env.local
+.env.development
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build artifacts from previous builds
+dist/
