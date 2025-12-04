@@ -7,7 +7,7 @@ A full-stack task management application with a React frontend and Python FastAP
 ## 🎯 Overview
 
 This project is a complete CRUD application for managing tasks with:
-- **Frontend**: React 18 + Vite with responsive UI
+- **Frontend**: React 18 + Vite with responsive UI and modern green theme
 - **Backend**: Python FastAPI with RESTful API
 - **Database**: MySQL 8.0 for persistent data storage
 - **Testing**: Comprehensive test suite with property-based testing (Hypothesis & fast-check)
@@ -22,7 +22,7 @@ project-root/
 │   ├── src/
 │   │   ├── App.jsx               # Main task manager component
 │   │   ├── App.test.jsx          # Comprehensive test suite with property tests
-│   │   ├── App.css               # Task manager styling
+│   │   ├── App.css               # Task manager styling (green theme)
 │   │   ├── main.jsx              # React entry point
 │   │   └── test/
 │   │       └── setup.js          # Test configuration
@@ -111,17 +111,18 @@ npm test
 - ✅ **View Tasks**: Display all tasks ordered by creation date (newest first)
 - ✅ **Edit Tasks**: Update task title and description
 - ✅ **Delete Tasks**: Remove individual tasks from the list
-- ✅ **Delete All Tasks**: Remove all tasks at once
+- ✅ **Delete All Tasks**: Remove all tasks at once with confirmation dialog
 - ✅ **Toggle Completion**: Mark tasks as complete or incomplete
 - ✅ **Data Persistence**: Tasks persist across application restarts
 - ✅ **Input Validation**: Client and server-side validation for data integrity
 - ✅ **Error Handling**: User-friendly error messages for all operations
 
 ### Frontend Features
-- ✅ Responsive task management UI
+- ✅ Responsive task management UI with modern green color scheme
 - ✅ Task creation form with validation
 - ✅ Inline task editing
 - ✅ Visual distinction for completed tasks (strikethrough)
+- ✅ Delete All Tasks button with confirmation dialog
 - ✅ Loading state indicators for all operations
 - ✅ Error handling with user-friendly messages
 - ✅ Empty state messaging
@@ -129,13 +130,36 @@ npm test
 - ✅ Environment-based API URL configuration
 - ✅ Comprehensive test coverage with property-based testing
 
+### UI Theme
+The application features a modern **green color scheme** that provides a fresh, calming user experience:
+
+**Color Palette:**
+- **Primary Green**: `#10b981` (Emerald 500) - Main actions, buttons, focus states
+- **Dark Green**: `#047857` (Emerald 700) - Gradient accents, hover states
+- **Teal**: `#14b8a6` (Teal 500) - Edit buttons and secondary actions
+- **Red**: `#dc2626` (Red 600) - Delete actions and warnings
+
+**Visual Elements:**
+- Green gradient background (emerald to dark emerald)
+- Green accent colors for interactive elements
+- Green focus rings for accessibility
+- Green loading indicators
+- Teal edit buttons for visual distinction
+- All tasks disabled during bulk delete operation
+
+**Accessibility:**
+- High contrast ratios for readability
+- Clear visual feedback on interactions
+- Accessible color combinations meeting WCAG guidelines
+- Focus indicators on all interactive elements
+
 ### Backend Features
 - ✅ RESTful API with FastAPI
 - ✅ Full CRUD operations for tasks
-- ✅ Bulk delete operation for all tasks
+- ✅ Bulk delete operation for all tasks (DELETE /api/tasks)
 - ✅ Pydantic models for request/response validation
-- ✅ JSON file-based persistence with in-memory caching
-- ✅ Automatic data directory and file creation
+- ✅ MySQL database with connection pooling
+- ✅ Automatic schema creation on startup
 - ✅ Proper HTTP status codes (200, 201, 204, 404, 422)
 - ✅ CORS enabled for frontend communication
 - ✅ Auto-reload during development
@@ -288,6 +312,16 @@ fetch('http://localhost:8000/api/tasks', { method: 'DELETE' });
 - Idempotent operation (safe to call multiple times)
 - No request body required
 - No response body returned
+- Frontend shows confirmation dialog before execution
+- All task operations disabled during deletion
+
+**UI Features:**
+- "🗑️ Delete All Tasks" button appears when tasks exist
+- Confirmation dialog: "Are you sure you want to delete ALL tasks? This action cannot be undone."
+- Button shows loading state: "Deleting All..."
+- All task items disabled during bulk delete
+- Immediate UI update after deletion
+- Optimistic update with rollback on error
 
 ### GET /health
 Returns the health status of the backend.
@@ -465,6 +499,7 @@ For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](fronte
 - [ ] Completed tasks show strikethrough styling
 - [ ] Tasks ordered by creation date (newest first)
 - [ ] Empty state message shows when no tasks exist
+- [ ] Green theme colors display correctly
 
 **Task Editing:**
 - [ ] Edit button shows edit form with current data
@@ -484,12 +519,19 @@ For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](fronte
 - [ ] Deletion persists after page refresh
 
 **Delete All Tasks:**
-- [ ] Delete all button removes all tasks at once
-- [ ] Works when no tasks exist (idempotent)
+- [ ] Delete All button appears when tasks exist
+- [ ] Button shows "🗑️ Delete All Tasks" text
+- [ ] Clicking shows confirmation dialog
+- [ ] Confirmation message: "Are you sure you want to delete ALL tasks? This action cannot be undone."
+- [ ] Clicking Cancel keeps tasks
+- [ ] Clicking OK removes all tasks
+- [ ] Button shows "Deleting All..." during operation
+- [ ] All task buttons disabled during deletion
 - [ ] Works with single task
 - [ ] Works with multiple tasks
+- [ ] Works when no tasks exist (idempotent)
 - [ ] Removes both completed and incomplete tasks
-- [ ] UI updates immediately
+- [ ] UI updates immediately after deletion
 - [ ] Deletion persists after page refresh
 
 **Error Handling:**
@@ -982,6 +1024,13 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Easy to scale and backup
 - Repository pattern allows swapping to other databases
 
+**Green Color Theme:**
+- Modern, fresh appearance with emerald green tones
+- Provides visual distinction from typical blue themes
+- Calming color psychology suitable for task management
+- High contrast for accessibility
+- Consistent color usage across all UI elements
+
 **No Authentication:**
 - MVP scope focuses on core CRUD functionality
 - Authentication can be added later without major refactoring
@@ -1081,3 +1130,5 @@ This is a demonstration project for educational purposes.
 **Built with ❤️ using spec-driven development 📋**
 
 **Tested with ✅ Property-Based Testing (Hypothesis & fast-check)**
+
+**Styled with 💚 Modern Green Theme**
