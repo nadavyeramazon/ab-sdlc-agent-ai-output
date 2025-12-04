@@ -79,11 +79,17 @@ def create_mock_repository():
             return True
         return False
 
+    def delete_all():
+        count = len(mock_tasks)
+        mock_tasks.clear()
+        return count
+
     repo.get_all = get_all
     repo.get_by_id = get_by_id
     repo.create = create
     repo.update = update
     repo.delete = delete
+    repo.delete_all = delete_all
 
     return repo
 
@@ -346,6 +352,55 @@ class TestTaskAPIEndpoints:
         response = client.delete(f"/api/tasks/{fake_id}")
 
         assert response.status_code == 404
+
+    def test_delete_all_tasks_empty_list(self, client: TestClient) -> None:
+        """Test DELETE /api/tasks when no tasks exist"""
+        response = client.delete("/api/tasks")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "message" in data
+        assert "deletedCount" in data
+        assert data["message"] == "All tasks deleted"
+        assert data["deletedCount"] == 0
+
+    def test_delete_all_tasks_with_existing_tasks(self, client: TestClient) -> None:
+        """Test DELETE /api/tasks when tasks exist"""
+        # Create multiple tasks
+        client.post("/api/tasks", json={"title": "Task 1", "description": "Description 1"})
+        client.post("/api/tasks", json={"title": "Task 2", "description": "Description 2"})
+        client.post("/api/tasks", json={"title": "Task 3", "description": "Description 3"})
+
+        # Verify tasks were created
+        response = client.get("/api/tasks")
+        assert len(response.json()["tasks"]) == 3
+
+        # Delete all tasks
+        response = client.delete("/api/tasks")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["message"] == "All tasks deleted"
+        assert data["deletedCount"] == 3
+
+        # Verify all tasks are gone
+        response = client.get("/api/tasks")
+        assert len(response.json()["tasks"]) == 0
+
+    def test_delete_all_tasks_response_structure(self, client: TestClient) -> None:
+        """Test DELETE /api/tasks returns correct response structure"""
+        # Create a task
+        client.post("/api/tasks", json={"title": "Test Task", "description": "Test"})
+
+        response = client.delete("/api/tasks")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, dict)
+        assert "message" in data
+        assert "deletedCount" in data
+        assert isinstance(data["message"], str)
+        assert isinstance(data["deletedCount"], int)
 
 
 # Property-Based Tests
