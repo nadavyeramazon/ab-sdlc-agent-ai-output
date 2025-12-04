@@ -411,7 +411,8 @@ describe('Delete All Tasks Feature', () => {
     });
 
     it('should clear error message after 5 seconds', async () => {
-      vi.useFakeTimers();
+      // Setup fake timers with shouldAdvanceTime to allow promises to resolve
+      vi.useFakeTimers({ shouldAdvanceTime: true });
 
       const mockTasks = [
         {
@@ -428,8 +429,13 @@ describe('Delete All Tasks Feature', () => {
         json: async () => ({ tasks: mockTasks }),
       });
 
+      const user = userEvent.setup({
+        advanceTimers: vi.advanceTimersByTime,
+      });
+
       render(<App />);
 
+      // Wait for initial tasks to load
       await waitFor(() => {
         expect(screen.getByText('Task 1')).toBeInTheDocument();
       });
@@ -446,32 +452,31 @@ describe('Delete All Tasks Feature', () => {
         status: 500,
       });
 
-      // Setup userEvent to work with fake timers
-      const user = userEvent.setup({
-        advanceTimers: vi.advanceTimersByTime,
-      });
-
       await user.click(deleteAllButton);
 
-      // Wait for error message
+      // Wait for error message to appear
       await waitFor(() => {
         expect(
           screen.getByText(/HTTP error! status: 500/)
         ).toBeInTheDocument();
       });
 
-      // Fast-forward time by 5 seconds wrapped in act
+      // Advance timers by 5 seconds to trigger the setTimeout that clears the error
       await act(async () => {
-        vi.advanceTimersByTime(5000);
+        await vi.advanceTimersByTimeAsync(5000);
       });
 
-      // Error should be cleared
-      await waitFor(() => {
-        expect(
-          screen.queryByText(/HTTP error! status: 500/)
-        ).not.toBeInTheDocument();
+      // Run any remaining timers
+      await act(async () => {
+        await vi.runAllTimersAsync();
       });
 
+      // Error should be cleared now
+      expect(
+        screen.queryByText(/HTTP error! status: 500/)
+      ).not.toBeInTheDocument();
+
+      // Restore real timers
       vi.useRealTimers();
     });
   });
