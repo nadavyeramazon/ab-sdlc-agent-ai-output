@@ -101,14 +101,16 @@ def client() -> Generator[TestClient, None, None]:
     # Create a single mock repository instance to reuse
     mock_repo = create_mock_repository()
 
-    # Mock the repository initialization and dependency
-    with patch('app.repositories.task_repository.TaskRepository._initialize_database'):
-        with patch('app.dependencies.get_task_repository', return_value=mock_repo):
-            test_app = create_app()
-            test_client = TestClient(test_app)
-            yield test_client
+    # Create app and override dependency
+    from app.dependencies import get_task_repository
+    test_app = create_app()
+    test_app.dependency_overrides[get_task_repository] = lambda: mock_repo
+
+    test_client = TestClient(test_app)
+    yield test_client
 
     # Cleanup
+    test_app.dependency_overrides.clear()
     mock_tasks = {}
 
 
