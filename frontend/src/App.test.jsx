@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import App from './App';
@@ -446,7 +446,12 @@ describe('Delete All Tasks Feature', () => {
         status: 500,
       });
 
-      await userEvent.click(deleteAllButton);
+      // Setup userEvent to work with fake timers
+      const user = userEvent.setup({
+        advanceTimers: vi.advanceTimersByTime,
+      });
+
+      await user.click(deleteAllButton);
 
       // Wait for error message
       await waitFor(() => {
@@ -455,8 +460,10 @@ describe('Delete All Tasks Feature', () => {
         ).toBeInTheDocument();
       });
 
-      // Fast-forward time by 5 seconds
-      vi.advanceTimersByTime(5000);
+      // Fast-forward time by 5 seconds wrapped in act
+      await act(async () => {
+        vi.advanceTimersByTime(5000);
+      });
 
       // Error should be cleared
       await waitFor(() => {
