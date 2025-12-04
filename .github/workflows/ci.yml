@@ -18,9 +18,9 @@ env:
   PYTHON_VERSION: '3.11'
 
 jobs:
-  # Job 1: Backend Linting
-  backend-linting:
-    name: Backend Linting
+  # Job 1: Backend Lint & Test (Combined)
+  backend-quality:
+    name: Backend Lint & Test
     runs-on: ubuntu-latest
     timeout-minutes: 10
     
@@ -29,80 +29,31 @@ jobs:
         uses: actions/checkout@v3
         continue-on-error: false
       
-      - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Build images
+        run: docker compose build backend mysql
         continue-on-error: false
       
-      - name: Cache pip dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+      - name: Start MySQL
+        run: docker compose up -d mysql
+        continue-on-error: false
       
-      - name: Install dependencies
-        working-directory: ./backend
+      - name: Wait for MySQL to be ready
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-dev.txt
+          echo "Waiting for MySQL to be ready..."
+          timeout 60 bash -c 'until docker compose exec mysql mysqladmin ping -h localhost -u root -prootpassword --silent; do sleep 2; done'
         continue-on-error: false
       
-      - name: Run Flake8 (linting)
-        working-directory: ./backend
-        run: flake8 .
+      - name: Lint and test backend
+        run: docker compose run --rm backend sh -c "flake8 . && pytest -v --cov=. --cov-report=term-missing"
         continue-on-error: false
       
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
 
-  # Job 2: Backend Tests
-  backend-tests:
-    name: Backend Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: backend-linting
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        continue-on-error: false
-      
-      - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-        continue-on-error: false
-      
-      - name: Cache pip dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt', 'backend/requirements-dev.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      
-      - name: Install dependencies
-        working-directory: ./backend
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-dev.txt
-        continue-on-error: false
-      
-      - name: Run health check
-        working-directory: ./backend
-        run: |
-          python -c "from app.main import app; print('Backend imports successfully')"
-        continue-on-error: false
-      
-      - name: Run backend tests
-        working-directory: ./backend
-        run: pytest -v --cov=. --cov-report=term-missing
-        continue-on-error: false
-
-  # Job 3: Frontend Linting
-  frontend-linting:
-    name: Frontend Linting
+  # Job 2: Frontend Lint & Test (Combined)
+  frontend-quality:
+    name: Frontend Lint & Test
     runs-on: ubuntu-latest
     timeout-minutes: 10
     
@@ -111,111 +62,24 @@ jobs:
         uses: actions/checkout@v3
         continue-on-error: false
       
-      - name: Set up Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NODE_VERSION }}
+      - name: Build frontend image
+        run: docker compose build frontend
         continue-on-error: false
       
-      - name: Cache npm dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm install
+      - name: Lint, test, and build frontend
+        run: docker compose run --rm frontend sh -c "npm run lint && npm test && npm run build"
         continue-on-error: false
       
-      - name: Run ESLint
-        working-directory: ./frontend
-        run: npm run lint
-        continue-on-error: false
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
 
-  # Job 4: Frontend Tests
-  frontend-tests:
-    name: Frontend Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: frontend-linting
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        continue-on-error: false
-      
-      - name: Set up Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-        continue-on-error: false
-      
-      # Cache npm dependencies for faster subsequent runs
-      - name: Cache npm dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      
-      # CRITICAL: Use 'npm install' NOT 'npm ci'
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm install
-        continue-on-error: false
-      
-      # Execute frontend test suite
-      - name: Run frontend tests
-        working-directory: ./frontend
-        run: npm test
-        continue-on-error: false
-      
-      - name: Build frontend
-        working-directory: ./frontend
-        run: npm run build
-        continue-on-error: false
-
-  # Job 5: Docker Build Verification
-  docker-build:
-    name: Docker Build Verification
+  # Job 3: Docker Compose Integration
+  docker-compose-integration:
+    name: Docker Compose Integration
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [backend-linting, frontend-linting]
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        continue-on-error: false
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        continue-on-error: false
-      
-      - name: Build backend Docker image
-        run: |
-          docker build -t backend:test ./backend
-        continue-on-error: false
-      
-      - name: Build frontend Docker image
-        run: |
-          docker build -t frontend:test ./frontend
-        continue-on-error: false
-      
-      - name: Verify Docker images
-        run: |
-          docker images | grep test
-        continue-on-error: false
-
-  # Job 6: Docker Compose Validation
-  docker-compose-validation:
-    name: Docker Compose Validation
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: [backend-tests, frontend-tests, docker-build]
+    needs: [backend-quality, frontend-quality]
     
     steps:
       - name: Checkout code
@@ -264,11 +128,11 @@ jobs:
         if: always()
         run: docker compose down -v
 
-  # Job 7: Summary
+  # Job 4: Summary
   ci-success:
     name: CI Pipeline Success
     runs-on: ubuntu-latest
-    needs: [backend-linting, backend-tests, frontend-linting, frontend-tests, docker-build, docker-compose-validation]
+    needs: [backend-quality, frontend-quality, docker-compose-integration]
     if: success()
     
     steps:
@@ -276,18 +140,13 @@ jobs:
         run: |
           echo "✅ All CI pipeline checks passed successfully!"
           echo ""
-          echo "Sequential workflow completed:"
-          echo "  Stage 1 - Linting (parallel):"
-          echo "    ✓ Backend linting (flake8)"
-          echo "    ✓ Frontend linting (ESLint)"
+          echo "Workflow completed:"
+          echo "  Stage 1 - Quality checks (parallel):"
+          echo "    ✓ Backend lint & test (docker compose)"
+          echo "    ✓ Frontend lint & test (docker compose)"
           echo ""
-          echo "  Stage 2 - Testing (parallel, after linting):"
-          echo "    ✓ Backend tests (pytest with coverage)"
-          echo "    ✓ Frontend tests (vitest)"
-          echo ""
-          echo "  Stage 3 - Docker validation (after tests):"
-          echo "    ✓ Docker build verification"
-          echo "    ✓ Docker Compose integration validation"
+          echo "  Stage 2 - Integration:"
+          echo "    ✓ Docker Compose full stack validation"
           echo ""
           echo "All quality gates passed! 🎉"
         continue-on-error: false

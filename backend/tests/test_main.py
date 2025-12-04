@@ -57,7 +57,7 @@ def client() -> Generator[TestClient, None, None]:
             cursor.close()
     except Exception:
         pass  # Ignore cleanup errors
-    
+
     dependencies._task_repository = None
 
 
