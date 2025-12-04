@@ -115,7 +115,8 @@ npm test
 - ✅ **Create Tasks**: Add new tasks with title and description
 - ✅ **View Tasks**: Display all tasks ordered by creation date (newest first)
 - ✅ **Edit Tasks**: Update task title and description
-- ✅ **Delete Tasks**: Remove tasks from the list
+- ✅ **Delete Tasks**: Remove individual tasks from the list
+- ✅ **Delete All Tasks**: Remove all tasks at once with a single operation
 - ✅ **Toggle Completion**: Mark tasks as complete or incomplete
 - ✅ **Data Persistence**: Tasks persist across application restarts
 - ✅ **Input Validation**: Client and server-side validation for data integrity
@@ -136,6 +137,7 @@ npm test
 ### Backend Features
 - ✅ RESTful API with FastAPI
 - ✅ Full CRUD operations for tasks
+- ✅ Bulk delete operation for clearing all tasks
 - ✅ Pydantic models for request/response validation
 - ✅ JSON file-based persistence with in-memory caching
 - ✅ Automatic data directory and file creation
@@ -255,7 +257,7 @@ Update an existing task.
 ```
 
 ### DELETE /api/tasks/{task_id}
-Delete a task.
+Delete a specific task by ID.
 
 **Response (204 No Content):**
 No response body.
@@ -266,6 +268,27 @@ No response body.
   "detail": "Task not found"
 }
 ```
+
+### DELETE /api/tasks
+Delete all tasks at once (bulk delete operation).
+
+**Response (204 No Content):**
+No response body.
+
+**Example:**
+```bash
+# Delete all tasks
+curl -X DELETE http://localhost:8000/api/tasks
+
+# Response: 204 No Content (no body)
+```
+
+**Notes:**
+- This is a destructive operation that removes all tasks from storage
+- No confirmation is required - the operation executes immediately
+- The operation is idempotent - calling it multiple times is safe
+- Returns 204 status code even when no tasks exist
+- Useful for testing, development, or clearing all data
 
 ### GET /health
 Returns the health status of the backend.
@@ -369,6 +392,7 @@ The backend test suite includes:
 - ✅ Request validation (empty titles, length limits)
 - ✅ HTTP status codes (200, 201, 204, 404, 422)
 - ✅ Task repository CRUD operations
+- ✅ Bulk delete operations (delete_all)
 - ✅ File persistence and data loading
 - ✅ Error handling for missing files and invalid data
 
@@ -382,6 +406,9 @@ The backend test suite includes:
 - ✅ **Property 7**: Invalid update rejection - empty title updates should be rejected
 - ✅ **Property 8**: RESTful status codes - operations return correct HTTP status codes
 - ✅ **Property 9**: Persistence across restarts - tasks survive backend restarts
+- ✅ **Property 11**: Bulk delete completeness - delete_all removes all tasks from repository
+- ✅ **Property 12**: Bulk delete persistence - empty state persists after repository restart
+- ✅ **Property 13**: Bulk delete completeness (API) - DELETE /api/tasks removes all tasks
 
 For detailed backend testing documentation, see [backend/README_TESTS.md](backend/README_TESTS.md).
 
@@ -435,6 +462,13 @@ For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](fronte
 - [ ] Task removed immediately from UI
 - [ ] Deletion persists after page refresh
 
+**Bulk Task Deletion:**
+- [ ] DELETE /api/tasks removes all tasks
+- [ ] Operation works when no tasks exist (idempotent)
+- [ ] All tasks are immediately removed from UI
+- [ ] Empty state persists after page refresh
+- [ ] Individual task endpoints return 404 after bulk delete
+
 **Error Handling:**
 - [ ] Validation errors display clearly
 - [ ] Network errors show user-friendly messages
@@ -444,6 +478,7 @@ For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](fronte
 - [ ] Tasks persist after browser refresh
 - [ ] Tasks persist after backend restart
 - [ ] Tasks persist after full Docker restart
+- [ ] Bulk delete persists after restart
 
 **Integration:**
 - [ ] Services start with `docker compose up` within 10 seconds
@@ -583,10 +618,11 @@ docker compose restart backend
 
 **Reset Data:**
 ```bash
-# Delete all tasks
-rm backend/data/tasks.json
+# Option 1: Delete all tasks via API
+curl -X DELETE http://localhost:8000/api/tasks
 
-# Restart backend (will create empty file)
+# Option 2: Delete file and restart
+rm backend/data/tasks.json
 docker compose restart backend
 ```
 
@@ -689,6 +725,12 @@ docker compose restart backend
 - Authentication can be added later without major refactoring
 - All tasks are currently shared (no user isolation)
 
+**Bulk Delete Operation:**
+- Provides efficient way to clear all tasks with single API call
+- Avoids N+1 problem (no need to delete tasks one by one)
+- Useful for testing, development, and data management
+- Idempotent design ensures safe repeated calls
+
 **Property-Based Testing:**
 - Catches edge cases that manual testing misses
 - Provides mathematical guarantees about correctness
@@ -714,6 +756,7 @@ docker compose restart backend
 - No authentication or authorization
 - No real-time updates (polling required)
 - No task sharing or collaboration features
+- Bulk delete has no confirmation (destructive operation)
 
 ## 🤝 Contributing
 
