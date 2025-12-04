@@ -110,7 +110,8 @@ npm test
 - ✅ **Create Tasks**: Add new tasks with title and description
 - ✅ **View Tasks**: Display all tasks ordered by creation date (newest first)
 - ✅ **Edit Tasks**: Update task title and description
-- ✅ **Delete Tasks**: Remove tasks from the list
+- ✅ **Delete Tasks**: Remove individual tasks from the list
+- ✅ **Delete All Tasks**: Remove all tasks at once
 - ✅ **Toggle Completion**: Mark tasks as complete or incomplete
 - ✅ **Data Persistence**: Tasks persist across application restarts
 - ✅ **Input Validation**: Client and server-side validation for data integrity
@@ -131,6 +132,7 @@ npm test
 ### Backend Features
 - ✅ RESTful API with FastAPI
 - ✅ Full CRUD operations for tasks
+- ✅ Bulk delete operation for all tasks
 - ✅ Pydantic models for request/response validation
 - ✅ JSON file-based persistence with in-memory caching
 - ✅ Automatic data directory and file creation
@@ -250,7 +252,7 @@ Update an existing task.
 ```
 
 ### DELETE /api/tasks/{task_id}
-Delete a task.
+Delete a specific task by ID.
 
 **Response (204 No Content):**
 No response body.
@@ -261,6 +263,31 @@ No response body.
   "detail": "Task not found"
 }
 ```
+
+### DELETE /api/tasks
+Delete all tasks at once.
+
+**Response (204 No Content):**
+No response body.
+
+**Example Usage:**
+```bash
+# Using curl
+curl -X DELETE http://localhost:8000/api/tasks
+
+# Using httpie
+http DELETE http://localhost:8000/api/tasks
+
+# Using JavaScript fetch
+fetch('http://localhost:8000/api/tasks', { method: 'DELETE' });
+```
+
+**Behavior:**
+- Deletes all tasks from the database
+- Returns 204 status code regardless of whether tasks existed
+- Idempotent operation (safe to call multiple times)
+- No request body required
+- No response body returned
 
 ### GET /health
 Returns the health status of the backend.
@@ -358,6 +385,7 @@ pytest -v
 # Run specific test file
 pytest test_main.py
 pytest test_task_repository.py
+pytest test_task_service.py
 
 # Run with coverage
 pytest --cov=. --cov-report=html
@@ -383,9 +411,11 @@ The backend test suite includes:
 
 **Unit Tests:**
 - ✅ All API endpoints (GET, POST, PUT, DELETE)
+- ✅ Delete all tasks endpoint (DELETE /api/tasks)
 - ✅ Request validation (empty titles, length limits)
 - ✅ HTTP status codes (200, 201, 204, 404, 422)
 - ✅ Task repository CRUD operations
+- ✅ Task service business logic layer
 - ✅ File persistence and data loading
 - ✅ Error handling for missing files and invalid data
 
@@ -399,6 +429,7 @@ The backend test suite includes:
 - ✅ **Property 7**: Invalid update rejection - empty title updates should be rejected
 - ✅ **Property 8**: RESTful status codes - operations return correct HTTP status codes
 - ✅ **Property 9**: Persistence across restarts - tasks survive backend restarts
+- ✅ **Property 10**: Delete all removes all tasks - delete_all removes all tasks regardless of count
 
 For detailed backend testing documentation, see [backend/README_TESTS.md](backend/README_TESTS.md).
 
@@ -416,7 +447,7 @@ The frontend test suite includes:
 - ✅ Empty state display
 
 **Property-Based Tests:**
-- ✅ **Property 10**: Task ordering consistency - tasks always ordered by creation date (newest first)
+- ✅ **Property 11**: Task ordering consistency - tasks always ordered by creation date (newest first)
 
 For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](frontend/TEST_GUIDE.md).
 
@@ -448,8 +479,17 @@ For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](fronte
 - [ ] Status persists after page refresh
 
 **Task Deletion:**
-- [ ] Delete button removes task from list
+- [ ] Delete button removes individual task from list
 - [ ] Task removed immediately from UI
+- [ ] Deletion persists after page refresh
+
+**Delete All Tasks:**
+- [ ] Delete all button removes all tasks at once
+- [ ] Works when no tasks exist (idempotent)
+- [ ] Works with single task
+- [ ] Works with multiple tasks
+- [ ] Removes both completed and incomplete tasks
+- [ ] UI updates immediately
 - [ ] Deletion persists after page refresh
 
 **Error Handling:**
