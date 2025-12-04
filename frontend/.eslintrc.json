@@ -1,7 +1,8 @@
 {
   "env": {
     "browser": true,
-    "es2021": true
+    "es2021": true,
+    "node": true
   },
   "extends": [
     "eslint:recommended",
@@ -22,5 +23,22 @@
     "react/prop-types": "off",
     "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
     "no-console": ["warn", { "allow": ["warn", "error"] }]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["**/__tests__/**/*", "**/*.test.*", "**/*.spec.*"],
+      "globals": {
+        "global": "readonly",
+        "describe": "readonly",
+        "it": "readonly",
+        "expect": "readonly",
+        "test": "readonly",
+        "beforeEach": "readonly",
+        "afterEach": "readonly",
+        "beforeAll": "readonly",
+        "afterAll": "readonly",
+        "vi": "readonly"
+      }
+    }
+  ]
 }
