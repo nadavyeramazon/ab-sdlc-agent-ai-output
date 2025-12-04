@@ -477,9 +477,10 @@ class TestDeleteAllTasksEndpoint:
         # Delete all
         response = client.delete("/api/tasks")
 
+        # Verify 204 No Content status and empty body
+        # Note: content-length header is optional for 204 responses per HTTP spec
         assert response.status_code == 204
         assert response.text == ""
-        assert response.headers.get("content-length") == "0"
 
     def test_delete_all_tasks_wrong_methods(self, client: TestClient) -> None:
         """Test that other HTTP methods are not allowed on /api/tasks delete"""
