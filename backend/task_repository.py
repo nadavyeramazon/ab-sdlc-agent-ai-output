@@ -90,7 +90,10 @@ class TaskRepository:
         Returns:
             List of all tasks, ordered by creation date (newest first)
         """
-        query = "SELECT id, title, description, completed, created_at, updated_at FROM tasks ORDER BY created_at DESC"
+        query = (
+            "SELECT id, title, description, completed, created_at, updated_at "
+            "FROM tasks ORDER BY created_at DESC"
+        )
 
         try:
             with self._get_connection() as connection:
@@ -114,7 +117,10 @@ class TaskRepository:
         Returns:
             Task object if found, None otherwise
         """
-        query = "SELECT id, title, description, completed, created_at, updated_at FROM tasks WHERE id = %s"
+        query = (
+            "SELECT id, title, description, completed, created_at, updated_at "
+            "FROM tasks WHERE id = %s"
+        )
 
         try:
             with self._get_connection() as connection:

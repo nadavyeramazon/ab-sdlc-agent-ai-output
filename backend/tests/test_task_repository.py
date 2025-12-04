@@ -11,7 +11,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from main import TaskCreate, TaskUpdate
+from main import TaskCreate
 from task_repository import TaskRepository
 
 
@@ -103,7 +103,7 @@ class TestTaskCreationPersistence:
             assert all_tasks[0].id == created_task.id
             assert all_tasks[0].title == task_data.title
             assert all_tasks[0].description == task_data.description
-            assert all_tasks[0].completed == False
+            assert all_tasks[0].completed is False
 
         finally:
             # Clean up after test

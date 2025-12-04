@@ -7,7 +7,7 @@ This module provides a RESTful API for managing tasks with CRUD operations.
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from models import Task, TaskCreate, TaskUpdate
+from models import TaskCreate, TaskUpdate
 from task_repository import TaskRepository
 
 # Initialize FastAPI application with redirect_slashes disabled
