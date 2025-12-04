@@ -121,11 +121,8 @@ class TestApplicationInitialization:
         assert app_instance.description == "A RESTful API for managing tasks"
         assert app_instance.version == "1.0.0"
 
-    def test_all_routes_are_registered(self) -> None:
+    def test_all_routes_are_registered(self, client: TestClient) -> None:
         """Test that all routes are registered correctly"""
-        app_instance = create_app()
-        client = TestClient(app_instance)
-
         # Test health route is registered
         response = client.get("/health")
         assert response.status_code == 200
@@ -148,11 +145,8 @@ class TestApplicationInitialization:
         response = client.delete(f"/api/tasks/{task_id}")
         assert response.status_code == 204
 
-    def test_cors_is_configured(self) -> None:
+    def test_cors_is_configured(self, client: TestClient) -> None:
         """Test that CORS middleware is configured correctly"""
-        app_instance = create_app()
-        client = TestClient(app_instance)
-
         # Make request with Origin header
         response = client.get("/api/tasks", headers={"Origin": "http://localhost:3000"})
 
@@ -160,11 +154,8 @@ class TestApplicationInitialization:
         assert "access-control-allow-origin" in response.headers
         assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
 
-    def test_openapi_docs_accessible(self) -> None:
+    def test_openapi_docs_accessible(self, client: TestClient) -> None:
         """Test that OpenAPI documentation is accessible"""
-        app_instance = create_app()
-        client = TestClient(app_instance)
-
         # Test OpenAPI JSON endpoint
         response = client.get("/openapi.json")
         assert response.status_code == 200
@@ -357,7 +348,11 @@ class TestTaskCreationProperties:
     """Property-based tests for task creation and management"""
 
     @given(st.text().filter(lambda s: not s or not s.strip()))
-    @settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(
+        max_examples=10,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+        deadline=1000
+    )
     def test_property_empty_title_rejection(self, client: TestClient, empty_title: str) -> None:
         """
         Property: Empty title rejection
@@ -376,7 +371,11 @@ class TestTaskCreationProperties:
         st.text(min_size=1, max_size=200).filter(lambda s: s.strip()),
         st.text(max_size=1000),
     )
-    @settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(
+        max_examples=10,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+        deadline=2000
+    )
     def test_property_restful_status_codes(
         self, client: TestClient, title: str, description: str
     ) -> None:

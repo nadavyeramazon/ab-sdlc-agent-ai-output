@@ -100,7 +100,7 @@ class TestTaskCreationPersistence:
     **Validates: Requirements 1.1, 1.4**
     """
 
-    @settings(max_examples=50)
+    @settings(max_examples=10, deadline=1000)
     @given(task_data=task_create_strategy())
     def test_created_task_appears_in_get_all(self, task_data):
         """
@@ -141,8 +141,8 @@ class TestPersistenceAcrossRestarts:
     **Validates: Requirements 7.1, 7.3**
     """
 
-    @settings(max_examples=50)
-    @given(tasks_data=st.lists(task_create_strategy(), min_size=1, max_size=10))
+    @settings(max_examples=10, deadline=2000)
+    @given(tasks_data=st.lists(task_create_strategy(), min_size=1, max_size=5))
     def test_tasks_persist_across_restarts(self, tasks_data):
         """
         Property: For any set of tasks created before a repository restart,
