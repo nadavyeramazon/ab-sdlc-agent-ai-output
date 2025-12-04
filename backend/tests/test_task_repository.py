@@ -40,19 +40,19 @@ def create_mock_repository():
     """Create a mock repository with in-memory storage"""
     repo = TaskRepository.__new__(TaskRepository)
     repo.db_config = {}
-    
+
     # Override methods to use in-memory storage
     def get_all():
         return sorted(mock_tasks.values(), key=lambda t: t.created_at, reverse=True)
-    
+
     def get_by_id(task_id: str):
         return mock_tasks.get(task_id)
-    
+
     def create(task_data: TaskCreate):
         task = Task.create_new(task_data)
         mock_tasks[task.id] = task
         return task
-    
+
     def update(task_id: str, task_data):
         existing = mock_tasks.get(task_id)
         if not existing:
@@ -60,19 +60,19 @@ def create_mock_repository():
         updated = existing.update_from(task_data)
         mock_tasks[task_id] = updated
         return updated
-    
+
     def delete(task_id: str):
         if task_id in mock_tasks:
             del mock_tasks[task_id]
             return True
         return False
-    
+
     repo.get_all = get_all
     repo.get_by_id = get_by_id
     repo.create = create
     repo.update = update
     repo.delete = delete
-    
+
     return repo
 
 
@@ -84,11 +84,11 @@ def test_repo():
     """
     global mock_tasks
     mock_tasks = {}
-    
+
     with patch('app.repositories.task_repository.TaskRepository._initialize_database'):
         repo = create_mock_repository()
         yield repo
-    
+
     mock_tasks = {}
 
 
@@ -113,10 +113,10 @@ class TestTaskCreationPersistence:
         """
         global mock_tasks
         mock_tasks = {}
-        
+
         with patch('app.repositories.task_repository.TaskRepository._initialize_database'):
             repo = create_mock_repository()
-            
+
             # Create the task
             created_task = repo.create(task_data)
 
@@ -129,7 +129,7 @@ class TestTaskCreationPersistence:
             assert all_tasks[0].title == task_data.title
             assert all_tasks[0].description == task_data.description
             assert all_tasks[0].completed is False
-        
+
         mock_tasks = {}
 
 
@@ -155,7 +155,7 @@ class TestPersistenceAcrossRestarts:
         """
         global mock_tasks
         mock_tasks = {}
-        
+
         with patch('app.repositories.task_repository.TaskRepository._initialize_database'):
             # Create first repository instance and add tasks
             repo1 = create_mock_repository()
@@ -197,5 +197,5 @@ class TestPersistenceAcrossRestarts:
                 assert loaded.completed == expected["completed"]
                 assert loaded.created_at == expected["created_at"]
                 assert loaded.updated_at == expected["updated_at"]
-        
+
         mock_tasks = {}

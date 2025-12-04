@@ -12,7 +12,6 @@ This test suite covers:
 
 from typing import Generator
 from unittest.mock import MagicMock, patch
-from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -39,32 +38,33 @@ def mock_get_connection():
 def create_mock_repository():
     """Create a mock repository with in-memory storage"""
     from app.repositories.task_repository import TaskRepository
-    
+
     repo = TaskRepository.__new__(TaskRepository)
     repo.db_config = {}
-    
+
     # Mock the _get_connection method
     def mock_connection_context():
         from contextlib import contextmanager
+
         @contextmanager
         def _mock():
             yield mock_get_connection()
         return _mock()
-    
+
     repo._get_connection = mock_connection_context
-    
+
     # Override methods to use in-memory storage
     def get_all():
         return sorted(mock_tasks.values(), key=lambda t: t.created_at, reverse=True)
-    
+
     def get_by_id(task_id: str):
         return mock_tasks.get(task_id)
-    
+
     def create(task_data: TaskCreate):
         task = Task.create_new(task_data)
         mock_tasks[task.id] = task
         return task
-    
+
     def update(task_id: str, task_data):
         existing = mock_tasks.get(task_id)
         if not existing:
@@ -72,19 +72,19 @@ def create_mock_repository():
         updated = existing.update_from(task_data)
         mock_tasks[task_id] = updated
         return updated
-    
+
     def delete(task_id: str):
         if task_id in mock_tasks:
             del mock_tasks[task_id]
             return True
         return False
-    
+
     repo.get_all = get_all
     repo.get_by_id = get_by_id
     repo.create = create
     repo.update = update
     repo.delete = delete
-    
+
     return repo
 
 
@@ -97,14 +97,14 @@ def client() -> Generator[TestClient, None, None]:
     """
     global mock_tasks
     mock_tasks = {}
-    
+
     # Mock the repository initialization
     with patch('app.repositories.task_repository.TaskRepository._initialize_database'):
         with patch('app.dependencies.get_task_repository', side_effect=create_mock_repository):
             test_app = create_app()
             test_client = TestClient(test_app)
             yield test_client
-    
+
     # Cleanup
     mock_tasks = {}
 
