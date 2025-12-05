@@ -176,7 +176,7 @@ def delete_task(
     return None
 
 
-@router.delete("/tasks")
+@router.delete("/tasks/all")
 def delete_all_tasks(
     service: TaskService = Depends(get_task_service)
 ) -> dict:
@@ -193,7 +193,7 @@ def delete_all_tasks(
         Response: {
             "success": true,
             "deleted_count": 5,
-            "message": "All tasks deleted successfully"
+            "message": "All tasks deleted"
         }
     """
     try:
