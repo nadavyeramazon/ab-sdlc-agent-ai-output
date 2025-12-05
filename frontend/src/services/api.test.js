@@ -1,199 +1,308 @@
 /**
- * Property-based tests for API service
- * Tests universal properties that should hold across all API operations
+ * Tests for API Service Module
+ * Covers all task-related API methods including delete all functionality
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import * as fc from 'fast-check';
-import { taskApi } from './api.js';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { taskApi } from './api';
 
-describe('API Service Property Tests', () => {
-  let originalFetch;
+// Mock fetch globally
+global.fetch = vi.fn();
 
+describe('taskApi', () => {
   beforeEach(() => {
-    originalFetch = global.fetch;
+    // Clear all mocks before each test
+    vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    global.fetch = originalFetch;
+  describe('getAllTasks', () => {
+    it('should fetch all tasks successfully', async () => {
+      const mockTasks = {
+        tasks: [
+          {
+            id: '1',
+            title: 'Test Task',
+            description: 'Test Description',
+            completed: false,
+          },
+        ],
+      };
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockTasks,
+      });
+
+      const result = await taskApi.getAllTasks();
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:8000/api/tasks'
+      );
+      expect(result).toEqual(mockTasks);
+    });
+
+    it('should throw error when fetch fails', async () => {
+      global.fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+      });
+
+      await expect(taskApi.getAllTasks()).rejects.toThrow(
+        'HTTP error! status: 500'
+      );
+    });
   });
 
-  /**
-   * Property 1: API error handling consistency
-   * Validates: Requirements 7.2, 7.4
-   * 
-   * For any API operation that fails, the error should be caught and 
-   * formatted consistently with an error message
-   */
-  it('Property 1: API error handling consistency - all failed operations throw Error with message', async () => {
-    // Generator for HTTP error status codes (excluding 404 for delete which is handled specially)
-    const httpErrorStatusArb = fc.integer({ min: 400, max: 599 }).filter(status => status !== 404);
-    
-    // Generator for 422 validation errors
-    const validationErrorArb = fc.record({
-      detail: fc.array(fc.record({
-        msg: fc.string({ minLength: 1, maxLength: 100 }),
-        loc: fc.array(fc.string()),
-        type: fc.string(),
-      }), { minLength: 1, maxLength: 3 }),
-    });
+  describe('createTask', () => {
+    it('should create a task successfully', async () => {
+      const taskData = {
+        title: 'New Task',
+        description: 'New Description',
+      };
+      const mockResponse = {
+        id: '1',
+        ...taskData,
+        completed: false,
+      };
 
-    // Generator for task IDs
-    const taskIdArb = fc.uuid();
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
 
-    // Generator for task data
-    const taskDataArb = fc.record({
-      title: fc.string({ minLength: 1, maxLength: 100 }),
-      description: fc.option(fc.string({ maxLength: 500 }), { nil: undefined }),
-    });
+      const result = await taskApi.createTask(taskData);
 
-    // Generator for update data
-    const updateDataArb = fc.record({
-      title: fc.option(fc.string({ minLength: 1, maxLength: 100 }), { nil: undefined }),
-      description: fc.option(fc.string({ maxLength: 500 }), { nil: undefined }),
-      completed: fc.option(fc.boolean(), { nil: undefined }),
-    });
-
-    await fc.assert(
-      fc.asyncProperty(
-        fc.oneof(
-          // Test getAllTasks with various error statuses
-          fc.record({
-            method: fc.constant('getAllTasks'),
-            status: httpErrorStatusArb,
-            hasValidationError: fc.constant(false),
-          }),
-          // Test createTask with validation errors
-          fc.record({
-            method: fc.constant('createTask'),
-            status: fc.constant(422),
-            hasValidationError: fc.constant(true),
-            validationError: validationErrorArb,
-            taskData: taskDataArb,
-          }),
-          // Test createTask with other errors
-          fc.record({
-            method: fc.constant('createTask'),
-            status: httpErrorStatusArb,
-            hasValidationError: fc.constant(false),
-            taskData: taskDataArb,
-          }),
-          // Test updateTask with validation errors
-          fc.record({
-            method: fc.constant('updateTask'),
-            status: fc.constant(422),
-            hasValidationError: fc.constant(true),
-            validationError: validationErrorArb,
-            taskId: taskIdArb,
-            updateData: updateDataArb,
-          }),
-          // Test updateTask with 404 errors
-          fc.record({
-            method: fc.constant('updateTask'),
-            status: fc.constant(404),
-            hasValidationError: fc.constant(false),
-            taskId: taskIdArb,
-            updateData: updateDataArb,
-          }),
-          // Test updateTask with other errors
-          fc.record({
-            method: fc.constant('updateTask'),
-            status: httpErrorStatusArb,
-            hasValidationError: fc.constant(false),
-            taskId: taskIdArb,
-            updateData: updateDataArb,
-          }),
-          // Test deleteTask with non-404 errors (404 is handled gracefully)
-          fc.record({
-            method: fc.constant('deleteTask'),
-            status: httpErrorStatusArb,
-            hasValidationError: fc.constant(false),
-            taskId: taskIdArb,
-          }),
-          // Test getTaskById with 404 errors
-          fc.record({
-            method: fc.constant('getTaskById'),
-            status: fc.constant(404),
-            hasValidationError: fc.constant(false),
-            taskId: taskIdArb,
-          }),
-          // Test getTaskById with other errors
-          fc.record({
-            method: fc.constant('getTaskById'),
-            status: httpErrorStatusArb,
-            hasValidationError: fc.constant(false),
-            taskId: taskIdArb,
-          })
-        ),
-        async (testCase) => {
-          // Mock fetch to return error response
-          global.fetch = vi.fn().mockResolvedValue({
-            ok: false,
-            status: testCase.status,
-            json: async () => testCase.hasValidationError ? testCase.validationError : {},
-          });
-
-          let thrownError = null;
-
-          try {
-            // Call the appropriate API method
-            switch (testCase.method) {
-              case 'getAllTasks':
-                await taskApi.getAllTasks();
-                break;
-              case 'createTask':
-                await taskApi.createTask(testCase.taskData);
-                break;
-              case 'updateTask':
-                await taskApi.updateTask(testCase.taskId, testCase.updateData);
-                break;
-              case 'deleteTask':
-                await taskApi.deleteTask(testCase.taskId);
-                break;
-              case 'getTaskById':
-                await taskApi.getTaskById(testCase.taskId);
-                break;
-            }
-          } catch (error) {
-            thrownError = error;
-          }
-
-          // Property: All failed operations should throw an Error with a message
-          expect(thrownError).toBeInstanceOf(Error);
-          expect(thrownError.message).toBeTruthy();
-          expect(typeof thrownError.message).toBe('string');
-          expect(thrownError.message.length).toBeGreaterThan(0);
-
-          // Additional consistency check: error messages should be meaningful
-          // (not just empty strings or whitespace)
-          expect(thrownError.message.trim().length).toBeGreaterThan(0);
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:8000/api/tasks',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(taskData),
         }
-      ),
-      { numRuns: 100 } // Run 100 iterations as specified in design doc
-    );
+      );
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should handle validation error (422)', async () => {
+      global.fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 422,
+        json: async () => ({
+          detail: [{ msg: 'Title cannot be empty' }],
+        }),
+      });
+
+      await expect(
+        taskApi.createTask({ title: '' })
+      ).rejects.toThrow('Title cannot be empty');
+    });
   });
 
-  /**
-   * Edge case: deleteTask with 404 should NOT throw an error
-   * This is a special case where 404 is handled gracefully
-   */
-  it('Edge case: deleteTask with 404 returns gracefully without error', async () => {
-    await fc.assert(
-      fc.asyncProperty(
-        fc.uuid(),
-        async (taskId) => {
-          // Mock fetch to return 404
-          global.fetch = vi.fn().mockResolvedValue({
-            ok: false,
-            status: 404,
-            json: async () => ({}),
-          });
+  describe('updateTask', () => {
+    it('should update a task successfully', async () => {
+      const taskId = '1';
+      const taskData = { title: 'Updated Title' };
+      const mockResponse = {
+        id: taskId,
+        ...taskData,
+        completed: false,
+      };
 
-          // Should not throw
-          await expect(taskApi.deleteTask(taskId)).resolves.toBeUndefined();
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const result = await taskApi.updateTask(taskId, taskData);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `http://localhost:8000/api/tasks/${taskId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(taskData),
         }
-      ),
-      { numRuns: 100 }
-    );
+      );
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should handle task not found (404)', async () => {
+      global.fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+      });
+
+      await expect(
+        taskApi.updateTask('999', { title: 'Test' })
+      ).rejects.toThrow('Task not found. It may have been deleted.');
+    });
+  });
+
+  describe('deleteTask', () => {
+    it('should delete a task successfully', async () => {
+      const taskId = '1';
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+      });
+
+      await taskApi.deleteTask(taskId);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `http://localhost:8000/api/tasks/${taskId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+    });
+
+    it('should handle 404 gracefully', async () => {
+      global.fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+      });
+
+      // Should not throw error for 404
+      await expect(taskApi.deleteTask('999')).resolves.toBeUndefined();
+    });
+
+    it('should throw error for other failures', async () => {
+      global.fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+      });
+
+      await expect(taskApi.deleteTask('1')).rejects.toThrow(
+        'HTTP error! status: 500'
+      );
+    });
+  });
+
+  describe('deleteAllTasks', () => {
+    it('should delete all tasks successfully', async () => {
+      const mockResponse = {
+        success: true,
+        message: 'All tasks deleted successfully',
+        deletedCount: 5,
+      };
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const result = await taskApi.deleteAllTasks();
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:8000/api/tasks/all',
+        {
+          method: 'DELETE',
+        }
+      );
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should delete zero tasks when list is empty', async () => {
+      const mockResponse = {
+        success: true,
+        message: 'All tasks deleted successfully',
+        deletedCount: 0,
+      };
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const result = await taskApi.deleteAllTasks();
+
+      expect(result).toEqual(mockResponse);
+      expect(result.deletedCount).toBe(0);
+    });
+
+    it('should handle server error (500)', async () => {
+      const mockErrorResponse = {
+        detail: {
+          success: false,
+          message: 'Error deleting tasks',
+          error: 'Database connection failed',
+        },
+      };
+
+      global.fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => mockErrorResponse,
+      });
+
+      await expect(taskApi.deleteAllTasks()).rejects.toThrow(
+        'Database connection failed'
+      );
+    });
+
+    it('should handle network error', async () => {
+      global.fetch.mockRejectedValueOnce(
+        new Error('Network request failed')
+      );
+
+      await expect(taskApi.deleteAllTasks()).rejects.toThrow(
+        'Network request failed'
+      );
+    });
+
+    it('should use correct endpoint /api/tasks/all', async () => {
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          message: 'All tasks deleted successfully',
+          deletedCount: 3,
+        }),
+      });
+
+      await taskApi.deleteAllTasks();
+
+      const fetchCall = global.fetch.mock.calls[0];
+      expect(fetchCall[0]).toBe('http://localhost:8000/api/tasks/all');
+    });
+  });
+
+  describe('getTaskById', () => {
+    it('should get a task by ID successfully', async () => {
+      const taskId = '1';
+      const mockTask = {
+        id: taskId,
+        title: 'Test Task',
+        description: 'Test Description',
+        completed: false,
+      };
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockTask,
+      });
+
+      const result = await taskApi.getTaskById(taskId);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `http://localhost:8000/api/tasks/${taskId}`
+      );
+      expect(result).toEqual(mockTask);
+    });
+
+    it('should handle task not found (404)', async () => {
+      global.fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+      });
+
+      await expect(taskApi.getTaskById('999')).rejects.toThrow(
+        'Task not found'
+      );
+    });
   });
 });

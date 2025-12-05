@@ -106,17 +106,20 @@ export const taskApi = {
   },
 
   /**
-   * Delete all tasks
-   * @returns {Promise<Object>} Object with message and deletedCount
+   * Delete all tasks using the /api/tasks/all endpoint
+   * @returns {Promise<Object>} Object with success, message, and deletedCount
    * @throws {Error} If request fails
    */
   async deleteAllTasks() {
-    const response = await fetch(`${API_URL}/api/tasks`, {
+    const response = await fetch(`${API_URL}/api/tasks/all`, {
       method: 'DELETE',
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json();
+      throw new Error(
+        errorData.detail?.error || 'Failed to delete all tasks'
+      );
     }
 
     return response.json();
