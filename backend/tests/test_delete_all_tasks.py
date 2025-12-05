@@ -9,7 +9,7 @@ This test suite covers:
 """
 
 from typing import Generator
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -51,7 +51,11 @@ def create_mock_repository():
 
     # Override methods to use in-memory storage
     def get_all():
-        return sorted(mock_tasks.values(), key=lambda t: t.created_at, reverse=True)
+        return sorted(
+            mock_tasks.values(),
+            key=lambda t: t.created_at,
+            reverse=True
+        )
 
     def get_by_id(task_id: str):
         return mock_tasks.get(task_id)
@@ -118,12 +122,24 @@ def client() -> Generator[TestClient, None, None]:
 class TestDeleteAllTasksEndpoint:
     """Test suite for DELETE /api/tasks/all endpoint"""
 
-    def test_delete_all_tasks_success_with_tasks(self, client: TestClient) -> None:
+    def test_delete_all_tasks_success_with_tasks(
+        self,
+        client: TestClient
+    ) -> None:
         """Test successful deletion when tasks exist"""
         # Create multiple tasks
-        client.post("/api/tasks", json={"title": "Task 1", "description": "Description 1"})
-        client.post("/api/tasks", json={"title": "Task 2", "description": "Description 2"})
-        client.post("/api/tasks", json={"title": "Task 3", "description": "Description 3"})
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 1", "description": "Description 1"}
+        )
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 2", "description": "Description 2"}
+        )
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 3", "description": "Description 3"}
+        )
 
         # Verify tasks exist
         response = client.get("/api/tasks")
@@ -143,7 +159,10 @@ class TestDeleteAllTasksEndpoint:
         response = client.get("/api/tasks")
         assert len(response.json()["tasks"]) == 0
 
-    def test_delete_all_tasks_success_empty_list(self, client: TestClient) -> None:
+    def test_delete_all_tasks_success_empty_list(
+        self,
+        client: TestClient
+    ) -> None:
         """Test successful deletion when no tasks exist"""
         # Ensure no tasks exist
         response = client.get("/api/tasks")
@@ -159,10 +178,16 @@ class TestDeleteAllTasksEndpoint:
         assert data["message"] == "All tasks deleted successfully"
         assert data["deletedCount"] == 0
 
-    def test_delete_all_tasks_response_structure(self, client: TestClient) -> None:
+    def test_delete_all_tasks_response_structure(
+        self,
+        client: TestClient
+    ) -> None:
         """Test that response has correct structure"""
         # Create a task
-        client.post("/api/tasks", json={"title": "Test Task", "description": "Test"})
+        client.post(
+            "/api/tasks",
+            json={"title": "Test Task", "description": "Test"}
+        )
 
         response = client.delete("/api/tasks/all")
 
@@ -183,11 +208,20 @@ class TestDeleteAllTasksEndpoint:
         assert data["success"] is True
         assert data["deletedCount"] >= 0
 
-    def test_delete_all_tasks_multiple_calls(self, client: TestClient) -> None:
+    def test_delete_all_tasks_multiple_calls(
+        self,
+        client: TestClient
+    ) -> None:
         """Test multiple consecutive calls to delete all tasks"""
         # Create tasks
-        client.post("/api/tasks", json={"title": "Task 1", "description": "Desc 1"})
-        client.post("/api/tasks", json={"title": "Task 2", "description": "Desc 2"})
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 1", "description": "Desc 1"}
+        )
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 2", "description": "Desc 2"}
+        )
 
         # First delete
         response1 = client.delete("/api/tasks/all")
@@ -203,13 +237,19 @@ class TestDeleteAllTasksEndpoint:
         response = client.get("/api/tasks")
         assert len(response.json()["tasks"]) == 0
 
-    def test_delete_all_tasks_large_number(self, client: TestClient) -> None:
+    def test_delete_all_tasks_large_number(
+        self,
+        client: TestClient
+    ) -> None:
         """Test deletion with larger number of tasks"""
         # Create 10 tasks
         for i in range(10):
             client.post(
                 "/api/tasks",
-                json={"title": f"Task {i}", "description": f"Description {i}"}
+                json={
+                    "title": f"Task {i}",
+                    "description": f"Description {i}"
+                }
             )
 
         # Verify tasks created
@@ -225,7 +265,10 @@ class TestDeleteAllTasksEndpoint:
         response = client.get("/api/tasks")
         assert len(response.json()["tasks"]) == 0
 
-    def test_delete_all_tasks_content_type(self, client: TestClient) -> None:
+    def test_delete_all_tasks_content_type(
+        self,
+        client: TestClient
+    ) -> None:
         """Test that response has correct content type"""
         response = client.delete("/api/tasks/all")
 
@@ -236,7 +279,10 @@ class TestDeleteAllTasksEndpoint:
 class TestDeleteAllTasksErrorHandling:
     """Test suite for error handling in DELETE /api/tasks/all endpoint"""
 
-    def test_delete_all_tasks_database_error(self, client: TestClient) -> None:
+    def test_delete_all_tasks_database_error(
+        self,
+        client: TestClient
+    ) -> None:
         """Test error handling when database operation fails"""
         # Override the repository to raise an exception
         from app.dependencies import get_task_repository
@@ -268,7 +314,10 @@ class TestDeleteAllTasksErrorHandling:
         assert data["detail"]["message"] == "Error deleting tasks"
         assert "error" in data["detail"]
 
-    def test_delete_all_tasks_wrong_http_method(self, client: TestClient) -> None:
+    def test_delete_all_tasks_wrong_http_method(
+        self,
+        client: TestClient
+    ) -> None:
         """Test that only DELETE method is allowed"""
         # Test GET method
         response = client.get("/api/tasks/all")
@@ -286,7 +335,10 @@ class TestDeleteAllTasksErrorHandling:
 class TestDeleteAllTasksIntegration:
     """Integration tests for DELETE /api/tasks/all endpoint"""
 
-    def test_delete_all_after_various_operations(self, client: TestClient) -> None:
+    def test_delete_all_after_various_operations(
+        self,
+        client: TestClient
+    ) -> None:
         """Test delete all after various CRUD operations"""
         # Create tasks
         task1 = client.post(
@@ -297,10 +349,10 @@ class TestDeleteAllTasksIntegration:
             "/api/tasks",
             json={"title": "Task 2", "description": "Description 2"}
         ).json()
-        task3 = client.post(
+        client.post(
             "/api/tasks",
             json={"title": "Task 3", "description": "Description 3"}
-        ).json()
+        )
 
         # Update a task
         client.put(
@@ -327,8 +379,14 @@ class TestDeleteAllTasksIntegration:
     def test_create_after_delete_all(self, client: TestClient) -> None:
         """Test creating tasks after deleting all"""
         # Create tasks
-        client.post("/api/tasks", json={"title": "Task 1", "description": "Desc 1"})
-        client.post("/api/tasks", json={"title": "Task 2", "description": "Desc 2"})
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 1", "description": "Desc 1"}
+        )
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 2", "description": "Desc 2"}
+        )
 
         # Delete all
         client.delete("/api/tasks/all")
