@@ -33,7 +33,8 @@ class TaskCreate(BaseModel):
             Trimmed title string
 
         Raises:
-            ValueError: If title is empty, whitespace-only, or exceeds 200 characters
+            ValueError: If title is empty, whitespace-only, or
+                exceeds 200 characters
         """
         if not v or not v.strip():
             raise ValueError("Title cannot be empty")
@@ -84,7 +85,8 @@ class TaskUpdate(BaseModel):
             Trimmed title string or None
 
         Raises:
-            ValueError: If title is empty, whitespace-only, or exceeds 200 characters
+            ValueError: If title is empty, whitespace-only, or
+                exceeds 200 characters
         """
         if v is not None:
             if not v or not v.strip():
@@ -167,6 +169,8 @@ class Task(BaseModel):
         if update_data.completed is not None:
             updated_fields["completed"] = update_data.completed
 
-        updated_fields["updated_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        updated_fields["updated_at"] = (
+            datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        )
 
         return self.model_copy(update=updated_fields)
