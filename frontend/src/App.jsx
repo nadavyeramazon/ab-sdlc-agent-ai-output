@@ -4,7 +4,6 @@ import logo from './assets/logo-swiftpay.png';
 import { useTasks } from './hooks/useTasks';
 import TaskForm from './components/TaskForm';
 import TaskList from './components/TaskList';
-import { taskApi } from './services/api';
 
 function App() {
   // Use custom hook for task management
@@ -16,7 +15,7 @@ function App() {
     updateTask,
     deleteTask,
     toggleTaskComplete,
-    refreshTasks,
+    fetchTasks,
   } = useTasks();
 
   // Local state for edit mode
@@ -108,7 +107,7 @@ function App() {
       const data = await response.json();
 
       // Refresh the task list
-      await refreshTasks();
+      await fetchTasks();
 
       // Show success message
       setSuccessMessage(
