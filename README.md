@@ -151,7 +151,7 @@ npm test
 - ✅ Pydantic models for request/response validation
 - ✅ MySQL database persistence with connection pooling
 - ✅ Automatic database schema initialization
-- ✅ Proper HTTP status codes (200, 201, 204, 404, 422)
+- ✅ Proper HTTP status codes (200, 201, 204, 404, 422, 500)
 - ✅ CORS enabled for frontend communication
 - ✅ Auto-reload during development
 - ✅ Comprehensive test coverage with property-based testing
@@ -402,12 +402,18 @@ This endpoint provides a convenient way to clear all tasks from the database. Us
 ```
 
 **Response (500 Internal Server Error):**
+Returned when a database error occurs during the delete operation.
+
 ```json
 {
-  "success": false,
-  "error": "Database connection error"
+  "detail": "Error deleting tasks: Database connection error"
 }
 ```
+
+**Error Scenarios:**
+- **Database Connection Failure**: If MySQL is unavailable or connection fails
+- **Query Execution Error**: If the DELETE query fails
+- **General Exceptions**: Any unexpected errors during the operation
 
 **Example Usage:**
 ```bash
@@ -419,8 +425,14 @@ http DELETE http://localhost:8000/api/tasks/all
 
 # Using fetch in JavaScript
 fetch('http://localhost:8000/api/tasks/all', { method: 'DELETE' })
-  .then(response => response.json())
-  .then(data => console.log(`Deleted ${data.deletedCount} tasks`));
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => console.log(`Deleted ${data.deletedCount} tasks`))
+  .catch(error => console.error('Error deleting tasks:', error));
 ```
 
 **Frontend Integration:**
@@ -446,10 +458,11 @@ const handleDeleteAllTasks = async () => {
 **Notes:**
 - This operation is idempotent - calling it multiple times is safe
 - Returns `deletedCount: 0` if no tasks exist
-- Operation is atomic - all tasks are deleted in a single transaction
+- Operation is atomic - all tasks are deleted in a single database transaction
 - Cannot be undone - ensure you have backups if needed
 - Frontend shows confirmation dialog before execution
 - Success message displays the number of deleted tasks
+- HTTP 500 status returned on server errors (not error object in response body)
 
 ### GET /health
 Returns the health status of the backend.
@@ -610,7 +623,7 @@ The backend test suite includes:
 - ✅ All API endpoints (GET, POST, PUT, DELETE)
 - ✅ Bulk delete endpoint (DELETE /api/tasks/all)
 - ✅ Request validation (empty titles, length limits)
-- ✅ HTTP status codes (200, 201, 204, 404, 422)
+- ✅ HTTP status codes (200, 201, 204, 404, 422, 500)
 - ✅ Task repository CRUD operations
 - ✅ Database persistence and connection handling
 - ✅ Error handling for database errors and invalid data
@@ -1003,6 +1016,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Returns count of deleted tasks for confirmation
 - Idempotent operation - safe to call multiple times
 - Atomic operation - all tasks deleted in single transaction
+- Uses proper HTTP exception handling (500 status on errors)
 
 **No Authentication:**
 - MVP scope focuses on core CRUD functionality
