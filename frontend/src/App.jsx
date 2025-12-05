@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import './App.css';
-import logo from './assets/logo.png';
+import logo from './assets/logo-swiftpay.png';
 import { useTasks } from './hooks/useTasks';
 import TaskForm from './components/TaskForm';
 import TaskList from './components/TaskList';
+import { taskApi } from './services/api';
 
 function App() {
   // Use custom hook for task management
@@ -15,6 +16,7 @@ function App() {
     updateTask,
     deleteTask,
     toggleTaskComplete,
+    refreshTasks,
   } = useTasks();
 
   // Local state for edit mode
@@ -25,19 +27,21 @@ function App() {
   const [createError, setCreateError] = useState('');
   const [toggleLoading, setToggleLoading] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // Handle task creation
   const handleCreateTask = async (taskData) => {
     setCreateLoading(true);
     setCreateError('');
-    
+
     const success = await createTask(taskData);
-    
+
     setCreateLoading(false);
     if (!success) {
       setCreateError(error || 'Failed to create task');
     }
-    
+
     return success;
   };
 
@@ -51,7 +55,7 @@ function App() {
     const success = await updateTask(editingTask.id, taskData);
 
     setEditLoading(false);
-    
+
     if (success) {
       setEditingTask(null);
     } else {
@@ -73,6 +77,53 @@ function App() {
     setToggleLoading(taskId);
     await toggleTaskComplete(taskId, currentStatus);
     setToggleLoading(null);
+  };
+
+  // Handle delete all tasks
+  const handleDeleteAllTasks = async () => {
+    if (tasks.length === 0) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Are you sure you want to delete all tasks? This action cannot be undone.'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeleteAllLoading(true);
+    setSuccessMessage('');
+
+    try {
+      const response = await fetch('http://localhost:3000/api/tasks/all', {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete all tasks');
+      }
+
+      const data = await response.json();
+
+      // Refresh the task list
+      await refreshTasks();
+
+      // Show success message
+      setSuccessMessage(
+        `Successfully deleted ${data.deletedCount} task${data.deletedCount !== 1 ? 's' : ''}`
+      );
+
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 5000);
+    } catch (err) {
+      setCreateError('Failed to delete all tasks: ' + err.message);
+    } finally {
+      setDeleteAllLoading(false);
+    }
   };
 
   // Start editing a task
@@ -114,7 +165,23 @@ function App() {
 
           {/* Task List */}
           <div className="task-list-section">
-            <h3>Task List</h3>
+            <div className="task-list-header">
+              <h3>Task List</h3>
+              {tasks.length > 0 && (
+                <button
+                  onClick={handleDeleteAllTasks}
+                  disabled={deleteAllLoading || loading}
+                  className="btn-delete-all"
+                >
+                  {deleteAllLoading ? 'Deleting...' : 'Delete All Tasks'}
+                </button>
+              )}
+            </div>
+
+            {successMessage && (
+              <div className="success-message">{successMessage}</div>
+            )}
+
             <TaskList
               tasks={tasks}
               loading={loading}
