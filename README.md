@@ -35,11 +35,21 @@ project-root/
 │   ├── TEST_GUIDE.md             # Comprehensive testing documentation
 │   └── Dockerfile                # Frontend Docker image
 ├── backend/                       # Python FastAPI backend
-│   ├── main.py                   # FastAPI application with task endpoints
-│   ├── task_repository.py        # Data persistence layer (MySQL)
-│   ├── test_main.py              # API endpoint tests with property tests
-│   ├── test_task_repository.py   # Repository tests with property tests
-│   ├── requirements.txt          # Backend dependencies (includes mysql-connector-python)
+│   ├── app/
+│   │   ├── main.py               # FastAPI application factory
+│   │   ├── routes/
+│   │   │   └── tasks.py          # Task endpoints (includes DELETE /tasks/all)
+│   │   ├── services/
+│   │   │   └── task_service.py   # Business logic layer
+│   │   ├── repositories/
+│   │   │   └── task_repository.py # Data persistence layer (MySQL)
+│   │   └── models/
+│   │       └── task.py           # Pydantic models
+│   ├── tests/
+│   │   ├── test_main.py          # API endpoint tests
+│   │   ├── test_task_repository.py # Repository tests
+│   │   └── test_delete_all_tasks.py # DELETE /tasks/all endpoint tests
+│   ├── requirements.txt          # Backend dependencies
 │   ├── pytest.ini                # Pytest configuration
 │   ├── README_TESTS.md           # Backend testing documentation
 │   ├── .env.example              # Environment variable template
@@ -90,7 +100,7 @@ project-root/
 ```bash
 cd backend
 pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8000
 ```
 
 #### Frontend Setup
@@ -102,6 +112,11 @@ npm run dev
 
 #### Run Tests
 ```bash
+# Backend tests
+cd backend
+pytest
+
+# Frontend tests
 cd frontend
 npm test
 ```
@@ -387,10 +402,16 @@ No response body.
 ```
 
 ### DELETE /api/tasks/all
-Delete all tasks at once.
+Delete all tasks at once (bulk delete operation).
 
 **Description:**
 This endpoint provides a convenient way to clear all tasks from the database. Useful for testing, resetting the application state, or bulk cleanup operations.
+
+**HTTP Method:** `DELETE`
+
+**Path:** `/api/tasks/all`
+
+**Request Body:** None required
 
 **Response (200 OK):**
 ```json
@@ -400,6 +421,11 @@ This endpoint provides a convenient way to clear all tasks from the database. Us
   "deletedCount": 5
 }
 ```
+
+**Response Fields:**
+- `success` (boolean): Always `true` for successful deletion
+- `message` (string): Human-readable success message
+- `deletedCount` (integer): Number of tasks deleted (0 if no tasks existed)
 
 **Response (500 Internal Server Error):**
 Returned when a database error occurs during the delete operation.
@@ -416,6 +442,7 @@ Returned when a database error occurs during the delete operation.
 - **General Exceptions**: Any unexpected errors during the operation
 
 **Example Usage:**
+
 ```bash
 # Using curl
 curl -X DELETE http://localhost:8000/api/tasks/all
@@ -423,7 +450,7 @@ curl -X DELETE http://localhost:8000/api/tasks/all
 # Using httpie
 http DELETE http://localhost:8000/api/tasks/all
 
-# Using fetch in JavaScript
+# Using JavaScript fetch
 fetch('http://localhost:8000/api/tasks/all', { method: 'DELETE' })
   .then(response => {
     if (!response.ok) {
@@ -431,12 +458,15 @@ fetch('http://localhost:8000/api/tasks/all', { method: 'DELETE' })
     }
     return response.json();
   })
-  .then(data => console.log(`Deleted ${data.deletedCount} tasks`))
+  .then(data => {
+    console.log(`Deleted ${data.deletedCount} task(s)`);
+    console.log(`Success: ${data.success}`);
+    console.log(`Message: ${data.message}`);
+  })
   .catch(error => console.error('Error deleting tasks:', error));
 ```
 
-**Frontend Integration:**
-The Delete All button in the UI calls this endpoint with proper error handling:
+**Frontend Integration Example:**
 ```jsx
 const handleDeleteAllTasks = async () => {
   const confirmed = window.confirm(
@@ -445,24 +475,46 @@ const handleDeleteAllTasks = async () => {
   
   if (!confirmed) return;
   
+  setDeleteAllLoading(true);
+  
   try {
-    const data = await taskApi.deleteAllTasks();
-    await fetchTasks(); // Refresh list
-    setSuccessMessage(`Successfully deleted ${data.deletedCount} task(s)`);
+    const response = await fetch(`${API_URL}/api/tasks/all`, {
+      method: 'DELETE'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    await fetchTasks(); // Refresh task list
+    
+    setSuccessMessage(
+      `Successfully deleted ${data.deletedCount} task${data.deletedCount !== 1 ? 's' : ''}`
+    );
+    
+    // Auto-dismiss success message after 5 seconds
+    setTimeout(() => setSuccessMessage(''), 5000);
   } catch (err) {
     setError('Failed to delete all tasks: ' + err.message);
+  } finally {
+    setDeleteAllLoading(false);
   }
 };
 ```
 
-**Notes:**
-- This operation is idempotent - calling it multiple times is safe
-- Returns `deletedCount: 0` if no tasks exist
-- Operation is atomic - all tasks are deleted in a single database transaction
-- Cannot be undone - ensure you have backups if needed
-- Frontend shows confirmation dialog before execution
-- Success message displays the number of deleted tasks
-- HTTP 500 status returned on server errors (not error object in response body)
+**Implementation Notes:**
+- ✅ **Idempotent**: Calling the endpoint multiple times is safe and produces the same result
+- ✅ **Returns count**: Always returns the number of tasks deleted, even if 0
+- ✅ **Atomic operation**: All tasks are deleted in a single database transaction
+- ✅ **Cannot be undone**: Ensure proper confirmation dialogs in client applications
+- ✅ **Frontend confirmation**: UI shows native confirmation dialog before execution
+- ✅ **Success feedback**: Frontend displays count of deleted tasks
+- ✅ **Error handling**: HTTP 500 status returned on server errors (not error object in body)
+- ✅ **Route ordering**: Defined before `/tasks/{task_id}` to prevent path conflicts
+
+**Route Ordering Note:**
+The `/tasks/all` route must be defined **before** the `/tasks/{task_id}` route in the FastAPI router to ensure FastAPI matches the specific path first, rather than treating "all" as a task ID parameter.
 
 ### GET /health
 Returns the health status of the backend.
@@ -558,12 +610,12 @@ pytest
 pytest -v
 
 # Run specific test file
-pytest test_main.py
-pytest test_task_repository.py
-pytest test_delete_all_tasks.py
+pytest tests/test_main.py
+pytest tests/test_task_repository.py
+pytest tests/test_delete_all_tasks.py
 
 # Run with coverage
-pytest --cov=. --cov-report=html
+pytest --cov=app --cov-report=html
 ```
 
 **Frontend Tests:**
@@ -627,6 +679,21 @@ The backend test suite includes:
 - ✅ Task repository CRUD operations
 - ✅ Database persistence and connection handling
 - ✅ Error handling for database errors and invalid data
+
+**Delete All Tasks Tests (`tests/test_delete_all_tasks.py`):**
+- ✅ Delete multiple tasks (returns correct count)
+- ✅ Delete with empty database (returns 0 count)
+- ✅ Delete single task (returns count of 1)
+- ✅ Response JSON structure validation (success, message, deletedCount)
+- ✅ Idempotent behavior (can call multiple times safely)
+- ✅ Delete and recreate tasks workflow
+- ✅ Delete tasks with mixed completion states
+- ✅ Content-Type header validation
+- ✅ Accurate deleted count for various scenarios (0, 1, 3, 5, 10 tasks)
+- ✅ Database error handling
+- ✅ Wrong HTTP methods (GET, POST, PUT) return 405
+- ✅ Integration with other endpoints (create, update, get)
+- ✅ GET /api/tasks returns empty list after delete all
 
 **Property-Based Tests:**
 - ✅ **Property 1**: Task creation persistence - any valid task should be retrievable after creation
@@ -754,7 +821,7 @@ For detailed CI/CD documentation, see the **CI/CD Pipeline** section below.
 5. Verify in browser: http://localhost:3000
 
 **Backend Changes:**
-1. Edit files in `backend/`
+1. Edit files in `backend/app/`
 2. FastAPI auto-reloads with `--reload` flag
 3. No restart needed
 4. Run tests: `cd backend && pytest`
@@ -923,7 +990,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Ensure port 8000 is not in use: `lsof -i :8000`
 - Check backend logs: `docker compose logs backend`
 - Verify backend health: `curl http://localhost:8000/health`
-- Check if data directory exists: `ls -la backend/data/`
+- Check if MySQL is running: `docker compose ps mysql`
 
 ### Tasks not persisting
 - Verify MySQL is running: `docker compose ps mysql`
@@ -943,6 +1010,12 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Review backend logs: `docker compose logs backend`
 - Check MySQL connection: `docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "SELECT * FROM tasks;"`
 - Verify MySQL service is healthy: `docker compose ps`
+
+### Delete All endpoint returns 404
+- Verify route ordering: `/tasks/all` must be defined **before** `/tasks/{task_id}`
+- Check backend logs: `docker compose logs backend`
+- Test endpoint directly: `curl -X DELETE http://localhost:8000/api/tasks/all`
+- Restart backend: `docker compose restart backend`
 
 ### Delete All button not working
 - Check browser console for JavaScript errors
@@ -964,6 +1037,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Reinstall dependencies: `pip install -r requirements.txt`
 - Run with verbose: `pytest -v`
 - Check hypothesis examples: `ls -la .hypothesis/examples/`
+- Verify test database: `docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager_test -e "SHOW TABLES;"`
 
 ### Property-based tests failing
 - Property tests use random data and may find edge cases
@@ -1017,6 +1091,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Idempotent operation - safe to call multiple times
 - Atomic operation - all tasks deleted in single transaction
 - Uses proper HTTP exception handling (500 status on errors)
+- **Route ordering critical**: Must be defined before `/tasks/{task_id}` to avoid path conflicts
 
 **No Authentication:**
 - MVP scope focuses on core CRUD functionality
@@ -1055,6 +1130,12 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 ## 🤝 Contributing
 
 ### Development Process
+
+1. **Fork and Clone:**
+   ```bash
+   git clone https://github.com/nadavyeramazon/ab-sdlc-agent-ai-output.git
+   cd ab-sdlc-agent-ai-output
+   ```
 
 2. **Create Feature Branch**:
    ```bash
@@ -1112,6 +1193,7 @@ This is a demonstration project for educational purposes.
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [Pydantic Documentation](https://docs.pydantic.dev/)
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
+- [MySQL Documentation](https://dev.mysql.com/doc/)
 
 ### Property-Based Testing
 - [Hypothesis Documentation](https://hypothesis.readthedocs.io/) - Python property-based testing
