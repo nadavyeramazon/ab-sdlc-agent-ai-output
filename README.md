@@ -22,8 +22,10 @@ project-root/
 │   ├── src/
 │   │   ├── App.jsx               # Main task manager component
 │   │   ├── App.test.jsx          # Comprehensive test suite with property tests
-│   │   ├── App.css               # Task manager styling
+│   │   ├── App.css               # Task manager styling (green theme)
 │   │   ├── main.jsx              # React entry point
+│   │   ├── assets/
+│   │   │   └── logo-swiftpay.png # Application logo
 │   │   └── test/
 │   │       └── setup.js          # Test configuration
 │   ├── index.html                # HTML template
@@ -116,17 +118,31 @@ npm test
 - ✅ **Input Validation**: Client and server-side validation for data integrity
 - ✅ **Error Handling**: User-friendly error messages for all operations
 
+### UI Design & Branding
+- ✅ **Modern Green Theme**: Fresh emerald color scheme (#10B981) for a professional look
+- ✅ **SwiftPay Branding**: Custom SwiftPay logo for brand identity
+- ✅ **Responsive Design**: Mobile-friendly interface that adapts to screen size
+- ✅ **Visual Feedback**: Smooth animations and hover effects
+- ✅ **Accessible Colors**: High contrast ratios for readability
+
 ### Frontend Features
-- ✅ Responsive task management UI
+- ✅ Responsive task management UI with green theme
 - ✅ Task creation form with validation
 - ✅ Inline task editing
 - ✅ Visual distinction for completed tasks (strikethrough)
 - ✅ Loading state indicators for all operations
 - ✅ Error handling with user-friendly messages
+- ✅ Success messages for bulk operations
 - ✅ Empty state messaging
 - ✅ Hot Module Replacement (HMR) for development
 - ✅ Environment-based API URL configuration
 - ✅ Comprehensive test coverage with property-based testing
+- ✅ **Delete All Tasks Button**: Bulk delete with confirmation dialog
+  - Appears only when tasks are present
+  - Native confirmation dialog before deletion
+  - Shows success message with deleted count
+  - Disabled during deletion operation
+  - Automatic UI refresh after deletion
 
 ### Backend Features
 - ✅ RESTful API with FastAPI
@@ -139,6 +155,113 @@ npm test
 - ✅ CORS enabled for frontend communication
 - ✅ Auto-reload during development
 - ✅ Comprehensive test coverage with property-based testing
+
+## 🎨 UI Theme & Design
+
+### Color Palette
+
+The application uses a modern **green theme** with emerald colors:
+
+| Element | Color | Hex Code | Usage |
+|---------|-------|----------|--------|
+| **Primary Green** | Emerald 500 | `#10B981` | Buttons, accents, hover states |
+| **Dark Green** | Emerald 600 | `#059669` | Active buttons, focus states |
+| **Light Green** | Emerald 100 | `#D1FAE5` | (Reserved for future use) |
+| **Very Light Green** | Emerald 50 | `#ECFDF5` | Success messages background |
+| **Background Gradient** | Green gradient | `#10B981 → #059669` | App background |
+
+**Accessibility:**
+- All color combinations meet WCAG AA contrast ratio requirements
+- Interactive elements have clear visual feedback
+- Focus states are clearly visible
+
+### Branding
+
+**Logo:**
+- The application displays the **SwiftPay** logo in the header
+- Logo file: `frontend/src/assets/logo-swiftpay.png`
+- Size: 64x64px (desktop), 48x48px (mobile)
+- Positioned alongside the "Task Manager" heading
+
+### Delete All Tasks Button
+
+The **Delete All Tasks** button provides a convenient way to clear all tasks at once:
+
+**Visual Design:**
+- **Color**: Red (#FC8181) to indicate destructive action
+- **Position**: Top-right of task list, next to "Task List" heading
+- **Responsive**: Full-width on mobile, compact on desktop
+- **States**:
+  - Normal: Red background, white text
+  - Hover: Darker red (#F56565) with elevation effect
+  - Disabled: Gray background (#CBD5E0) during operation
+  - Loading: Shows "Deleting..." text
+
+**Behavior:**
+```javascript
+// When clicked:
+1. Shows confirmation dialog: "Are you sure you want to delete all tasks? 
+   This action cannot be undone."
+2. If user clicks "Cancel": No action taken
+3. If user clicks "OK":
+   - Button disabled and shows "Deleting..."
+   - Calls DELETE /api/tasks/all endpoint
+   - On success:
+     * Refreshes task list
+     * Shows success message: "Successfully deleted N task(s)"
+     * Success message auto-dismisses after 5 seconds
+   - On error:
+     * Shows error message
+     * Button re-enabled
+```
+
+**Visibility:**
+- Button **only appears** when tasks are present
+- Button **hidden** when task list is empty
+- Button **disabled** while tasks are loading
+
+**User Experience:**
+- ✅ Clear visual warning (red color)
+- ✅ Confirmation dialog prevents accidental deletion
+- ✅ Loading state provides feedback during operation
+- ✅ Success message confirms action completion
+- ✅ Shows count of deleted tasks for transparency
+- ✅ Proper error handling with user-friendly messages
+
+**Code Example:**
+```jsx
+{tasks.length > 0 && (
+  <button
+    onClick={handleDeleteAllTasks}
+    disabled={deleteAllLoading || loading}
+    className="btn-delete-all"
+  >
+    {deleteAllLoading ? 'Deleting...' : 'Delete All Tasks'}
+  </button>
+)}
+```
+
+**CSS Styling:**
+```css
+.btn-delete-all {
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #fc8181; /* Red for destructive action */
+  color: white;
+  white-space: nowrap;
+}
+
+.btn-delete-all:hover:not(:disabled) {
+  background-color: #f56565;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(252, 129, 129, 0.4);
+}
+```
 
 ## 📡 API Endpoints
 
@@ -300,11 +423,33 @@ fetch('http://localhost:8000/api/tasks/all', { method: 'DELETE' })
   .then(data => console.log(`Deleted ${data.deletedCount} tasks`));
 ```
 
+**Frontend Integration:**
+The Delete All button in the UI calls this endpoint with proper error handling:
+```jsx
+const handleDeleteAllTasks = async () => {
+  const confirmed = window.confirm(
+    'Are you sure you want to delete all tasks? This action cannot be undone.'
+  );
+  
+  if (!confirmed) return;
+  
+  try {
+    const data = await taskApi.deleteAllTasks();
+    await fetchTasks(); // Refresh list
+    setSuccessMessage(`Successfully deleted ${data.deletedCount} task(s)`);
+  } catch (err) {
+    setError('Failed to delete all tasks: ' + err.message);
+  }
+};
+```
+
 **Notes:**
 - This operation is idempotent - calling it multiple times is safe
 - Returns `deletedCount: 0` if no tasks exist
 - Operation is atomic - all tasks are deleted in a single transaction
 - Cannot be undone - ensure you have backups if needed
+- Frontend shows confirmation dialog before execution
+- Success message displays the number of deleted tasks
 
 ### GET /health
 Returns the health status of the backend.
@@ -422,6 +567,41 @@ npm run test:watch
 npm run test:coverage
 ```
 
+### Frontend Test Coverage
+
+The frontend test suite includes comprehensive tests for the Delete All Tasks feature:
+
+**Delete All Button Tests:**
+- ✅ Button appears when tasks are present
+- ✅ Button hidden when no tasks exist
+- ✅ Shows confirmation dialog on click
+- ✅ Does not delete when user cancels confirmation
+- ✅ Deletes all tasks when user confirms
+- ✅ Shows success message with deleted count
+- ✅ Uses singular/plural correctly ("1 task" vs "2 tasks")
+- ✅ Shows error message on API failure
+- ✅ Disables button during deletion operation
+- ✅ Shows loading state ("Deleting...")
+
+**Integration Tests:**
+- ✅ Task creation flow (form → API → list update)
+- ✅ Task editing flow (edit button → form → update → display)
+- ✅ Task deletion flow (delete button → removal)
+- ✅ Task completion toggle
+- ✅ Error handling for failed API calls
+- ✅ Loading states for all operations
+- ✅ Empty state display
+
+**Property-Based Tests:**
+- ✅ **Property 10**: Task ordering consistency - tasks always ordered by creation date (newest first)
+
+**API Service Tests:**
+- ✅ `deleteAllTasks()` returns success response with deletedCount
+- ✅ `deleteAllTasks()` throws error on failure (consistent error handling)
+- ✅ Error handling consistency across all API operations
+
+For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](frontend/TEST_GUIDE.md).
+
 ### Backend Test Coverage
 
 The backend test suite includes:
@@ -448,25 +628,34 @@ The backend test suite includes:
 
 For detailed backend testing documentation, see [backend/README_TESTS.md](backend/README_TESTS.md).
 
-### Frontend Test Coverage
-
-The frontend test suite includes:
-
-**Integration Tests:**
-- ✅ Task creation flow (form → API → list update)
-- ✅ Task editing flow (edit button → form → update → display)
-- ✅ Task deletion flow (delete button → removal)
-- ✅ Task completion toggle
-- ✅ Error handling for failed API calls
-- ✅ Loading states for all operations
-- ✅ Empty state display
-
-**Property-Based Tests:**
-- ✅ **Property 10**: Task ordering consistency - tasks always ordered by creation date (newest first)
-
-For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](frontend/TEST_GUIDE.md).
-
 ### Manual Testing Checklist
+
+**UI Theme & Branding:**
+- [ ] Green color theme applied throughout UI
+- [ ] SwiftPay logo displays correctly in header
+- [ ] Logo scales properly on mobile devices
+- [ ] All interactive elements use green accent colors
+- [ ] Hover states show darker green
+- [ ] Focus states are clearly visible
+
+**Delete All Tasks Feature:**
+- [ ] Delete All button appears when tasks exist
+- [ ] Delete All button hidden when no tasks exist
+- [ ] Clicking button shows confirmation dialog
+- [ ] Confirmation message is clear and warns about permanence
+- [ ] Canceling confirmation does not delete tasks
+- [ ] Confirming deletes all tasks
+- [ ] Success message shows correct count
+- [ ] Success message uses singular for 1 task
+- [ ] Success message uses plural for multiple tasks
+- [ ] Success message auto-dismisses after 5 seconds
+- [ ] Button disabled during deletion
+- [ ] Button shows "Deleting..." during operation
+- [ ] Task list refreshes after deletion
+- [ ] Empty state message appears after deletion
+- [ ] Error message displays on API failure
+- [ ] Button works on mobile devices
+- [ ] Button responsive design on different screens
 
 **Task Creation:**
 - [ ] Can create task with title only
@@ -497,8 +686,6 @@ For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](fronte
 - [ ] Delete button removes individual task from list
 - [ ] Task removed immediately from UI
 - [ ] Deletion persists after page refresh
-- [ ] Delete all endpoint removes all tasks
-- [ ] Delete all returns correct count
 
 **Error Handling:**
 - [ ] Validation errors display clearly
@@ -532,221 +719,7 @@ The project includes a comprehensive GitHub Actions workflow that implements a s
 - ✅ Full system integration validation with Docker Compose
 - ✅ Intelligent caching for faster subsequent runs
 
-#### Pipeline Stages
-
-The CI pipeline executes in three distinct stages, each acting as a quality gate:
-
-**Stage 1: Linting (Parallel Execution)**
-- **Backend Linting**: Runs flake8 on Python code
-- **Frontend Linting**: Runs ESLint on JavaScript/React code
-- **Purpose**: Catch code style and syntax issues immediately
-- **Duration**: ~1-2 minutes
-- **Fail-Fast**: If linting fails, tests are skipped
-
-**Stage 2: Testing (Parallel Execution, After Linting)**
-- **Backend Tests**: Runs pytest with coverage reporting
-  - Unit tests for API endpoints and repository operations
-  - Property-based tests using Hypothesis (100+ iterations)
-- **Frontend Tests**: Runs Vitest with React Testing Library
-  - Integration tests for UI components
-  - Property-based tests using fast-check (100+ iterations)
-- **Purpose**: Verify functionality and correctness
-- **Duration**: ~2-3 minutes
-- **Fail-Fast**: If tests fail, Docker validation is skipped
-
-**Stage 3: Docker Validation (Sequential Execution, After Tests)**
-- **Docker Build Verification**: Builds backend and frontend images
-- **Docker Compose Validation**: 
-  - Validates docker-compose.yml syntax
-  - Starts all services (MySQL, backend, frontend)
-  - Performs health checks on backend and frontend
-  - Displays logs on failure
-  - Cleans up containers and volumes
-- **Purpose**: Verify complete system integration
-- **Duration**: ~3-5 minutes
-- **Fail-Fast**: Stops immediately on any failure
-
-#### Dependency Graph
-
-```
-┌─────────────────┐     ┌─────────────────┐
-│ Backend Linting │     │Frontend Linting │  ← Stage 1: Linting (Parallel)
-└────────┬────────┘     └────────┬────────┘
-         │                       │
-         ▼                       ▼
-┌─────────────────┐     ┌─────────────────┐
-│  Backend Tests  │     │ Frontend Tests  │  ← Stage 2: Testing (Parallel)
-└────────┬────────┘     └────────┬────────┘
-         │                       │
-         └───────────┬───────────┘
-                     │
-         ┌───────────▼───────────┐
-         │  Docker Build Verify  │           ← Stage 3: Docker (Sequential)
-         └───────────┬───────────┘
-                     │
-                     ▼
-         ┌───────────────────────┐
-         │Docker Compose Validate│
-         └───────────┬───────────┘
-                     │
-                     ▼
-         ┌───────────────────────┐
-         │    CI Success Summary │           ← Final confirmation
-         └───────────────────────┘
-```
-
-#### Execution Order and Fail-Fast Behavior
-
-The pipeline enforces strict execution order using GitHub Actions' `needs` keyword:
-
-1. **Linting runs first** (parallel):
-   - `backend-linting` (no dependencies)
-   - `frontend-linting` (no dependencies)
-   - If either fails → entire pipeline stops
-
-2. **Tests run after linting** (parallel):
-   - `backend-tests` needs `backend-linting`
-   - `frontend-tests` needs `frontend-linting`
-   - If either fails → Docker validation is skipped
-
-3. **Docker validation runs after tests** (sequential):
-   - `docker-build` (runs in parallel with tests for efficiency)
-   - `docker-compose-validation` needs `[backend-tests, frontend-tests, docker-build]`
-   - If any dependency fails → validation is skipped
-
-4. **Summary job confirms success**:
-   - `ci-success` needs all previous jobs
-   - Only runs if all checks pass
-
-**Fail-Fast Configuration:**
-- All critical steps use `continue-on-error: false` (or omit it, as false is default)
-- Failed jobs immediately stop the pipeline
-- Dependent jobs are automatically skipped
-- Clear status indicators show which stage failed
-
-#### Caching Strategy
-
-The pipeline uses intelligent caching to speed up subsequent runs:
-
-**Backend Cache:**
-```yaml
-key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt', 'backend/requirements-dev.txt') }}
-```
-- Caches pip packages based on requirements file hashes
-- Cache invalidates automatically when dependencies change
-- Typical speedup: 30-60 seconds per run
-
-**Frontend Cache:**
-```yaml
-key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
-```
-- Caches npm packages based on package.json hash
-- Cache invalidates automatically when dependencies change
-- Typical speedup: 45-90 seconds per run
-
-#### Testing the Pipeline Locally
-
-You can test the CI pipeline locally using [act](https://github.com/nektos/act), a tool that runs GitHub Actions locally:
-
-**Install act:**
-```bash
-# macOS
-brew install act
-
-# Linux
-curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
-
-# Windows (with Chocolatey)
-choco install act-cli
-```
-
-**Run the entire pipeline:**
-```bash
-# Run all jobs
-act pull_request
-
-# Run with verbose output
-act pull_request -v
-```
-
-**Run specific jobs:**
-```bash
-# Run only linting jobs
-act pull_request -j backend-linting
-act pull_request -j frontend-linting
-
-# Run only test jobs
-act pull_request -j backend-tests
-act pull_request -j frontend-tests
-
-# Run Docker validation
-act pull_request -j docker-compose-validation
-```
-
-**Simulate different scenarios:**
-```bash
-# Test with a specific event
-act push
-
-# Test with environment variables
-act pull_request --env NODE_VERSION=18 --env PYTHON_VERSION=3.11
-
-# Use a specific Docker image for the runner
-act pull_request -P ubuntu-latest=catthehacker/ubuntu:act-latest
-```
-
-**Limitations of local testing:**
-- Some GitHub-specific features may not work identically
-- Caching behavior may differ from GitHub's infrastructure
-- Secrets and environment variables need to be provided manually
-- Docker-in-Docker scenarios may require additional configuration
-
-**Alternative: Manual validation**
-```bash
-# Validate workflow syntax
-docker run --rm -v $(pwd):/repo ghcr.io/rhysd/actionlint:latest -color
-
-# Or install actionlint locally
-brew install actionlint  # macOS
-actionlint .github/workflows/ci.yml
-```
-
-#### Monitoring Pipeline Execution
-
-**In GitHub UI:**
-1. Navigate to the "Actions" tab in your repository
-2. Select a workflow run to see the execution graph
-3. Click on individual jobs to see detailed logs
-4. Failed jobs show clear error messages and logs
-
-**Status Checks:**
-- All jobs must pass before merging pull requests
-- Branch protection rules enforce CI success
-- Clear visual indicators show pipeline status
-
-**Debugging Failed Runs:**
-1. Check which stage failed (linting, tests, or Docker)
-2. Review the job logs for specific error messages
-3. For Docker failures, check the "Show Docker Compose logs" step
-4. Reproduce locally using the same commands from the workflow
-5. Use `act` to test fixes before pushing
-
-#### Pipeline Performance
-
-**Typical Execution Times:**
-- **Linting Stage**: 1-2 minutes (parallel)
-- **Testing Stage**: 2-3 minutes (parallel, after linting)
-- **Docker Stage**: 3-5 minutes (sequential, after tests)
-- **Total Duration**: 6-10 minutes (with caching)
-- **First Run**: 10-15 minutes (without cache)
-
-**Optimization Features:**
-- Parallel execution within stages
-- Dependency caching (pip, npm)
-- Early termination on failures
-- Efficient Docker layer caching
-
-All property-based tests run with 100+ iterations in CI to ensure comprehensive coverage.
+For detailed CI/CD documentation, see the **CI/CD Pipeline** section below.
 
 ## 🔧 Development
 
@@ -872,8 +845,10 @@ docker compose restart mysql
 
 **Reset Data:**
 ```bash
-# Use the bulk delete endpoint
+# Use the bulk delete endpoint (easiest method)
 curl -X DELETE http://localhost:8000/api/tasks/all
+
+# Or use the Delete All button in the UI
 
 # Or connect to MySQL and delete all tasks manually
 docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "DELETE FROM tasks;"
@@ -956,11 +931,20 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Check MySQL connection: `docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "SELECT * FROM tasks;"`
 - Verify MySQL service is healthy: `docker compose ps`
 
+### Delete All button not working
+- Check browser console for JavaScript errors
+- Verify backend API is accessible: `curl -X DELETE http://localhost:8000/api/tasks/all`
+- Check if tasks exist: `curl http://localhost:8000/api/tasks`
+- Review frontend logs: `docker compose logs frontend`
+- Test confirmation dialog: Ensure browser allows native dialogs
+- Check network tab for API request/response
+
 ### Tests failing
 **Frontend:**
 - Clear node_modules: `rm -rf node_modules && npm install`
 - Check test setup: Ensure `src/test/setup.js` exists
 - Run with verbose: `npm test -- --reporter=verbose`
+- Check for mock issues with `window.confirm`
 
 **Backend:**
 - Clear pytest cache: `rm -rf .pytest_cache __pycache__`
@@ -984,6 +968,26 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 ## 📝 Notes
 
 ### Design Decisions
+
+**UI Theme - Green Color Palette:**
+- Emerald green (#10B981) chosen for modern, professional appearance
+- Replaced previous blue/purple theme for fresh look
+- Maintains accessibility with high contrast ratios
+- Consistent use across all interactive elements
+- Smooth transitions and hover effects
+
+**Branding - SwiftPay Logo:**
+- Custom logo reinforces brand identity
+- Replaces generic "todo" logo
+- Professional appearance suitable for production use
+- Responsive sizing for different screen sizes
+
+**Delete All Feature:**
+- Red color (#FC8181) clearly indicates destructive action
+- Native confirmation dialog prevents accidental deletion
+- Success message provides transparency (shows deleted count)
+- Button only visible when needed (tasks present)
+- Disabled state prevents double-clicks during operation
 
 **MySQL Database:**
 - Production-ready relational database
@@ -1023,6 +1027,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Minimal external dependencies
 - Property-based testing for correctness guarantees
 - Clear separation of concerns (repository pattern)
+- Modern, accessible UI design
 
 ### Limitations
 - No authentication or authorization
@@ -1031,6 +1036,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Basic MySQL configuration (not optimized for high load)
 - Single MySQL instance (no replication or clustering)
 - Bulk delete operation cannot be undone
+- Delete All uses native browser confirmation dialog (not custom modal)
 
 ## 🤝 Contributing
 
@@ -1060,6 +1066,8 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
    - Complete the manual testing checklist
    - Verify data persistence
    - Test error scenarios
+   - Test UI theme and branding
+   - Test Delete All functionality
 
 6. **Submit Pull Request**:
    - Ensure all tests pass
@@ -1074,6 +1082,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - ✅ Manual testing checklist completed
 - ✅ Documentation updated if API changes
 - ✅ Correctness properties validated
+- ✅ UI changes match design specifications
 
 ## 📄 License
 
@@ -1100,3 +1109,5 @@ This is a demonstration project for educational purposes.
 **Built with ❤️ using spec-driven development 📋**
 
 **Tested with ✅ Property-Based Testing (Hypothesis & fast-check)**
+
+**Designed with 🎨 Modern UI/UX (Green Theme & SwiftPay Branding)**
