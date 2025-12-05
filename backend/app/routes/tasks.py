@@ -176,6 +176,53 @@ def delete_task(
     return None
 
 
+@router.delete("/tasks/all", status_code=200)
+def delete_all_tasks_endpoint(
+    service: TaskService = Depends(get_task_service)
+) -> dict:
+    """
+    Delete all tasks at once.
+
+    Args:
+        service: Injected TaskService instance
+
+    Returns:
+        JSON response with success status, message, and count of deleted tasks
+
+    Raises:
+        HTTPException 500: If an error occurs during deletion
+
+    Example:
+        Response (Success): {
+            "success": true,
+            "message": "All tasks deleted successfully",
+            "deletedCount": 5
+        }
+
+        Response (Error): {
+            "success": false,
+            "message": "Error deleting tasks",
+            "error": "Database connection failed"
+        }
+    """
+    try:
+        deleted_count = service.delete_all_tasks()
+        return {
+            "success": True,
+            "message": "All tasks deleted successfully",
+            "deletedCount": deleted_count
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "success": False,
+                "message": "Error deleting tasks",
+                "error": str(e)
+            }
+        )
+
+
 @router.delete("/tasks", status_code=200)
 def delete_all_tasks(
     service: TaskService = Depends(get_task_service)
