@@ -4,6 +4,7 @@ import logo from './assets/logo-swiftpay.png';
 import { useTasks } from './hooks/useTasks';
 import TaskForm from './components/TaskForm';
 import TaskList from './components/TaskList';
+import { taskApi } from './services/api';
 
 function App() {
   // Use custom hook for task management
@@ -96,15 +97,7 @@ function App() {
     setSuccessMessage('');
 
     try {
-      const response = await fetch('http://localhost:3000/api/tasks/all', {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete all tasks');
-      }
-
-      const data = await response.json();
+      const data = await taskApi.deleteAllTasks();
 
       // Refresh the task list
       await fetchTasks();
