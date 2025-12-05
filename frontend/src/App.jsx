@@ -28,6 +28,7 @@ function App() {
   const [toggleLoading, setToggleLoading] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(null);
   const [deleteAllLoading, setDeleteAllLoading] = useState(false);
+  const [deleteAllError, setDeleteAllError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
   // Handle task creation
@@ -95,6 +96,7 @@ function App() {
 
     setDeleteAllLoading(true);
     setSuccessMessage('');
+    setDeleteAllError('');
 
     try {
       const data = await taskApi.deleteAllTasks();
@@ -112,7 +114,7 @@ function App() {
         setSuccessMessage('');
       }, 5000);
     } catch (err) {
-      setCreateError('Failed to delete all tasks: ' + err.message);
+      setDeleteAllError('Failed to delete all tasks: ' + err.message);
     } finally {
       setDeleteAllLoading(false);
     }
@@ -172,6 +174,10 @@ function App() {
 
             {successMessage && (
               <div className="success-message">{successMessage}</div>
+            )}
+
+            {deleteAllError && (
+              <div className="error-message">{deleteAllError}</div>
             )}
 
             <TaskList
