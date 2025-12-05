@@ -4,11 +4,13 @@ Task management route module.
 This module provides RESTful API endpoints for task CRUD operations.
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter
+from fastapi import Depends
+from fastapi import HTTPException
 
+from app.dependencies import get_task_service
 from app.models.task import TaskCreate, TaskUpdate
 from app.services.task_service import TaskService
-from app.dependencies import get_task_service
 
 router = APIRouter(tags=["Tasks"])
 
@@ -24,7 +26,8 @@ def get_all_tasks(
         service: Injected TaskService instance
 
     Returns:
-        JSON response containing list of all tasks ordered by creation date (newest first)
+        JSON response containing list of all tasks ordered by creation
+        date (newest first)
 
     Example:
         Response: {
@@ -63,7 +66,7 @@ def create_task(
         HTTPException 422: If validation fails (empty title, too long, etc.)
 
     Example:
-        Request: {"title": "Buy groceries", "description": "Milk, eggs, bread"}
+        Request: {"title": "Buy groceries", "description": "Milk, eggs"}
         Response: {
             "id": "123e4567-e89b-12d3-a456-426614174000",
             "title": "Buy groceries",
@@ -187,7 +190,8 @@ def delete_all_tasks_endpoint(
         service: Injected TaskService instance
 
     Returns:
-        JSON response with success status, message, and count of deleted tasks
+        JSON response with success status, message, and count of
+        deleted tasks
 
     Raises:
         HTTPException 500: If an error occurs during deletion
