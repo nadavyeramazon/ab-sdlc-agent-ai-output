@@ -111,6 +111,23 @@ def delete_all_tasks(
         )
 
 
+@router.api_route("/tasks/all", methods=["GET", "POST", "PUT", "PATCH"])
+def tasks_all_method_not_allowed() -> None:
+    """
+    Explicitly reject non-DELETE methods on /tasks/all endpoint.
+
+    This route handler ensures that GET, POST, PUT, and PATCH requests
+    to /tasks/all return 405 Method Not Allowed instead of 404 Not Found.
+
+    Raises:
+        HTTPException 405: Method not allowed
+    """
+    raise HTTPException(
+        status_code=405,
+        detail="Method not allowed. Only DELETE is supported for /tasks/all"
+    )
+
+
 @router.get("/tasks/{task_id}")
 def get_task(
     task_id: str,
