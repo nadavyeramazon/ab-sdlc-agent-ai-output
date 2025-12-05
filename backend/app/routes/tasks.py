@@ -192,7 +192,7 @@ def delete_all_tasks(
     Example:
         Response: {
             "success": true,
-            "deleted_count": 5,
+            "deletedCount": 5,
             "message": "All tasks deleted"
         }
     """
@@ -200,7 +200,7 @@ def delete_all_tasks(
         deleted_count = service.delete_all_tasks()
         return {
             "success": True,
-            "deleted_count": deleted_count,
+            "deletedCount": deleted_count,
             "message": "All tasks deleted"
         }
     except Exception as e:
