@@ -157,10 +157,11 @@ npm test
 - ✅ Pydantic models for request/response validation
 - ✅ MySQL database with connection pooling
 - ✅ Automatic database schema creation
-- ✅ Proper HTTP status codes (200, 201, 204, 404, 422)
+- ✅ Proper HTTP status codes (200, 201, 204, 404, 422, 500)
 - ✅ CORS enabled for frontend communication
 - ✅ Auto-reload during development
 - ✅ Comprehensive test coverage with property-based testing
+- ✅ Proper error handling with detailed error responses
 
 ## 🎨 User Interface Components
 
@@ -365,8 +366,112 @@ No response body.
 }
 ```
 
+### DELETE /api/tasks/all
+Delete all tasks at once with transactional deletion (all or nothing).
+
+**Request Body:** None
+
+**Response Success (200 OK):**
+```json
+{
+  "success": true,
+  "message": "All tasks deleted successfully",
+  "deletedCount": 5
+}
+```
+
+**Response Error (500 Internal Server Error):**
+```json
+{
+  "detail": {
+    "success": false,
+    "message": "Error deleting tasks",
+    "error": "Database connection failed"
+  }
+}
+```
+
+**Example Usage with curl:**
+```bash
+# Delete all tasks
+curl -X DELETE http://localhost:8000/api/tasks/all
+
+# Expected success response
+{
+  "success": true,
+  "message": "All tasks deleted successfully",
+  "deletedCount": 5
+}
+```
+
+**JavaScript Integration:**
+```javascript
+// API Service Method
+async deleteAllTasksNew() {
+  const response = await fetch(`${API_URL}/api/tasks/all`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.detail?.error || 'Failed to delete tasks');
+  }
+
+  return response.json();
+}
+
+// Usage in component
+const handleDeleteAll = async () => {
+  try {
+    const result = await taskApi.deleteAllTasksNew();
+    if (result.success) {
+      console.log(`Successfully deleted ${result.deletedCount} tasks`);
+      // Update UI
+    }
+  } catch (error) {
+    console.error('Error deleting tasks:', error.message);
+    // Show error to user
+  }
+};
+```
+
+**Comparison with DELETE /api/tasks:**
+
+| Feature | DELETE /api/tasks/all | DELETE /api/tasks |
+|---------|----------------------|-------------------|
+| **Path** | `/api/tasks/all` | `/api/tasks` |
+| **Response Format** | `{success, message, deletedCount}` | `{message, deletedCount}` |
+| **Success Field** | ✅ Included | ❌ Not included |
+| **Error Handling** | ✅ Returns 500 with error details | Basic error handling |
+| **Error Details** | ✅ Includes error message | Limited error info |
+| **Use Case** | Production-ready with comprehensive error handling | Simple bulk delete |
+
+**Use Cases:**
+- Clear all test data during development
+- Reset the task list quickly
+- Bulk cleanup operations
+- Starting fresh with an empty task list
+- Production scenarios requiring error details
+
+**Safety Features:**
+- Transactional deletion (all or nothing)
+- Frontend confirmation dialog prevents accidental deletion
+- Returns count of deleted tasks for verification
+- Comprehensive error handling with detailed messages
+- Clear success/failure indicators in response
+- Optimistic UI updates with rollback on error
+
+**Error Handling:**
+The endpoint handles various error scenarios:
+- **Database connection failures**: Returns error details
+- **Transaction failures**: Rolls back all changes
+- **Unexpected errors**: Catches and returns error messages
+- **Network errors**: Frontend handles with rollback
+
+**Note:** This operation cannot be undone. All tasks are permanently deleted from the database. Always confirm the operation in the confirmation dialog.
+
 ### DELETE /api/tasks
-Delete all tasks at once.
+Delete all tasks at once (legacy endpoint, use DELETE /api/tasks/all for better error handling).
 
 **Request Body:** None
 
@@ -532,6 +637,7 @@ pytest -v
 # Run specific test file
 pytest test_main.py
 pytest test_task_repository.py
+pytest test_delete_all_tasks.py
 
 # Run with coverage
 pytest --cov=. --cov-report=html
@@ -558,8 +664,10 @@ The backend test suite includes:
 **Unit Tests:**
 - ✅ All API endpoints (GET, POST, PUT, DELETE)
 - ✅ DELETE all tasks endpoint with empty list and existing tasks
+- ✅ DELETE /api/tasks/all endpoint with success and error scenarios
 - ✅ Request validation (empty titles, length limits)
-- ✅ HTTP status codes (200, 201, 204, 404, 422)
+- ✅ HTTP status codes (200, 201, 204, 404, 422, 500)
+- ✅ Error handling for database failures
 - ✅ Task repository CRUD operations
 - ✅ Database persistence and data loading
 - ✅ Error handling for connection failures and invalid data
@@ -648,12 +756,15 @@ For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](fronte
 - [ ] Button shows "Deleting..." during operation
 - [ ] Error handling works with rollback
 - [ ] Empty state displays after successful deletion
+- [ ] DELETE /api/tasks/all endpoint works correctly
+- [ ] Error responses include detailed error information
 
 **Error Handling:**
 - [ ] Validation errors display clearly
 - [ ] Network errors show user-friendly messages
 - [ ] Loading indicators show during operations
 - [ ] Delete all errors restore original task list
+- [ ] 500 errors from DELETE /api/tasks/all show error details
 
 **Data Persistence:**
 - [ ] Tasks persist after browser refresh
@@ -697,6 +808,7 @@ The CI pipeline executes in three distinct stages, each acting as a quality gate
 - **Backend Tests**: Runs pytest with coverage reporting
   - Unit tests for API endpoints and repository operations
   - Property-based tests using Hypothesis (100+ iterations)
+  - Tests for DELETE /api/tasks/all endpoint
 - **Frontend Tests**: Runs Vitest with React Testing Library
   - Integration tests for UI components
   - Property-based tests using fast-check (100+ iterations)
@@ -1024,7 +1136,10 @@ docker compose restart mysql
 
 **Reset Data:**
 ```bash
-# Delete all tasks using the API
+# Delete all tasks using the new API endpoint
+curl -X DELETE http://localhost:8000/api/tasks/all
+
+# Or delete all tasks using the legacy API endpoint
 curl -X DELETE http://localhost:8000/api/tasks
 
 # Or connect to MySQL and delete all tasks
@@ -1108,6 +1223,13 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Check MySQL connection: `docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "SELECT * FROM tasks;"`
 - Verify MySQL service is healthy: `docker compose ps`
 
+### DELETE /api/tasks/all returns 500 error
+- Check backend logs for error details: `docker compose logs backend`
+- Verify MySQL connection is working: `curl http://localhost:8000/api/tasks`
+- Test database connection: `docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "SELECT 1;"`
+- Check for database lock issues: `docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "SHOW PROCESSLIST;"`
+- Review error response for specific error message
+
 ### Tests failing
 **Frontend:**
 - Clear node_modules: `rm -rf node_modules && npm install`
@@ -1119,6 +1241,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Reinstall dependencies: `pip install -r requirements.txt`
 - Run with verbose: `pytest -v`
 - Check hypothesis examples: `ls -la .hypothesis/examples/`
+- Run specific test file: `pytest test_delete_all_tasks.py -v`
 
 ### Property-based tests failing
 - Property tests use random data and may find edge cases
@@ -1153,11 +1276,22 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Repository pattern allows swapping to other databases
 
 **Delete All Feature:**
+- Two endpoints available:
+  - `/api/tasks/all` - New endpoint with comprehensive error handling
+  - `/api/tasks` - Legacy endpoint for backwards compatibility
 - Confirmation dialog prevents accidental data loss
 - Task count display for clarity
 - Disabled state when no tasks exist
 - Optimistic UI updates with error rollback
 - Returns deleted count for verification
+- Transactional deletion ensures data integrity
+
+**Error Handling:**
+- Comprehensive error handling in DELETE /api/tasks/all
+- Returns 500 status code with detailed error information
+- Error response includes success flag, message, and error details
+- Frontend can display meaningful error messages to users
+- Rollback support for failed operations
 
 **No Authentication:**
 - MVP scope focuses on core CRUD functionality
@@ -1182,6 +1316,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Minimal external dependencies
 - Property-based testing for correctness guarantees
 - Clear separation of concerns (repository pattern)
+- Comprehensive error handling and detailed error messages
 
 ### Limitations
 - No authentication or authorization
@@ -1219,6 +1354,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
    - Complete the manual testing checklist
    - Verify data persistence
    - Test error scenarios
+   - Test DELETE /api/tasks/all endpoint
 
 6. **Submit Pull Request**:
    - Ensure all tests pass
@@ -1233,6 +1369,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - ✅ Manual testing checklist completed
 - ✅ Documentation updated if API changes
 - ✅ Correctness properties validated
+- ✅ Error handling tested for new endpoints
 
 ## 📄 License
 
