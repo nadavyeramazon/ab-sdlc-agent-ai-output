@@ -579,23 +579,21 @@ describe('Delete All Tasks Feature', () => {
         name: /delete all tasks/i,
       });
 
-      // Click and wait for all state updates to complete
-      await act(async () => {
-        await user.click(deleteAllButton);
-      });
+      // Click the button
+      await user.click(deleteAllButton);
 
-      // Should show error message - wait for it
+      // Should show error message
       await waitFor(() => {
         expect(
           screen.getByText(/failed to delete all tasks/i)
         ).toBeInTheDocument();
       });
 
-      // Tasks should be restored after rollback - the optimistic update clears them,
-      // then rollback restores them. We need to wait for the rollback.
+      // Tasks should be restored after rollback - use findByText for async query
       await waitFor(
-        () => {
-          expect(screen.getByText('Task 1')).toBeInTheDocument();
+        async () => {
+          const task = await screen.findByText('Task 1');
+          expect(task).toBeInTheDocument();
         },
         { timeout: 3000 }
       );
@@ -716,10 +714,8 @@ describe('Delete All Tasks Feature', () => {
         name: /delete all tasks/i,
       });
 
-      // Click and wait for all updates
-      await act(async () => {
-        await user.click(deleteAllButton);
-      });
+      // Click the button
+      await user.click(deleteAllButton);
 
       // Should show error
       await waitFor(() => {
@@ -728,10 +724,11 @@ describe('Delete All Tasks Feature', () => {
         ).toBeInTheDocument();
       });
 
-      // Task should be restored after rollback
+      // Task should be restored after rollback - use findByText for async query
       await waitFor(
-        () => {
-          expect(screen.getByText('Task 1')).toBeInTheDocument();
+        async () => {
+          const task = await screen.findByText('Task 1');
+          expect(task).toBeInTheDocument();
         },
         { timeout: 3000 }
       );
