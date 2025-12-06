@@ -102,7 +102,7 @@ def delete_all_tasks(
     try:
         deleted_count = service.delete_all_tasks()
         return {"success": True, "deletedCount": deleted_count}
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=500,
             detail="Failed to delete tasks"
