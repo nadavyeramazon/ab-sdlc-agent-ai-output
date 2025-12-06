@@ -1063,13 +1063,8 @@ describe('App Component', () => {
 
         render(<App />);
 
-        // Wait for the task to appear (this confirms component loaded and fetched)
-        await waitFor(
-          () => {
-            expect(screen.getByText('Task 1')).toBeInTheDocument();
-          },
-          { timeout: 3000 }
-        );
+        // Use findByText which automatically waits for the element
+        await screen.findByText('Task 1');
 
         // Now check for the delete all button
         expect(
