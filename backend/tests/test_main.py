@@ -364,7 +364,7 @@ class TestTaskAPIEndpoints:
     def test_delete_task_non_existent(self, client: TestClient) -> None:
         """Test DELETE /api/tasks/{id} with non-existent ID"""
         fake_id = "00000000-0000-0000-0000-000000000000"
-        response = client.delete(f"/api/tasks/{task_id}")
+        response = client.delete(f"/api/tasks/{fake_id}")
 
         assert response.status_code == 404
 
