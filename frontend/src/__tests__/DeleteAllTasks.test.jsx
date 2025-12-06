@@ -435,18 +435,25 @@ describe('Delete All Tasks Feature', () => {
         name: /delete all tasks/i,
       });
 
-      // Click the button - this starts the async operation
-      await user.click(deleteAllButton);
+      // Start the delete operation but don't await it yet
+      const clickPromise = user.click(deleteAllButton);
 
-      // Wait for loading state to appear using findByRole (built-in waiting)
-      const loadingButton = await screen.findByRole('button', {
-        name: /deleting all/i,
+      // Wait for loading state to appear
+      await waitFor(() => {
+        const loadingButton = screen.queryByRole('button', {
+          name: /deleting all/i,
+        });
+        expect(loadingButton).toBeInTheDocument();
+        expect(loadingButton).toBeDisabled();
       });
-      expect(loadingButton).toBeInTheDocument();
-      expect(loadingButton).toBeDisabled();
 
       // Now resolve the delete operation
-      resolveDelete();
+      act(() => {
+        resolveDelete();
+      });
+
+      // Wait for the click to complete
+      await clickPromise;
 
       // Wait for deletion to complete
       await waitFor(() => {
@@ -501,17 +508,25 @@ describe('Delete All Tasks Feature', () => {
         name: /delete all tasks/i,
       });
 
-      // Click the button
-      await user.click(deleteAllButton);
+      // Start the delete operation but don't await it yet
+      const clickPromise = user.click(deleteAllButton);
 
-      // Button should be disabled during operation - use findByRole for waiting
-      const loadingButton = await screen.findByRole('button', {
-        name: /deleting all/i,
+      // Wait for button to be disabled during operation
+      await waitFor(() => {
+        const loadingButton = screen.queryByRole('button', {
+          name: /deleting all/i,
+        });
+        expect(loadingButton).toBeInTheDocument();
+        expect(loadingButton).toBeDisabled();
       });
-      expect(loadingButton).toBeDisabled();
 
       // Resolve the delete operation
-      resolveDelete();
+      act(() => {
+        resolveDelete();
+      });
+
+      // Wait for the click to complete
+      await clickPromise;
 
       // Wait for completion
       await waitFor(() => {
@@ -572,10 +587,13 @@ describe('Delete All Tasks Feature', () => {
         ).toBeInTheDocument();
       });
 
-      // Wait for rollback to complete - tasks should be restored
-      await waitFor(() => {
-        expect(screen.getByText('Task 1')).toBeInTheDocument();
-      });
+      // Tasks should be restored (rollback) - wait for state to settle
+      await waitFor(
+        () => {
+          expect(screen.getByText('Task 1')).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should auto-dismiss error message after 5 seconds', async () => {
@@ -614,6 +632,11 @@ describe('Delete All Tasks Feature', () => {
       const user = userEvent.setup({ delay: null });
       render(<App />);
 
+      // Wait for initial render
+      await act(async () => {
+        await vi.runAllTimersAsync();
+      });
+
       await waitFor(() => {
         expect(screen.getByText('Task 1')).toBeInTheDocument();
       });
@@ -623,7 +646,9 @@ describe('Delete All Tasks Feature', () => {
       });
 
       // Click and wait for error to appear
-      await user.click(deleteAllButton);
+      await act(async () => {
+        await user.click(deleteAllButton);
+      });
 
       // Error should be visible
       await waitFor(() => {
@@ -687,7 +712,7 @@ describe('Delete All Tasks Feature', () => {
       });
       await user.click(deleteAllButton);
 
-      // Should show error and rollback
+      // Should show error
       await waitFor(() => {
         expect(
           screen.getByText(/failed to delete all tasks/i)
@@ -695,9 +720,12 @@ describe('Delete All Tasks Feature', () => {
       });
 
       // Wait for rollback to complete - verify task is still visible
-      await waitFor(() => {
-        expect(screen.getByText('Task 1')).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByText('Task 1')).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
     });
   });
 
