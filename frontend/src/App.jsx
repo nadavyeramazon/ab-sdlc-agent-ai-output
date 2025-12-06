@@ -15,7 +15,7 @@ function App() {
     updateTask,
     deleteTask,
     toggleTaskComplete,
-    refreshTasks,
+    fetchTasks,
   } = useTasks();
 
   // Local state for edit mode
@@ -95,12 +95,7 @@ function App() {
 
       if (response.ok) {
         // Refresh tasks to clear the list
-        if (refreshTasks) {
-          await refreshTasks();
-        } else {
-          // Fallback: reload the page
-          window.location.reload();
-        }
+        await fetchTasks();
       } else {
         setDeleteAllError('Failed to delete all tasks');
         // Auto-dismiss error after 5 seconds
