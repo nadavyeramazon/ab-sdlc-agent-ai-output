@@ -29,14 +29,14 @@ describe('App Component', () => {
   describe('Component Rendering', () => {
     it('should render without crashing', () => {
       render(<App />);
-      expect(screen.getByText('Task Manager')).toBeInTheDocument();
+      expect(screen.getByText('SwiftPay Tasks')).toBeInTheDocument();
     });
 
-    it('should render key UI elements', () => {
+    it('should render key UI elements with SwiftPay branding', () => {
       render(<App />);
 
-      // Check for main heading
-      expect(screen.getByRole('heading', { name: /task manager/i })).toBeInTheDocument();
+      // Check for main heading with SwiftPay branding
+      expect(screen.getByRole('heading', { name: /swiftpay tasks/i })).toBeInTheDocument();
 
       // Check for task section
       expect(screen.getByRole('heading', { name: /my tasks/i })).toBeInTheDocument();
@@ -971,9 +971,7 @@ describe('App Component', () => {
         render(<App />);
 
         await waitFor(() => {
-          expect(
-            screen.getByText(/Network connection failed/i)
-          ).toBeInTheDocument();
+          expect(screen.getByText(/Network connection failed/i)).toBeInTheDocument();
         });
       });
 
