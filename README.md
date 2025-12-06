@@ -1,53 +1,90 @@
-# Task Manager Application
+# SwiftPay Tasks Application
 
 > A production-ready task management application with comprehensive linting, testing, and security configurations.
 
-A full-stack task management application with a React frontend and Python FastAPI backend, orchestrated with Docker Compose for local development. Create, view, update, and delete tasks with persistent storage.
+A full-stack task management application with a React frontend and Python FastAPI backend, orchestrated with Docker Compose for local development. Create, view, update, and delete tasks with persistent storage. Now featuring **SwiftPay** branding with a modern green color scheme.
 
 ## 🎯 Overview
 
 This project is a complete CRUD application for managing tasks with:
-- **Frontend**: React 18 + Vite with responsive UI
+- **Frontend**: React 18 + Vite with responsive UI and SwiftPay branding
 - **Backend**: Python FastAPI with RESTful API
 - **Database**: MySQL 8.0 for persistent data storage
 - **Testing**: Comprehensive test suite with property-based testing (Hypothesis & fast-check)
 - **Orchestration**: Docker Compose for local development
 - **Hot Reload**: Live updates during development for both frontend and backend
+- **Modern Design**: Green color theme with SwiftPay branding
 
-## 📁 Project Structure
+## 🎨 Features
 
+### Task Management Features
+- ✅ **Create Tasks**: Add new tasks with title and description
+- ✅ **View Tasks**: Display all tasks ordered by creation date (newest first)
+- ✅ **Edit Tasks**: Update task title and description
+- ✅ **Delete Tasks**: Remove individual tasks from the list
+- ✅ **Delete All Tasks**: Remove all tasks at once with confirmation dialog
+- ✅ **Toggle Completion**: Mark tasks as complete or incomplete
+- ✅ **Data Persistence**: Tasks persist across application restarts
+- ✅ **Input Validation**: Client and server-side validation for data integrity
+- ✅ **Error Handling**: User-friendly error messages for all operations
+- ✅ **SwiftPay Branding**: Professional branding with green color theme
+
+### Delete All Tasks Feature
+
+The application includes a powerful bulk deletion feature that allows users to clear all tasks at once:
+
+**User Flow:**
+1. When tasks exist, a "Delete All Tasks" button appears at the top-right of the task list
+2. Clicking the button shows a confirmation dialog: "Are you sure you want to delete all tasks? This action cannot be undone."
+3. Upon confirmation, all tasks are deleted from the database
+4. The UI updates to show the empty state ("No tasks yet")
+5. If the operation fails, an error message is displayed and tasks are restored (rollback)
+
+**Technical Details:**
+- **API Endpoint**: `DELETE /api/tasks/all`
+- **Optimistic Updates**: Tasks are removed from the UI immediately
+- **Error Rollback**: If deletion fails, tasks are restored to the UI
+- **Auto-dismiss Errors**: Error messages automatically disappear after 5 seconds
+- **Loading States**: Button shows "Deleting All..." during operation and is disabled
+- **Conditional Rendering**: Button only appears when tasks exist
+
+**Example Usage:**
+```bash
+# Using curl
+curl -X DELETE http://localhost:8000/api/tasks/all
+
+# Response when tasks exist
+{"success": true, "deletedCount": 5}
+
+# Response when no tasks exist
+{"success": true, "deletedCount": 0}
 ```
-project-root/
-├── frontend/                      # React + Vite frontend
-│   ├── src/
-│   │   ├── App.jsx               # Main task manager component
-│   │   ├── App.test.jsx          # Comprehensive test suite with property tests
-│   │   ├── App.css               # Task manager styling
-│   │   ├── main.jsx              # React entry point
-│   │   └── test/
-│   │       └── setup.js          # Test configuration
-│   ├── index.html                # HTML template
-│   ├── package.json              # Frontend dependencies (includes fast-check)
-│   ├── vite.config.js            # Vite configuration with test setup
-│   ├── .env.example              # Environment variable template
-│   ├── TEST_GUIDE.md             # Comprehensive testing documentation
-│   └── Dockerfile                # Frontend Docker image
-├── backend/                       # Python FastAPI backend
-│   ├── main.py                   # FastAPI application with task endpoints
-│   ├── task_repository.py        # Data persistence layer (MySQL)
-│   ├── test_main.py              # API endpoint tests with property tests
-│   ├── test_task_repository.py   # Repository tests with property tests
-│   ├── requirements.txt          # Backend dependencies (includes mysql-connector-python)
-│   ├── pytest.ini                # Pytest configuration
-│   ├── README_TESTS.md           # Backend testing documentation
-│   ├── .env.example              # Environment variable template
-│   └── Dockerfile                # Backend Docker image
-├── .github/
-│   └── workflows/
-│       └── ci.yml                # CI/CD pipeline
-├── .gitignore                    # Git ignore rules
-└── README.md                     # This file
-```
+
+### Frontend Features
+- ✅ Responsive task management UI with SwiftPay branding
+- ✅ Modern green color theme (emerald and teal accents)
+- ✅ Task creation form with validation
+- ✅ Inline task editing
+- ✅ Bulk task deletion with confirmation
+- ✅ Visual distinction for completed tasks (strikethrough)
+- ✅ Loading state indicators for all operations
+- ✅ Error handling with user-friendly messages
+- ✅ Empty state messaging
+- ✅ Hot Module Replacement (HMR) for development
+- ✅ Environment-based API URL configuration
+- ✅ Comprehensive test coverage with property-based testing
+
+### Backend Features
+- ✅ RESTful API with FastAPI
+- ✅ Full CRUD operations for tasks
+- ✅ Bulk delete operation for all tasks
+- ✅ Pydantic models for request/response validation
+- ✅ MySQL database persistence
+- ✅ Automatic database schema initialization
+- ✅ Proper HTTP status codes (200, 201, 204, 404, 422, 500)
+- ✅ CORS enabled for frontend communication
+- ✅ Auto-reload during development
+- ✅ Comprehensive test coverage with property-based testing
 
 ## 🚀 Quick Start
 
@@ -104,44 +141,26 @@ cd frontend
 npm test
 ```
 
-## 🎨 Features
+## 💡 Color Theme
 
-### Task Management Features
-- ✅ **Create Tasks**: Add new tasks with title and description
-- ✅ **View Tasks**: Display all tasks ordered by creation date (newest first)
-- ✅ **Edit Tasks**: Update task title and description
-- ✅ **Delete Tasks**: Remove tasks from the list
-- ✅ **Delete All Tasks**: Remove all tasks at once
-- ✅ **Toggle Completion**: Mark tasks as complete or incomplete
-- ✅ **Data Persistence**: Tasks persist across application restarts
-- ✅ **Input Validation**: Client and server-side validation for data integrity
-- ✅ **Error Handling**: User-friendly error messages for all operations
+The application features a modern **green color theme** inspired by SwiftPay's branding:
 
-### Frontend Features
-- ✅ Responsive task management UI
-- ✅ Task creation form with validation
-- ✅ Inline task editing
-- ✅ Visual distinction for completed tasks (strikethrough)
-- ✅ Loading state indicators for all operations
-- ✅ Error handling with user-friendly messages
-- ✅ Empty state messaging
-- ✅ Hot Module Replacement (HMR) for development
-- ✅ Environment-based API URL configuration
-- ✅ Comprehensive test coverage with property-based testing
+| Element | Color | Usage |
+|---------|-------|-------|
+| **Primary Green** | `#10b981` (Emerald 500) | Gradient start, buttons, focus states, loading spinner, checkbox accent |
+| **Dark Green** | `#047857` (Emerald 700) | Gradient end |
+| **Hover Green** | `#059669` (Emerald 600) | Primary button hover state |
+| **Teal** | `#14b8a6` (Teal 500) | Edit button background |
+| **Dark Teal** | `#0d9488` (Teal 600) | Edit button hover state |
 
-### Backend Features
-- ✅ RESTful API with FastAPI
-- ✅ Full CRUD operations for tasks
-- ✅ Bulk delete operation for all tasks
-- ✅ Pydantic models for request/response validation
-- ✅ MySQL database persistence
-- ✅ Automatic database schema initialization
-- ✅ Proper HTTP status codes (200, 201, 204, 404, 422, 500)
-- ✅ CORS enabled for frontend communication
-- ✅ Auto-reload during development
-- ✅ Comprehensive test coverage with property-based testing
+**Background Gradient:**
+```css
+background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+```
 
-## 📡 API Endpoints
+This creates a vibrant, professional appearance that aligns with modern design trends while maintaining excellent readability and accessibility.
+
+## 📱 API Endpoints
 
 ### GET /api/tasks
 Retrieve all tasks ordered by creation date (newest first).
@@ -281,6 +300,14 @@ curl -X DELETE http://localhost:8000/api/tasks/all
 {"success": true, "deletedCount": 0}
 ```
 
+**UI Implementation:**
+- Button appears only when tasks exist
+- Confirmation dialog prevents accidental deletion
+- Optimistic UI updates for instant feedback
+- Error rollback restores tasks if operation fails
+- Loading state disables button during operation
+- Error messages auto-dismiss after 5 seconds
+
 ### DELETE /api/tasks/{task_id}
 Delete a single task by ID.
 
@@ -309,6 +336,53 @@ FastAPI provides automatic interactive API documentation:
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 
+## 📁 Project Structure
+
+```
+project-root/
+├── frontend/                      # React + Vite frontend
+│   ├── src/
+│   │   ├── App.jsx               # Main task manager component
+│   │   ├── App.css               # Green theme styling
+│   │   ├── assets/
+│   │   │   └── logo.png          # SwiftPay logo
+│   │   ├── __tests__/
+│   │   │   ├── App.test.jsx     # Main component tests
+│   │   │   └── DeleteAllTasks.test.jsx  # Delete all tests
+│   │   ├── components/
+│   │   │   ├── TaskList.jsx     # Task list with delete all button
+│   │   │   ├── TaskForm.jsx     # Task creation/edit form
+│   │   │   └── TaskItem.jsx     # Individual task display
+│   │   ├── hooks/
+│   │   │   └── useTasks.js      # Task state management hook
+│   │   ├── services/
+│   │   │   └── api.js           # API service with deleteAllTasks
+│   │   ├── main.jsx              # React entry point
+│   │   └── test/
+│   │       └── setup.js          # Test configuration
+│   ├── index.html                # HTML template
+│   ├── package.json              # Frontend dependencies (includes fast-check)
+│   ├── vite.config.js            # Vite configuration with test setup
+│   ├── .env.example              # Environment variable template
+│   ├── TEST_GUIDE.md             # Comprehensive testing documentation
+│   └── Dockerfile                # Frontend Docker image
+├── backend/                       # Python FastAPI backend
+│   ├── main.py                   # FastAPI application with task endpoints
+│   ├── task_repository.py        # Data persistence layer (MySQL)
+│   ├── test_main.py              # API endpoint tests with property tests
+│   ├── test_task_repository.py   # Repository tests with property tests
+│   ├── requirements.txt          # Backend dependencies (includes mysql-connector-python)
+│   ├── pytest.ini                # Pytest configuration
+│   ├── README_TESTS.md           # Backend testing documentation
+│   ├── .env.example              # Environment variable template
+│   └── Dockerfile                # Backend Docker image
+├── .github/
+│   └── workflows/
+│       └── ci.yml                # CI/CD pipeline
+├── .gitignore                    # Git ignore rules
+└── README.md                     # This file
+```
+
 ## ⚙️ Environment Configuration
 
 ### Backend Environment Variables
@@ -318,7 +392,7 @@ The backend uses environment variables for database configuration. When running 
 **Available Variables:**
 
 | Variable | Description | Default |
-|----------|-------------|---------||
+|----------|-------------|---------|
 | `DB_HOST` | MySQL host | `mysql` |
 | `DB_PORT` | MySQL port | `3306` |
 | `DB_USER` | MySQL user | `taskuser` |
@@ -345,7 +419,7 @@ cp .env.example .env
 **Available Variables:**
 
 | Variable | Description | Default |
-|----------|-------------|---------||
+|----------|-------------|---------|
 | `VITE_API_URL` | Backend API URL | `http://localhost:8000` |
 
 **Example `.env` file:**
@@ -410,6 +484,33 @@ npm run test:watch
 npm run test:coverage
 ```
 
+### Frontend Test Coverage
+
+The frontend test suite includes comprehensive tests for all features:
+
+**Delete All Tasks Tests** (`DeleteAllTasks.test.jsx`):
+- ✅ Delete all button rendering (only when tasks exist)
+- ✅ Confirmation dialog behavior
+- ✅ Complete delete all flow (button → confirm → API → empty state)
+- ✅ Loading states during delete all operation
+- ✅ Error handling and rollback on failure
+- ✅ Auto-dismissing error messages after 5 seconds
+- ✅ Edge cases (one task, many tasks)
+- ✅ API integration (correct endpoint and method)
+
+**Main App Tests** (`App.test.jsx`):
+- ✅ Component rendering with SwiftPay branding
+- ✅ Task creation flow
+- ✅ Task editing flow
+- ✅ Task deletion flow
+- ✅ Task completion toggle
+- ✅ Error handling for failed API calls
+- ✅ Loading states for all operations
+- ✅ Empty state display
+- ✅ Property-based test for task ordering
+
+For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](frontend/TEST_GUIDE.md).
+
 ### Backend Test Coverage
 
 The backend test suite includes:
@@ -437,24 +538,6 @@ The backend test suite includes:
 
 For detailed backend testing documentation, see [backend/README_TESTS.md](backend/README_TESTS.md).
 
-### Frontend Test Coverage
-
-The frontend test suite includes:
-
-**Integration Tests:**
-- ✅ Task creation flow (form → API → list update)
-- ✅ Task editing flow (edit button → form → update → display)
-- ✅ Task deletion flow (delete button → removal)
-- ✅ Task completion toggle
-- ✅ Error handling for failed API calls
-- ✅ Loading states for all operations
-- ✅ Empty state display
-
-**Property-Based Tests:**
-- ✅ **Property 10**: Task ordering consistency - tasks always ordered by creation date (newest first)
-
-For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](frontend/TEST_GUIDE.md).
-
 ### Manual Testing Checklist
 
 **Task Creation:**
@@ -469,6 +552,7 @@ For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](fronte
 - [ ] Completed tasks show strikethrough styling
 - [ ] Tasks ordered by creation date (newest first)
 - [ ] Empty state message shows when no tasks exist
+- [ ] SwiftPay branding and green theme are visible
 
 **Task Editing:**
 - [ ] Edit button shows edit form with current data
@@ -486,9 +570,18 @@ For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](fronte
 - [ ] Delete button removes task from list
 - [ ] Task removed immediately from UI
 - [ ] Deletion persists after page refresh
-- [ ] Delete all removes all tasks
-- [ ] Delete all works when no tasks exist
-- [ ] Delete all returns correct count
+
+**Delete All Tasks:**
+- [ ] Delete all button appears when tasks exist
+- [ ] Delete all button hidden when no tasks exist
+- [ ] Confirmation dialog appears on click
+- [ ] Canceling confirmation keeps tasks intact
+- [ ] Confirming deletes all tasks (including completed ones)
+- [ ] UI updates to show empty state
+- [ ] Button shows loading state during operation
+- [ ] Error message appears if operation fails
+- [ ] Error message auto-dismisses after 5 seconds
+- [ ] Tasks are restored if deletion fails (rollback)
 
 **Error Handling:**
 - [ ] Validation errors display clearly
@@ -505,238 +598,6 @@ For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](fronte
 - [ ] No CORS errors in browser console
 - [ ] Hot reload works for both frontend and backend
 - [ ] API documentation accessible at /docs
-
-### CI/CD Pipeline
-
-The project includes a comprehensive GitHub Actions workflow that implements a sequential, fail-fast approach to quality assurance. The pipeline is designed to catch simple issues early before investing time in more expensive operations.
-
-**Pipeline Triggers:**
-- All pull requests to main/master branches
-- Direct pushes to main/master branches
-
-**Key Features:**
-- ✅ Sequential execution with explicit job dependencies
-- ✅ Fail-fast approach - stops at first failure
-- ✅ Parallel execution within stages for efficiency
-- ✅ Comprehensive testing including property-based tests (100+ iterations)
-- ✅ Full system integration validation with Docker Compose
-- ✅ Intelligent caching for faster subsequent runs
-
-#### Pipeline Stages
-
-The CI pipeline executes in three distinct stages, each acting as a quality gate:
-
-**Stage 1: Linting (Parallel Execution)**
-- **Backend Linting**: Runs flake8 on Python code
-- **Frontend Linting**: Runs ESLint on JavaScript/React code
-- **Purpose**: Catch code style and syntax issues immediately
-- **Duration**: ~1-2 minutes
-- **Fail-Fast**: If linting fails, tests are skipped
-
-**Stage 2: Testing (Parallel Execution, After Linting)**
-- **Backend Tests**: Runs pytest with coverage reporting
-  - Unit tests for API endpoints and repository operations
-  - Property-based tests using Hypothesis (100+ iterations)
-- **Frontend Tests**: Runs Vitest with React Testing Library
-  - Integration tests for UI components
-  - Property-based tests using fast-check (100+ iterations)
-- **Purpose**: Verify functionality and correctness
-- **Duration**: ~2-3 minutes
-- **Fail-Fast**: If tests fail, Docker validation is skipped
-
-**Stage 3: Docker Validation (Sequential Execution, After Tests)**
-- **Docker Build Verification**: Builds backend and frontend images
-- **Docker Compose Validation**: 
-  - Validates docker-compose.yml syntax
-  - Starts all services (MySQL, backend, frontend)
-  - Performs health checks on backend and frontend
-  - Displays logs on failure
-  - Cleans up containers and volumes
-- **Purpose**: Verify complete system integration
-- **Duration**: ~3-5 minutes
-- **Fail-Fast**: Stops immediately on any failure
-
-#### Dependency Graph
-
-```
-┌─────────────────┐     ┌─────────────────┐
-│ Backend Linting │     │Frontend Linting │  ← Stage 1: Linting (Parallel)
-└────────┬────────┘     └────────┬────────┘
-         │                       │
-         ▼                       ▼
-┌─────────────────┐     ┌─────────────────┐
-│  Backend Tests  │     │ Frontend Tests  │  ← Stage 2: Testing (Parallel)
-└────────┬────────┘     └────────┬────────┘
-         │                       │
-         └───────────┬───────────┘
-                     │
-         ┌───────────▼───────────┐
-         │  Docker Build Verify  │           ← Stage 3: Docker (Sequential)
-         └───────────┬───────────┘
-                     │
-                     ▼
-         ┌───────────────────────┐
-         │Docker Compose Validate│
-         └───────────┬───────────┘
-                     │
-                     ▼
-         ┌───────────────────────┐
-         │    CI Success Summary │           ← Final confirmation
-         └───────────────────────┘
-```
-
-#### Execution Order and Fail-Fast Behavior
-
-The pipeline enforces strict execution order using GitHub Actions' `needs` keyword:
-
-1. **Linting runs first** (parallel):
-   - `backend-linting` (no dependencies)
-   - `frontend-linting` (no dependencies)
-   - If either fails → entire pipeline stops
-
-2. **Tests run after linting** (parallel):
-   - `backend-tests` needs `backend-linting`
-   - `frontend-tests` needs `frontend-linting`
-   - If either fails → Docker validation is skipped
-
-3. **Docker validation runs after tests** (sequential):
-   - `docker-build` (runs in parallel with tests for efficiency)
-   - `docker-compose-validation` needs `[backend-tests, frontend-tests, docker-build]`
-   - If any dependency fails → validation is skipped
-
-4. **Summary job confirms success**:
-   - `ci-success` needs all previous jobs
-   - Only runs if all checks pass
-
-**Fail-Fast Configuration:**
-- All critical steps use `continue-on-error: false` (or omit it, as false is default)
-- Failed jobs immediately stop the pipeline
-- Dependent jobs are automatically skipped
-- Clear status indicators show which stage failed
-
-#### Caching Strategy
-
-The pipeline uses intelligent caching to speed up subsequent runs:
-
-**Backend Cache:**
-```yaml
-key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt', 'backend/requirements-dev.txt') }}
-```
-- Caches pip packages based on requirements file hashes
-- Cache invalidates automatically when dependencies change
-- Typical speedup: 30-60 seconds per run
-
-**Frontend Cache:**
-```yaml
-key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
-```
-- Caches npm packages based on package.json hash
-- Cache invalidates automatically when dependencies change
-- Typical speedup: 45-90 seconds per run
-
-#### Testing the Pipeline Locally
-
-You can test the CI pipeline locally using [act](https://github.com/nektos/act), a tool that runs GitHub Actions locally:
-
-**Install act:**
-```bash
-# macOS
-brew install act
-
-# Linux
-curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
-
-# Windows (with Chocolatey)
-choco install act-cli
-```
-
-**Run the entire pipeline:**
-```bash
-# Run all jobs
-act pull_request
-
-# Run with verbose output
-act pull_request -v
-```
-
-**Run specific jobs:**
-```bash
-# Run only linting jobs
-act pull_request -j backend-linting
-act pull_request -j frontend-linting
-
-# Run only test jobs
-act pull_request -j backend-tests
-act pull_request -j frontend-tests
-
-# Run Docker validation
-act pull_request -j docker-compose-validation
-```
-
-**Simulate different scenarios:**
-```bash
-# Test with a specific event
-act push
-
-# Test with environment variables
-act pull_request --env NODE_VERSION=18 --env PYTHON_VERSION=3.11
-
-# Use a specific Docker image for the runner
-act pull_request -P ubuntu-latest=catthehacker/ubuntu:act-latest
-```
-
-**Limitations of local testing:**
-- Some GitHub-specific features may not work identically
-- Caching behavior may differ from GitHub's infrastructure
-- Secrets and environment variables need to be provided manually
-- Docker-in-Docker scenarios may require additional configuration
-
-**Alternative: Manual validation**
-```bash
-# Validate workflow syntax
-docker run --rm -v $(pwd):/repo ghcr.io/rhysd/actionlint:latest -color
-
-# Or install actionlint locally
-brew install actionlint  # macOS
-actionlint .github/workflows/ci.yml
-```
-
-#### Monitoring Pipeline Execution
-
-**In GitHub UI:**
-1. Navigate to the "Actions" tab in your repository
-2. Select a workflow run to see the execution graph
-3. Click on individual jobs to see detailed logs
-4. Failed jobs show clear error messages and logs
-
-**Status Checks:**
-- All jobs must pass before merging pull requests
-- Branch protection rules enforce CI success
-- Clear visual indicators show pipeline status
-
-**Debugging Failed Runs:**
-1. Check which stage failed (linting, tests, or Docker)
-2. Review the job logs for specific error messages
-3. For Docker failures, check the "Show Docker Compose logs" step
-4. Reproduce locally using the same commands from the workflow
-5. Use `act` to test fixes before pushing
-
-#### Pipeline Performance
-
-**Typical Execution Times:**
-- **Linting Stage**: 1-2 minutes (parallel)
-- **Testing Stage**: 2-3 minutes (parallel, after linting)
-- **Docker Stage**: 3-5 minutes (sequential, after tests)
-- **Total Duration**: 6-10 minutes (with caching)
-- **First Run**: 10-15 minutes (without cache)
-
-**Optimization Features:**
-- Parallel execution within stages
-- Dependency caching (pip, npm)
-- Early termination on failures
-- Efficient Docker layer caching
-
-All property-based tests run with 100+ iterations in CI to ensure comprehensive coverage.
 
 ## 🔧 Development
 
@@ -972,6 +833,19 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 
 ### Design Decisions
 
+**SwiftPay Branding:**
+- Modern, professional appearance with green color theme
+- Emerald and teal color palette for accessibility and visual appeal
+- Clean, minimalist design focused on usability
+- Responsive layout optimized for all screen sizes
+
+**Delete All Tasks Feature:**
+- Confirmation dialog prevents accidental data loss
+- Optimistic updates provide instant feedback
+- Error rollback ensures data integrity
+- Auto-dismissing errors reduce visual clutter
+- Conditional rendering keeps UI clean when not needed
+
 **MySQL Database:**
 - Production-ready relational database
 - ACID compliance for data integrity
@@ -1015,18 +889,18 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 
 ### Development Process
 
-2. **Create Feature Branch**:
+1. **Create Feature Branch**:
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
-3. **Implement Changes**:
+2. **Implement Changes**:
    - Follow the spec-driven development approach
    - Write implementation first
    - Add property-based tests for correctness properties
    - Add unit tests for specific cases
 
-4. **Run Tests**:
+3. **Run Tests**:
    ```bash
    # Backend tests
    cd backend && pytest -v
@@ -1035,12 +909,12 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
    cd frontend && npm test
    ```
 
-5. **Manual Testing**:
+4. **Manual Testing**:
    - Complete the manual testing checklist
    - Verify data persistence
    - Test error scenarios
 
-6. **Submit Pull Request**:
+5. **Submit Pull Request**:
    - Ensure all tests pass
    - Update documentation if needed
    - Reference related requirements/tasks
@@ -1054,7 +928,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - ✅ Documentation updated if API changes
 - ✅ Correctness properties validated
 
-## 📄 License
+## 📝 License
 
 This is a demonstration project for educational purposes.
 
@@ -1079,3 +953,5 @@ This is a demonstration project for educational purposes.
 **Built with ❤️ using spec-driven development 📋**
 
 **Tested with ✅ Property-Based Testing (Hypothesis & fast-check)**
+
+**Branded with 💳 SwiftPay Design**
