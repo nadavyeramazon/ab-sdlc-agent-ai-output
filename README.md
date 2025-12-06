@@ -59,6 +59,8 @@ project-root/
 │   │   │   ├── logo.png          # Application logo
 │   │   │   └── logo-swiftpay.png # SwiftPay branding logo
 │   │   ├── components/
+│   │   │   ├── __tests__/
+│   │   │   │   └── TaskList.test.jsx # TaskList component unit tests
 │   │   │   ├── TaskForm.jsx      # Task creation/edit form component
 │   │   │   ├── TaskItem.jsx      # Individual task display component
 │   │   │   └── TaskList.jsx      # Task list container component
@@ -164,6 +166,54 @@ App.jsx
 - **Props Down, Events Up**: Data flows down via props, events bubble up
 - **Separation of Concerns**: API logic separated from UI components
 
+### TaskList Component
+
+The `TaskList` component (`frontend/src/components/TaskList.jsx`) implements intelligent error handling to provide the best user experience:
+
+**Error Display Logic:**
+
+1. **Loading State**: Shows "Loading tasks..." (highest priority)
+2. **Error with No Tasks**: Shows only the error message (initial load failed)
+3. **Error with Tasks**: Shows error message ABOVE the task list (operation failed, data preserved)
+4. **No Tasks**: Shows "No tasks yet" empty state
+5. **Tasks Present**: Renders full task list
+
+**Use Cases:**
+
+```jsx
+// Scenario 1: Initial load fails (no tasks in state)
+// Displays: Error message only
+<div className="error">Failed to load tasks</div>
+
+// Scenario 2: Delete All operation fails (tasks still in state)
+// Displays: Error message + task list
+<>
+  <div className="error">HTTP error! status: 500</div>
+  <div className="task-list">
+    {/* All tasks still visible */}
+  </div>
+</>
+
+// Scenario 3: Normal operation (no errors)
+// Displays: Task list only
+<div className="task-list">
+  {/* Tasks rendered normally */}
+</div>
+```
+
+**Design Rationale:**
+- When an operation fails on existing data (e.g., Delete All returns 500), users need to see both the error AND their data
+- This prevents user confusion and data loss perception
+- The error message appears above tasks, providing context while preserving data visibility
+- Empty state errors (initial load failures) show only the error since there's no data to display
+
+**Props:**
+- `tasks`: Array of task objects to display
+- `loading`: Boolean indicating loading state
+- `error`: String error message (null if no error)
+- `toggleLoading`, `deleteLoading`, `editLoading`: IDs of tasks being operated on
+- `onToggleComplete`, `onDelete`, `onEdit`: Event handler callbacks
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -254,6 +304,7 @@ npm test
 -  **Data Persistence**: Tasks persist in MySQL database across restarts
 -  **Input Validation**: Client and server-side validation for data integrity
 -  **Error Handling**: User-friendly error messages for all operations
+-  **Intelligent Error Display**: Errors shown alongside tasks when operations fail on existing data
 
 ### User Interface Features
 -  **Modern Theme**: Clean emerald green color scheme (rebranded from purple)
@@ -263,6 +314,7 @@ npm test
 -  **Confirmation Dialogs**: Safety prompts for destructive actions (Delete All)
 -  **Empty State Messages**: Helpful hints when no tasks exist
 -  **Smooth Animations**: Hover effects and transitions for better UX
+-  **Contextual Error Messages**: Errors displayed with relevant context (e.g., error + task list when delete fails)
 
 ### Delete All Tasks Feature
 
@@ -277,6 +329,12 @@ The **Delete All Tasks** button provides a quick way to clear all tasks at once:
 - Button is disabled during deletion to prevent double-clicks
 - Hides automatically after all tasks are deleted
 
+**Error Handling**:
+- If delete all operation fails, error message is displayed above the task list
+- Tasks remain visible so users can see their data is still present
+- Users can retry the operation or delete tasks individually
+- Error provides context about what went wrong (e.g., "HTTP error! status: 500")
+
 **Safety Features**:
 - Confirmation dialog with clear warning message
 - Describes action as irreversible
@@ -290,6 +348,7 @@ The **Delete All Tasks** button provides a quick way to clear all tasks at once:
 // → User confirms or cancels
 // → If confirmed, all tasks are deleted from database
 // → UI updates to show empty state
+// → If error occurs, error shown above task list
 ```
 
 ### Frontend Features
@@ -299,12 +358,14 @@ The **Delete All Tasks** button provides a quick way to clear all tasks at once:
 -  Visual distinction for completed tasks (strikethrough)
 -  Loading state indicators for all operations
 -  Error handling with user-friendly messages
+-  Intelligent error display (errors + data when operations fail)
 -  Empty state messaging
 -  Hot Module Replacement (HMR) for development
 -  Environment-based API URL configuration
 -  Comprehensive test coverage with property-based testing
 -  Custom hooks for state management (`useTasks`)
 -  Reusable component architecture
+-  Unit tests for individual components (TaskList, TaskForm, TaskItem)
 
 ### Backend Features
 -  RESTful API with FastAPI
@@ -419,7 +480,7 @@ The Delete All Tasks button in the UI:
 2. Shows confirmation dialog before deletion
 3. Calls this endpoint on confirmation
 4. Updates UI to show empty state after successful deletion
-5. Shows error message if operation fails
+5. Shows error message ABOVE task list if operation fails (tasks remain visible)
 
 **Note:** This operation is idempotent - calling it multiple times will always result in an empty task list and return 204.
 
@@ -651,7 +712,18 @@ npm run test:coverage
 
 **Frontend Test Suite:**
 
-*Integration Tests:*
+*Unit Tests (Component Level):*
+-  TaskList component rendering
+-  TaskList loading state display
+-  TaskList error handling (with and without tasks)
+-  TaskList empty state display
+-  TaskList task rendering with various states
+-  TaskList error + tasks simultaneous display (key for delete all error handling)
+-  TaskList disabled states during operations
+-  TaskItem component rendering and interactions
+-  TaskForm validation and submission
+
+*Integration Tests (Application Level):*
 -  Task creation flow (form → API → list update)
 -  Task editing flow (edit button → form → update → display)
 -  Task deletion flow (delete button → removal)
@@ -660,7 +732,6 @@ npm run test:coverage
 -  Error handling for failed API calls
 -  Loading states for all operations
 -  Empty state display
--  Component rendering and props
 -  Custom hooks (useTasks)
 -  API service layer
 
@@ -671,7 +742,7 @@ npm run test:coverage
 -  Successful bulk deletion
 -  Loading state during operation
 -  Button disabled state during operation
--  Error handling for failed deletion
+-  **Error handling for failed deletion (error + tasks display)**
 -  Empty state after deletion
 
 *Property-Based Tests:*
@@ -679,7 +750,7 @@ npm run test:coverage
 
 For detailed testing documentation:
 - Backend: See inline test documentation in `backend/tests/`
-- Frontend: See `frontend/TEST_GUIDE.md`
+- Frontend: See `frontend/TEST_GUIDE.md` and `frontend/src/components/__tests__/`
 
 ## 🛠️ Pre-commit Hooks
 
@@ -753,7 +824,8 @@ The CI pipeline executes in three distinct stages, each acting as a quality gate
   - Unit tests for API endpoints and repository operations
   - Property-based tests using Hypothesis (100+ iterations)
 - **Frontend Tests**: Runs Vitest with React Testing Library
-  - Integration tests for UI components
+  - Unit tests for individual components
+  - Integration tests for UI components and flows
   - Property-based tests using fast-check (100+ iterations)
   - Production build verification
 - **Purpose**: Verify functionality and correctness
@@ -801,6 +873,7 @@ The CI pipeline executes in three distinct stages, each acting as a quality gate
 -  Fail-fast approach - stops at first failure
 -  Parallel execution within stages for efficiency
 -  Comprehensive testing including property-based tests (100+ iterations)
+-  Unit tests for individual components (TaskList, TaskForm, TaskItem)
 -  Full system integration validation with Docker Compose
 -  Intelligent caching for faster subsequent runs (pip, npm)
 
@@ -875,6 +948,7 @@ pytest --cov=app --cov-report=term-missing
 
 **File Locations:**
 - Components: `frontend/src/components/`
+- Component Tests: `frontend/src/components/__tests__/`
 - Hooks: `frontend/src/hooks/`
 - Services: `frontend/src/services/`
 - Main App: `frontend/src/App.jsx`
@@ -1171,6 +1245,12 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Props down, events up pattern for predictable data flow
 - Makes components reusable and testable
 - Separates concerns (UI, state, API)
+
+**Intelligent Error Handling in UI:**
+- TaskList component shows errors alongside tasks when operations fail
+- Prevents user confusion by maintaining data visibility during error states
+- Provides context for errors without hiding user data
+- Critical for operations like "Delete All" that may fail but shouldn't hide existing tasks
 
 **Emerald Green Theme:**
 - Modern, professional appearance
