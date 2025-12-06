@@ -67,11 +67,15 @@ def create_mock_repository():
             return True
         return False
 
+    def delete_all():
+        mock_tasks.clear()
+
     repo.get_all = get_all
     repo.get_by_id = get_by_id
     repo.create = create
     repo.update = update
     repo.delete = delete
+    repo.delete_all = delete_all
 
     return repo
 
@@ -197,5 +201,85 @@ class TestPersistenceAcrossRestarts:
                 assert loaded.completed == expected["completed"]
                 assert loaded.created_at == expected["created_at"]
                 assert loaded.updated_at == expected["updated_at"]
+
+        mock_tasks = {}
+
+
+class TestBulkDeleteOperations:
+    """
+    Unit tests for bulk delete operations in TaskRepository.
+
+    Tests the delete_all() method which removes all tasks from storage.
+    """
+
+    def test_delete_all_removes_all_tasks(self, test_repo):
+        """Test that delete_all() removes all tasks from storage"""
+        # Create multiple tasks
+        task1 = test_repo.create(TaskCreate(title="Task 1", description="Description 1"))
+        task2 = test_repo.create(TaskCreate(title="Task 2", description="Description 2"))
+        task3 = test_repo.create(TaskCreate(title="Task 3", description="Description 3"))
+
+        # Verify tasks exist
+        all_tasks = test_repo.get_all()
+        assert len(all_tasks) == 3
+
+        # Delete all tasks
+        test_repo.delete_all()
+
+        # Verify all tasks are removed
+        all_tasks = test_repo.get_all()
+        assert len(all_tasks) == 0
+
+        # Verify individual tasks are not retrievable
+        assert test_repo.get_by_id(task1.id) is None
+        assert test_repo.get_by_id(task2.id) is None
+        assert test_repo.get_by_id(task3.id) is None
+
+    def test_delete_all_on_empty_storage(self, test_repo):
+        """Test that delete_all() works on empty storage (no error)"""
+        # Verify storage is empty
+        all_tasks = test_repo.get_all()
+        assert len(all_tasks) == 0
+
+        # Delete all tasks (should not raise error)
+        test_repo.delete_all()
+
+        # Verify storage is still empty
+        all_tasks = test_repo.get_all()
+        assert len(all_tasks) == 0
+
+    @settings(max_examples=10, deadline=2000)
+    @given(tasks_data=st.lists(task_create_strategy(), min_size=1, max_size=5))
+    def test_property_bulk_delete_completeness(self, tasks_data):
+        """
+        Property: Bulk delete completeness
+        For any set of tasks created, after delete_all(), get_all() returns empty list.
+        """
+        global mock_tasks
+        mock_tasks = {}
+
+        with patch('app.repositories.task_repository.TaskRepository._initialize_database'):
+            repo = create_mock_repository()
+
+            # Create all tasks and store their IDs
+            created_ids = []
+            for task_data in tasks_data:
+                task = repo.create(task_data)
+                created_ids.append(task.id)
+
+            # Verify tasks were created
+            all_tasks = repo.get_all()
+            assert len(all_tasks) == len(tasks_data)
+
+            # Delete all tasks
+            repo.delete_all()
+
+            # Verify all tasks are removed
+            all_tasks = repo.get_all()
+            assert len(all_tasks) == 0
+
+            # Verify individual tasks are not retrievable
+            for task_id in created_ids:
+                assert repo.get_by_id(task_id) is None
 
         mock_tasks = {}
