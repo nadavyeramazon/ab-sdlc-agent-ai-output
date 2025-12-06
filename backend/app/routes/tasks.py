@@ -77,6 +77,38 @@ def create_task(
     return task.model_dump()
 
 
+@router.delete("/tasks/all")
+def delete_all_tasks(
+    service: TaskService = Depends(get_task_service)
+) -> dict:
+    """
+    Delete all tasks.
+
+    Args:
+        service: Injected TaskService instance
+
+    Returns:
+        JSON response with success status and count of deleted tasks
+
+    Raises:
+        HTTPException 500: If deletion fails
+
+    Example:
+        Response: {
+            "success": true,
+            "deletedCount": 5
+        }
+    """
+    try:
+        deleted_count = service.delete_all_tasks()
+        return {"success": True, "deletedCount": deleted_count}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to delete tasks"
+        )
+
+
 @router.get("/tasks/{task_id}")
 def get_task(
     task_id: str,
