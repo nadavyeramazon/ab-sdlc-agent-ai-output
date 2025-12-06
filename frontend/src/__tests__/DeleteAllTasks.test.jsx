@@ -579,21 +579,26 @@ describe('Delete All Tasks Feature', () => {
         name: /delete all tasks/i,
       });
 
-      // Click the button
-      await user.click(deleteAllButton);
-
-      // Should show error message
-      await waitFor(() => {
-        expect(
-          screen.getByText(/failed to delete all tasks/i)
-        ).toBeInTheDocument();
+      // Click the button and wait for all state updates
+      await act(async () => {
+        await user.click(deleteAllButton);
       });
 
-      // Tasks should be restored after rollback - use findByText for async query
+      // Wait for error message to appear
       await waitFor(
-        async () => {
-          const task = await screen.findByText('Task 1');
-          expect(task).toBeInTheDocument();
+        () => {
+          expect(
+            screen.getByText(/failed to delete all tasks/i)
+          ).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
+
+      // Wait for tasks to be restored after rollback
+      // The rollback happens in the catch block, so tasks should reappear
+      await waitFor(
+        () => {
+          expect(screen.getByText('Task 1')).toBeInTheDocument();
         },
         { timeout: 3000 }
       );
@@ -714,21 +719,25 @@ describe('Delete All Tasks Feature', () => {
         name: /delete all tasks/i,
       });
 
-      // Click the button
-      await user.click(deleteAllButton);
-
-      // Should show error
-      await waitFor(() => {
-        expect(
-          screen.getByText(/failed to delete all tasks/i)
-        ).toBeInTheDocument();
+      // Click the button and wait for all state updates
+      await act(async () => {
+        await user.click(deleteAllButton);
       });
 
-      // Task should be restored after rollback - use findByText for async query
+      // Wait for error message to appear
       await waitFor(
-        async () => {
-          const task = await screen.findByText('Task 1');
-          expect(task).toBeInTheDocument();
+        () => {
+          expect(
+            screen.getByText(/failed to delete all tasks/i)
+          ).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
+
+      // Wait for task to be restored after rollback
+      await waitFor(
+        () => {
+          expect(screen.getByText('Task 1')).toBeInTheDocument();
         },
         { timeout: 3000 }
       );
