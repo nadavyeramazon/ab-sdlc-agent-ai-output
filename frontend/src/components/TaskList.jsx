@@ -10,6 +10,9 @@ function TaskList({
   deleteLoading,
   onEdit,
   editLoading,
+  onDeleteAll,
+  deleteAllLoading,
+  deleteAllError,
 }) {
   if (loading) {
     return <div className="loading">Loading tasks...</div>;
@@ -25,9 +28,22 @@ function TaskList({
 
   return (
     <div className="task-list">
+      {/* Delete All Button - only visible when tasks exist */}
+      <div className="delete-all-container">
+        {deleteAllError && <div className="error">{deleteAllError}</div>}
+        <button
+          className="btn-delete-all"
+          onClick={onDeleteAll}
+          disabled={deleteAllLoading}
+          aria-label="Delete all tasks"
+        >
+          {deleteAllLoading ? 'Deleting All...' : 'Delete All Tasks'}
+        </button>
+      </div>
+
       {tasks.map((task) => {
         const isDisabled =
-          toggleLoading === task.id || deleteLoading === task.id || editLoading === task.id;
+          toggleLoading === task.id || deleteLoading === task.id || editLoading === task.id || deleteAllLoading;
         
         return (
           <TaskItem

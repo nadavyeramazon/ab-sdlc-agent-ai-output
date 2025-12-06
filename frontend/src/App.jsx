@@ -15,6 +15,7 @@ function App() {
     updateTask,
     deleteTask,
     toggleTaskComplete,
+    refreshTasks,
   } = useTasks();
 
   // Local state for edit mode
@@ -25,6 +26,8 @@ function App() {
   const [createError, setCreateError] = useState('');
   const [toggleLoading, setToggleLoading] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
+  const [deleteAllError, setDeleteAllError] = useState('');
 
   // Handle task creation
   const handleCreateTask = async (taskData) => {
@@ -73,6 +76,42 @@ function App() {
     setToggleLoading(taskId);
     await toggleTaskComplete(taskId, currentStatus);
     setToggleLoading(null);
+  };
+
+  // Handle delete all tasks
+  const handleDeleteAllTasks = async () => {
+    // Confirm before deleting
+    if (!window.confirm('Are you sure you want to delete all tasks? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeleteAllLoading(true);
+    setDeleteAllError('');
+
+    try {
+      const response = await fetch('/api/tasks', {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Refresh tasks to clear the list
+        if (refreshTasks) {
+          await refreshTasks();
+        } else {
+          // Fallback: reload the page
+          window.location.reload();
+        }
+      } else {
+        setDeleteAllError('Failed to delete all tasks');
+        // Auto-dismiss error after 5 seconds
+        setTimeout(() => setDeleteAllError(''), 5000);
+      }
+    } catch (err) {
+      setDeleteAllError('Network error. Please try again.');
+      setTimeout(() => setDeleteAllError(''), 5000);
+    } finally {
+      setDeleteAllLoading(false);
+    }
   };
 
   // Start editing a task
@@ -125,6 +164,9 @@ function App() {
               deleteLoading={deleteLoading}
               onEdit={startEditTask}
               editLoading={editLoading}
+              onDeleteAll={handleDeleteAllTasks}
+              deleteAllLoading={deleteAllLoading}
+              deleteAllError={deleteAllError}
             />
           </div>
         </div>
