@@ -21,21 +21,26 @@ describe('API Service Property Tests', () => {
   /**
    * Property 1: API error handling consistency
    * Validates: Requirements 7.2, 7.4
-   * 
-   * For any API operation that fails, the error should be caught and 
+   *
+   * For any API operation that fails, the error should be caught and
    * formatted consistently with an error message
    */
   it('Property 1: API error handling consistency - all failed operations throw Error with message', async () => {
     // Generator for HTTP error status codes (excluding 404 for delete which is handled specially)
-    const httpErrorStatusArb = fc.integer({ min: 400, max: 599 }).filter(status => status !== 404);
-    
+    const httpErrorStatusArb = fc
+      .integer({ min: 400, max: 599 })
+      .filter((status) => status !== 404);
+
     // Generator for 422 validation errors
     const validationErrorArb = fc.record({
-      detail: fc.array(fc.record({
-        msg: fc.string({ minLength: 1, maxLength: 100 }),
-        loc: fc.array(fc.string()),
-        type: fc.string(),
-      }), { minLength: 1, maxLength: 3 }),
+      detail: fc.array(
+        fc.record({
+          msg: fc.string({ minLength: 1, maxLength: 100 }),
+          loc: fc.array(fc.string()),
+          type: fc.string(),
+        }),
+        { minLength: 1, maxLength: 3 }
+      ),
     });
 
     // Generator for task IDs
@@ -49,7 +54,9 @@ describe('API Service Property Tests', () => {
 
     // Generator for update data
     const updateDataArb = fc.record({
-      title: fc.option(fc.string({ minLength: 1, maxLength: 100 }), { nil: undefined }),
+      title: fc.option(fc.string({ minLength: 1, maxLength: 100 }), {
+        nil: undefined,
+      }),
       description: fc.option(fc.string({ maxLength: 500 }), { nil: undefined }),
       completed: fc.option(fc.boolean(), { nil: undefined }),
     });
@@ -123,6 +130,12 @@ describe('API Service Property Tests', () => {
             status: httpErrorStatusArb,
             hasValidationError: fc.constant(false),
             taskId: taskIdArb,
+          }),
+          // Test deleteAllTasks with various error statuses
+          fc.record({
+            method: fc.constant('deleteAllTasks'),
+            status: httpErrorStatusArb,
+            hasValidationError: fc.constant(false),
           })
         ),
         async (testCase) => {
@@ -130,7 +143,8 @@ describe('API Service Property Tests', () => {
           global.fetch = vi.fn().mockResolvedValue({
             ok: false,
             status: testCase.status,
-            json: async () => testCase.hasValidationError ? testCase.validationError : {},
+            json: async () =>
+              testCase.hasValidationError ? testCase.validationError : {},
           });
 
           let thrownError = null;
@@ -152,6 +166,9 @@ describe('API Service Property Tests', () => {
                 break;
               case 'getTaskById':
                 await taskApi.getTaskById(testCase.taskId);
+                break;
+              case 'deleteAllTasks':
+                await taskApi.deleteAllTasks();
                 break;
             }
           } catch (error) {
@@ -179,21 +196,41 @@ describe('API Service Property Tests', () => {
    */
   it('Edge case: deleteTask with 404 returns gracefully without error', async () => {
     await fc.assert(
-      fc.asyncProperty(
-        fc.uuid(),
-        async (taskId) => {
-          // Mock fetch to return 404
-          global.fetch = vi.fn().mockResolvedValue({
-            ok: false,
-            status: 404,
-            json: async () => ({}),
-          });
+      fc.asyncProperty(fc.uuid(), async (taskId) => {
+        // Mock fetch to return 404
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: false,
+          status: 404,
+          json: async () => ({}),
+        });
 
-          // Should not throw
-          await expect(taskApi.deleteTask(taskId)).resolves.toBeUndefined();
-        }
-      ),
+        // Should not throw
+        await expect(taskApi.deleteTask(taskId)).resolves.toBeUndefined();
+      }),
       { numRuns: 100 }
+    );
+  });
+
+  /**
+   * Unit test: deleteAllTasks successful operation
+   * Tests that deleteAllTasks makes correct DELETE request to /api/tasks endpoint
+   */
+  it('Unit test: deleteAllTasks makes correct API request and handles success', async () => {
+    // Mock successful response (204 No Content)
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 204,
+    });
+
+    // Should resolve without error
+    await expect(taskApi.deleteAllTasks()).resolves.toBeUndefined();
+
+    // Verify fetch was called correctly
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/tasks'),
+      expect.objectContaining({
+        method: 'DELETE',
+      })
     );
   });
 });
