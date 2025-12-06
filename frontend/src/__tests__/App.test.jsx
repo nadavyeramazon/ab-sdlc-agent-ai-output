@@ -1057,14 +1057,23 @@ describe('App Component', () => {
 
         render(<App />);
 
-        await waitFor(() => {
-          expect(screen.getByText('Task 1')).toBeInTheDocument();
-        });
+        // Wait for the component to finish loading and rendering tasks
+        await waitFor(
+          () => {
+            expect(screen.getByText('Task 1')).toBeInTheDocument();
+          },
+          { timeout: 3000 }
+        );
 
-        // Delete all button should be visible
-        expect(
-          screen.getByRole('button', { name: /delete all tasks/i })
-        ).toBeInTheDocument();
+        // Now check for the delete all button
+        await waitFor(
+          () => {
+            expect(
+              screen.getByRole('button', { name: /delete all tasks/i })
+            ).toBeInTheDocument();
+          },
+          { timeout: 3000 }
+        );
       });
 
       it('should complete full delete all flow with confirmation: button → confirm → API → state clear', async () => {
