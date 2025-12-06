@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './App.css';
-import logo from './assets/logo.png';
+import logo from './assets/logo-swiftpay.png';
 import { useTasks } from './hooks/useTasks';
 import TaskForm from './components/TaskForm';
 import TaskList from './components/TaskList';
@@ -14,8 +14,8 @@ function App() {
     createTask,
     updateTask,
     deleteTask,
+    deleteAllTasks,
     toggleTaskComplete,
-    fetchTasks,
   } = useTasks();
 
   // Local state for edit mode
@@ -27,20 +27,19 @@ function App() {
   const [toggleLoading, setToggleLoading] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(null);
   const [deleteAllLoading, setDeleteAllLoading] = useState(false);
-  const [deleteAllError, setDeleteAllError] = useState('');
 
   // Handle task creation
   const handleCreateTask = async (taskData) => {
     setCreateLoading(true);
     setCreateError('');
-    
+
     const success = await createTask(taskData);
-    
+
     setCreateLoading(false);
     if (!success) {
       setCreateError(error || 'Failed to create task');
     }
-    
+
     return success;
   };
 
@@ -54,7 +53,7 @@ function App() {
     const success = await updateTask(editingTask.id, taskData);
 
     setEditLoading(false);
-    
+
     if (success) {
       setEditingTask(null);
     } else {
@@ -80,33 +79,15 @@ function App() {
 
   // Handle delete all tasks
   const handleDeleteAllTasks = async () => {
-    // Confirm before deleting
-    if (!window.confirm('Are you sure you want to delete all tasks? This action cannot be undone.')) {
-      return;
-    }
+    const confirmed = window.confirm(
+      'Are you sure you want to delete ALL tasks? This action cannot be undone.'
+    );
+
+    if (!confirmed) return;
 
     setDeleteAllLoading(true);
-    setDeleteAllError('');
-
-    try {
-      const response = await fetch('/api/tasks', {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        // Refresh tasks to clear the list
-        await fetchTasks();
-      } else {
-        setDeleteAllError('Failed to delete all tasks');
-        // Auto-dismiss error after 5 seconds
-        setTimeout(() => setDeleteAllError(''), 5000);
-      }
-    } catch (err) {
-      setDeleteAllError('Network error. Please try again.');
-      setTimeout(() => setDeleteAllError(''), 5000);
-    } finally {
-      setDeleteAllLoading(false);
-    }
+    await deleteAllTasks();
+    setDeleteAllLoading(false);
   };
 
   // Start editing a task
@@ -159,11 +140,21 @@ function App() {
               deleteLoading={deleteLoading}
               onEdit={startEditTask}
               editLoading={editLoading}
-              onDeleteAll={handleDeleteAllTasks}
-              deleteAllLoading={deleteAllLoading}
-              deleteAllError={deleteAllError}
             />
           </div>
+
+          {/* Delete All Section */}
+          {tasks.length > 0 && (
+            <div className="delete-all-section">
+              <button
+                className="btn-danger"
+                onClick={handleDeleteAllTasks}
+                disabled={deleteAllLoading || loading}
+              >
+                {deleteAllLoading ? 'Deleting...' : 'Delete All Tasks'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
