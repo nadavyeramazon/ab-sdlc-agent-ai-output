@@ -1036,9 +1036,7 @@ describe('App Component', () => {
           },
         ];
 
-        // Clear any previous mocks and set up fresh
-        vi.clearAllMocks();
-
+        // Set up the mock BEFORE rendering to avoid race condition
         global.fetch.mockImplementation((url, options) => {
           // Handle DELETE requests
           if (options?.method === 'DELETE') {
@@ -1065,17 +1063,7 @@ describe('App Component', () => {
 
         render(<App />);
 
-        // First wait for loading to complete
-        await waitFor(
-          () => {
-            expect(
-              screen.queryByText('Loading tasks...')
-            ).not.toBeInTheDocument();
-          },
-          { timeout: 3000 }
-        );
-
-        // Then wait for the task to appear
+        // Wait for the task to appear (this confirms component loaded and fetched)
         await waitFor(
           () => {
             expect(screen.getByText('Task 1')).toBeInTheDocument();
@@ -1084,14 +1072,9 @@ describe('App Component', () => {
         );
 
         // Now check for the delete all button
-        await waitFor(
-          () => {
-            expect(
-              screen.getByRole('button', { name: /delete all tasks/i })
-            ).toBeInTheDocument();
-          },
-          { timeout: 3000 }
-        );
+        expect(
+          screen.getByRole('button', { name: /delete all tasks/i })
+        ).toBeInTheDocument();
       });
 
       it('should complete full delete all flow with confirmation: button → confirm → API → state clear', async () => {
