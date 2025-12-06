@@ -66,6 +66,8 @@ project-root/
 │   │   │   ├── logo-swiftpay.png # SwiftPay official logo
 │   │   │   └── logo.png          # Alternative logo
 │   │   ├── components/
+│   │   │   ├── __tests__/
+│   │   │   │   └── TaskList.test.jsx # TaskList component tests
 │   │   │   ├── TaskForm.jsx      # Task creation/edit form component
 │   │   │   ├── TaskItem.jsx      # Individual task display component
 │   │   │   └── TaskList.jsx      # Task list container component
@@ -160,7 +162,7 @@ App.jsx (SwiftPay Theme)
   ├── useTasks hook (state management + deleteAllTasks)
   │   └── api.js (HTTP client with deleteAllTasks)
   ├── TaskForm component (create/edit)
-  ├── TaskList component (list container)
+  ├── TaskList component (list container with error handling)
   │   └── TaskItem component (individual task)
   ├── Delete All Button (with confirmation)
   └── SwiftPay CSS styles (emerald green theme)
@@ -171,6 +173,26 @@ App.jsx (SwiftPay Theme)
 - **Component Composition**: Small, focused components with single responsibilities
 - **Props Down, Events Up**: Data flows down via props, events bubble up
 - **Separation of Concerns**: API logic separated from UI components
+- **Graceful Error Handling**: Errors displayed without hiding current state
+
+### Error Handling Behavior
+
+The application provides robust error handling throughout:
+
+**TaskList Component Error Display:**
+- **Errors During Operations**: When an operation fails (e.g., delete all, toggle complete), the error message is displayed **alongside** the task list, not replacing it
+- **Benefits**: 
+  - Users can see which tasks were affected
+  - Provides context for what operation failed
+  - Allows users to retry or take corrective action
+  - Maintains visibility of current application state
+- **Example**: If "Delete All" fails due to a server error, the error message appears above the task list, and all tasks remain visible
+
+**Error Display Scenarios:**
+1. **Operation Errors with Tasks**: Error message shown above task list
+2. **Initial Fetch Error**: Error message shown with "No tasks yet" message
+3. **Loading State**: Loading indicator takes precedence, hiding errors temporarily
+4. **Success State**: Error messages clear automatically on successful operations
 
 ## 🚀 Quick Start
 
@@ -261,7 +283,7 @@ npm test
 -  **Toggle Completion**: Mark tasks as complete or incomplete
 -  **Data Persistence**: Tasks persist in MySQL database across restarts
 -  **Input Validation**: Client and server-side validation for data integrity
--  **Error Handling**: User-friendly error messages for all operations
+-  **Error Handling**: User-friendly error messages displayed alongside tasks for context
 
 ### Frontend Features
 -  **SwiftPay Theme**: Emerald green gradient background and accent colors
@@ -273,7 +295,7 @@ npm test
 -  **Delete All Button**: Prominent red outlined button (only visible when tasks exist)
 -  **Confirmation Dialog**: Native browser confirm for delete all action
 -  Loading state indicators for all operations
--  Error handling with user-friendly messages
+-  **Improved Error Handling**: Errors shown alongside tasks without hiding content
 -  Empty state messaging
 -  Hot Module Replacement (HMR) for development
 -  Environment-based API URL configuration
@@ -458,7 +480,7 @@ curl -X DELETE http://localhost:8000/api/tasks
 - **Confirmation Dialog**: Native `window.confirm()` dialog warns user before deletion
 - **Loading State**: Button shows "Deleting..." text during operation
 - **Disabled State**: Button is disabled while operation is in progress
-- **Error Handling**: Errors are displayed to user if deletion fails
+- **Error Handling**: Errors are displayed to user alongside tasks if deletion fails
 
 ### GET /health
 Returns the health status of the backend.
@@ -628,11 +650,19 @@ npm run test:coverage
 -  Task completion toggle
 -  **Delete all tasks flow** (button → confirmation → API call → state clear)
 -  Error handling for failed API calls
+-  **Error display alongside tasks** - errors shown without hiding task list
 -  Loading states for all operations
 -  Empty state display
 -  Component rendering and props
 -  Custom hooks (useTasks with deleteAllTasks)
 -  API service layer (including deleteAllTasks)
+
+*Component Tests:*
+-  **TaskList component** - error display behavior
+  - Error messages displayed alongside tasks
+  - Error with empty task list shows both error and "No tasks yet"
+  - Loading state takes precedence over errors
+  - Multiple tasks visible with error message
 
 *Property-Based Tests:*
 -  Task ordering consistency - tasks always ordered by creation date (newest first)
@@ -1048,6 +1078,13 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Verify App.jsx is rendering the button component
 - Check CSS for display: none or visibility: hidden rules
 
+### Error messages not displaying properly
+- Verify TaskList component is rendering error messages
+- Check browser console for React errors
+- Verify error state is being set in useTasks hook
+- Confirm API errors are being caught and handled
+- Check that error messages appear alongside tasks (not replacing them)
+
 ### Tests failing
 **Backend:**
 - Clear pytest cache: `rm -rf .pytest_cache __pycache__`
@@ -1134,6 +1171,13 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Native confirmation dialog prevents accidental deletion
 - Disabled state during operation prevents double-clicks
 - Clear visual feedback with loading text
+
+**Improved Error Handling:**
+- Error messages displayed alongside tasks (not replacing them)
+- Provides context about what failed while keeping tasks visible
+- Allows users to understand the error and take corrective action
+- Better UX than hiding content when errors occur
+- Errors clear automatically on successful operations
 
 **No Authentication:**
 - MVP scope focuses on core CRUD functionality
