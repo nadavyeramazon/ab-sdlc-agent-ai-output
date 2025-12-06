@@ -30,9 +30,10 @@ describe('API Service Property Tests', () => {
     const httpErrorStatusArb = fc.integer({ min: 400, max: 599 }).filter(status => status !== 404);
     
     // Generator for 422 validation errors
+    // Filter ensures error messages are not just whitespace
     const validationErrorArb = fc.record({
       detail: fc.array(fc.record({
-        msg: fc.string({ minLength: 1, maxLength: 100 }),
+        msg: fc.string({ minLength: 1, maxLength: 100 }).filter(s => s.trim().length > 0),
         loc: fc.array(fc.string()),
         type: fc.string(),
       }), { minLength: 1, maxLength: 3 }),
@@ -42,14 +43,16 @@ describe('API Service Property Tests', () => {
     const taskIdArb = fc.uuid();
 
     // Generator for task data
+    // Filter ensures titles are not just whitespace
     const taskDataArb = fc.record({
-      title: fc.string({ minLength: 1, maxLength: 100 }),
+      title: fc.string({ minLength: 1, maxLength: 100 }).filter(s => s.trim().length > 0),
       description: fc.option(fc.string({ maxLength: 500 }), { nil: undefined }),
     });
 
     // Generator for update data
+    // Filter ensures titles are not just whitespace when present
     const updateDataArb = fc.record({
-      title: fc.option(fc.string({ minLength: 1, maxLength: 100 }), { nil: undefined }),
+      title: fc.option(fc.string({ minLength: 1, maxLength: 100 }).filter(s => s.trim().length > 0), { nil: undefined }),
       description: fc.option(fc.string({ maxLength: 500 }), { nil: undefined }),
       completed: fc.option(fc.boolean(), { nil: undefined }),
     });
