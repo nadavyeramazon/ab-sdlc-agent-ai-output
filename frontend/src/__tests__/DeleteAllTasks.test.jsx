@@ -430,18 +430,22 @@ describe('Delete All Tasks Feature', () => {
       const deleteAllButton = screen.getByRole('button', {
         name: /delete all tasks/i,
       });
+      
+      // Click the button - this starts the async operation
       await user.click(deleteAllButton);
 
-      // Check if loading text is shown
+      // Check if loading text is shown BEFORE resolving the promise
       await waitFor(() => {
         const button = screen.getByRole('button', { name: /deleting all/i });
         expect(button).toBeInTheDocument();
         expect(button).toBeDisabled();
       });
 
-      // Resolve the delete operation
-      act(() => {
+      // Now resolve the delete operation
+      await act(async () => {
         resolveDelete();
+        // Give the promise time to resolve and state to update
+        await deletePromise;
       });
 
       // Wait for deletion to complete
@@ -496,6 +500,8 @@ describe('Delete All Tasks Feature', () => {
       const deleteAllButton = screen.getByRole('button', {
         name: /delete all tasks/i,
       });
+      
+      // Click the button
       await user.click(deleteAllButton);
 
       // Button should be disabled during operation
@@ -505,8 +511,9 @@ describe('Delete All Tasks Feature', () => {
       });
 
       // Resolve the delete operation
-      act(() => {
+      await act(async () => {
         resolveDelete();
+        await deletePromise;
       });
 
       // Wait for completion
@@ -529,6 +536,8 @@ describe('Delete All Tasks Feature', () => {
         },
       ];
 
+      let fetchCallCount = 0;
+
       global.fetch.mockImplementation((url, options) => {
         if (url.includes('/api/tasks/all') && options?.method === 'DELETE') {
           return Promise.resolve({
@@ -537,6 +546,8 @@ describe('Delete All Tasks Feature', () => {
           });
         }
         if (url.includes('/api/tasks')) {
+          fetchCallCount++;
+          // Always return the tasks (both initial load and after error)
           return Promise.resolve({
             ok: true,
             json: async () => ({ tasks: mockTasks }),
@@ -568,9 +579,7 @@ describe('Delete All Tasks Feature', () => {
       });
 
       // Tasks should still be visible (rollback)
-      await waitFor(() => {
-        expect(screen.getByText('Task 1')).toBeInTheDocument();
-      });
+      expect(screen.getByText('Task 1')).toBeInTheDocument();
     });
 
     it('should auto-dismiss error message after 5 seconds', async () => {
@@ -627,7 +636,7 @@ describe('Delete All Tasks Feature', () => {
 
       // Fast-forward 5 seconds
       await act(async () => {
-        vi.advanceTimersByTime(5000);
+        await vi.advanceTimersByTimeAsync(5000);
       });
 
       // Error should be gone
@@ -688,9 +697,7 @@ describe('Delete All Tasks Feature', () => {
       });
 
       // Verify task is still visible (rollback)
-      await waitFor(() => {
-        expect(screen.getByText('Task 1')).toBeInTheDocument();
-      });
+      expect(screen.getByText('Task 1')).toBeInTheDocument();
     });
   });
 
