@@ -15,7 +15,15 @@ describe('App Component', () => {
     vi.clearAllMocks();
 
     // Mock fetch for tasks endpoint by default
-    global.fetch.mockImplementation((url) => {
+    global.fetch.mockImplementation((url, options) => {
+      // Check for DELETE method first
+      if (options?.method === 'DELETE') {
+        return Promise.resolve({
+          ok: true,
+          status: 204,
+        });
+      }
+      // Default to GET
       if (url.includes('/api/tasks')) {
         return Promise.resolve({
           ok: true,
@@ -81,7 +89,13 @@ describe('App Component', () => {
     });
 
     it('should display "No tasks yet" when task list is empty', async () => {
-      global.fetch.mockImplementation((url) => {
+      global.fetch.mockImplementation((url, options) => {
+        if (options?.method === 'DELETE') {
+          return Promise.resolve({
+            ok: true,
+            status: 204,
+          });
+        }
         if (url.includes('/api/tasks')) {
           return Promise.resolve({
             ok: true,
@@ -102,7 +116,13 @@ describe('App Component', () => {
     });
 
     it('should display loading state while fetching tasks', async () => {
-      global.fetch.mockImplementation((url) => {
+      global.fetch.mockImplementation((url, options) => {
+        if (options?.method === 'DELETE') {
+          return Promise.resolve({
+            ok: true,
+            status: 204,
+          });
+        }
         if (url.includes('/api/tasks')) {
           return new Promise((resolve) =>
             setTimeout(
@@ -146,7 +166,13 @@ describe('App Component', () => {
         },
       ];
 
-      global.fetch.mockImplementation((url) => {
+      global.fetch.mockImplementation((url, options) => {
+        if (options?.method === 'DELETE') {
+          return Promise.resolve({
+            ok: true,
+            status: 204,
+          });
+        }
         if (url.includes('/api/tasks')) {
           return Promise.resolve({
             ok: true,
@@ -189,7 +215,13 @@ describe('App Component', () => {
         },
       ];
 
-      global.fetch.mockImplementation((url) => {
+      global.fetch.mockImplementation((url, options) => {
+        if (options?.method === 'DELETE') {
+          return Promise.resolve({
+            ok: true,
+            status: 204,
+          });
+        }
         if (url.includes('/api/tasks')) {
           return Promise.resolve({
             ok: true,
@@ -222,7 +254,13 @@ describe('App Component', () => {
         },
       ];
 
-      global.fetch.mockImplementation((url) => {
+      global.fetch.mockImplementation((url, options) => {
+        if (options?.method === 'DELETE') {
+          return Promise.resolve({
+            ok: true,
+            status: 204,
+          });
+        }
         if (url.includes('/api/tasks')) {
           return Promise.resolve({
             ok: true,
@@ -243,7 +281,13 @@ describe('App Component', () => {
     });
 
     it('should display error message when task fetch fails', async () => {
-      global.fetch.mockImplementation((url) => {
+      global.fetch.mockImplementation((url, options) => {
+        if (options?.method === 'DELETE') {
+          return Promise.resolve({
+            ok: true,
+            status: 204,
+          });
+        }
         if (url.includes('/api/tasks')) {
           return Promise.reject(new Error('Network error'));
         }
@@ -272,7 +316,13 @@ describe('App Component', () => {
         },
       ];
 
-      global.fetch.mockImplementation((url) => {
+      global.fetch.mockImplementation((url, options) => {
+        if (options?.method === 'DELETE') {
+          return Promise.resolve({
+            ok: true,
+            status: 204,
+          });
+        }
         if (url.includes('/api/tasks')) {
           return Promise.resolve({
             ok: true,
@@ -293,7 +343,9 @@ describe('App Component', () => {
         const taskItem = screen
           .getByText('Task without description')
           .closest('.task-item');
-        expect(taskItem.querySelector('.task-description')).not.toBeInTheDocument();
+        expect(
+          taskItem.querySelector('.task-description')
+        ).not.toBeInTheDocument();
       });
     });
 
@@ -309,7 +361,13 @@ describe('App Component', () => {
         },
       ];
 
-      global.fetch.mockImplementation((url) => {
+      global.fetch.mockImplementation((url, options) => {
+        if (options?.method === 'DELETE') {
+          return Promise.resolve({
+            ok: true,
+            status: 204,
+          });
+        }
         if (url.includes('/api/tasks')) {
           return Promise.resolve({
             ok: true,
@@ -370,11 +428,18 @@ describe('App Component', () => {
             // Sort tasks by created_at descending to match backend behavior
             const sortedTasks = [...generatedTasks].sort(
               (a, b) =>
-                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                new Date(b.created_at).getTime() -
+                new Date(a.created_at).getTime()
             );
 
             // Mock the API to return the sorted tasks (matching backend behavior)
-            global.fetch.mockImplementation((url) => {
+            global.fetch.mockImplementation((url, options) => {
+              if (options?.method === 'DELETE') {
+                return Promise.resolve({
+                  ok: true,
+                  status: 204,
+                });
+              }
               if (url.includes('/api/tasks')) {
                 return Promise.resolve({
                   ok: true,
@@ -409,7 +474,8 @@ describe('App Component', () => {
               const expectedOrder = [...generatedTasks]
                 .sort(
                   (a, b) =>
-                    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                    new Date(b.created_at).getTime() -
+                    new Date(a.created_at).getTime()
                 )
                 .map((task) => task.title);
 
@@ -432,6 +498,13 @@ describe('App Component', () => {
         let taskList = [];
 
         global.fetch.mockImplementation((url, options) => {
+          if (options?.method === 'DELETE') {
+            taskList = [];
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
+          }
           if (url.includes('/api/tasks') && options?.method === 'POST') {
             const body = JSON.parse(options.body);
             const newTask = {
@@ -477,13 +550,19 @@ describe('App Component', () => {
         await user.type(descriptionInput, 'This is a test description');
 
         // Submit the form
-        const createButton = screen.getByRole('button', { name: /create task/i });
+        const createButton = screen.getByRole('button', {
+          name: /create task/i,
+        });
         await user.click(createButton);
 
         // Verify task appears in the list
         await waitFor(() => {
-          expect(screen.getByText('New Integration Test Task')).toBeInTheDocument();
-          expect(screen.getByText('This is a test description')).toBeInTheDocument();
+          expect(
+            screen.getByText('New Integration Test Task')
+          ).toBeInTheDocument();
+          expect(
+            screen.getByText('This is a test description')
+          ).toBeInTheDocument();
         });
 
         // Verify form is cleared
@@ -496,6 +575,12 @@ describe('App Component', () => {
 
       it('should handle validation errors during task creation', async () => {
         global.fetch.mockImplementation((url, options) => {
+          if (options?.method === 'DELETE') {
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
+          }
           if (url.includes('/api/tasks') && options?.method === 'POST') {
             return Promise.resolve({
               ok: false,
@@ -529,7 +614,9 @@ describe('App Component', () => {
         await user.type(titleInput, 'Test');
         await user.clear(titleInput);
 
-        const createButton = screen.getByRole('button', { name: /create task/i });
+        const createButton = screen.getByRole('button', {
+          name: /create task/i,
+        });
         await user.click(createButton);
 
         // Should show client-side validation error
@@ -556,6 +643,12 @@ describe('App Component', () => {
         let currentTask = { ...initialTask };
 
         global.fetch.mockImplementation((url, options) => {
+          if (options?.method === 'DELETE') {
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
+          }
           if (url.includes('/api/tasks/1') && options?.method === 'PUT') {
             const body = JSON.parse(options.body);
             currentTask = {
@@ -616,7 +709,9 @@ describe('App Component', () => {
         await user.type(descriptionInput, 'Updated Description');
 
         // Submit the update
-        const updateButton = screen.getByRole('button', { name: /update task/i });
+        const updateButton = screen.getByRole('button', {
+          name: /update task/i,
+        });
         await user.click(updateButton);
 
         // Verify task is updated in the list
@@ -647,7 +742,13 @@ describe('App Component', () => {
           updated_at: '2024-01-01T00:00:00Z',
         };
 
-        global.fetch.mockImplementation((url) => {
+        global.fetch.mockImplementation((url, options) => {
+          if (options?.method === 'DELETE') {
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
+          }
           if (url.includes('/api/tasks')) {
             return Promise.resolve({
               ok: true,
@@ -714,6 +815,12 @@ describe('App Component', () => {
         };
 
         global.fetch.mockImplementation((url, options) => {
+          if (options?.method === 'DELETE') {
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
+          }
           if (url.includes('/api/tasks/1') && options?.method === 'PUT') {
             return Promise.resolve({
               ok: false,
@@ -756,7 +863,9 @@ describe('App Component', () => {
         await user.clear(titleInput);
         await user.type(titleInput, 'Updated Title');
 
-        const updateButton = screen.getByRole('button', { name: /update task/i });
+        const updateButton = screen.getByRole('button', {
+          name: /update task/i,
+        });
         await user.click(updateButton);
 
         // Should show error message in the form
@@ -783,6 +892,12 @@ describe('App Component', () => {
         global.fetch.mockImplementation((url, options) => {
           if (url.includes('/api/tasks/1') && options?.method === 'DELETE') {
             taskExists = false;
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
+          }
+          if (options?.method === 'DELETE') {
             return Promise.resolve({
               ok: true,
               status: 204,
@@ -838,6 +953,12 @@ describe('App Component', () => {
               status: 404,
             });
           }
+          if (options?.method === 'DELETE') {
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
+          }
           if (url.includes('/api/tasks')) {
             return Promise.resolve({
               ok: true,
@@ -872,7 +993,13 @@ describe('App Component', () => {
 
     describe('Delete All Tasks Flow', () => {
       it('should hide delete all button when no tasks exist', async () => {
-        global.fetch.mockImplementation((url) => {
+        global.fetch.mockImplementation((url, options) => {
+          if (options?.method === 'DELETE') {
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
+          }
           if (url.includes('/api/tasks')) {
             return Promise.resolve({
               ok: true,
@@ -909,7 +1036,13 @@ describe('App Component', () => {
           },
         ];
 
-        global.fetch.mockImplementation((url) => {
+        global.fetch.mockImplementation((url, options) => {
+          if (options?.method === 'DELETE') {
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
+          }
           if (url.includes('/api/tasks')) {
             return Promise.resolve({
               ok: true,
@@ -1034,7 +1167,13 @@ describe('App Component', () => {
           },
         ];
 
-        global.fetch.mockImplementation((url) => {
+        global.fetch.mockImplementation((url, options) => {
+          if (options?.method === 'DELETE') {
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
+          }
           if (url.includes('/api/tasks')) {
             return Promise.resolve({
               ok: true,
@@ -1124,7 +1263,9 @@ describe('App Component', () => {
         // Should show error in task list section
         await waitFor(() => {
           const taskListSection = document.querySelector('.task-list-section');
-          expect(taskListSection.textContent).toMatch(/HTTP error! status: 500/i);
+          expect(taskListSection.textContent).toMatch(
+            /HTTP error! status: 500/i
+          );
         });
 
         // Task should still exist
@@ -1149,16 +1290,13 @@ describe('App Component', () => {
           if (url.includes('/api/tasks') && options?.method === 'DELETE') {
             deleteInProgress = true;
             return new Promise((resolve) =>
-              setTimeout(
-                () => {
-                  deleteInProgress = false;
-                  resolve({
-                    ok: true,
-                    status: 204,
-                  });
-                },
-                100
-              )
+              setTimeout(() => {
+                deleteInProgress = false;
+                resolve({
+                  ok: true,
+                  status: 204,
+                });
+              }, 100)
             );
           }
           if (url.includes('/api/tasks')) {
@@ -1216,6 +1354,12 @@ describe('App Component', () => {
         let currentCompleted = false;
 
         global.fetch.mockImplementation((url, options) => {
+          if (options?.method === 'DELETE') {
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
+          }
           if (url.includes('/api/tasks/1') && options?.method === 'PUT') {
             const body = JSON.parse(options.body);
             currentCompleted = body.completed;
@@ -1289,6 +1433,12 @@ describe('App Component', () => {
         };
 
         global.fetch.mockImplementation((url, options) => {
+          if (options?.method === 'DELETE') {
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
+          }
           if (url.includes('/api/tasks/1') && options?.method === 'PUT') {
             return Promise.resolve({
               ok: false,
@@ -1330,7 +1480,13 @@ describe('App Component', () => {
 
     describe('Error Handling for Failed API Calls', () => {
       it('should display network error when task fetch fails', async () => {
-        global.fetch.mockImplementation((url) => {
+        global.fetch.mockImplementation((url, options) => {
+          if (options?.method === 'DELETE') {
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
+          }
           if (url.includes('/api/tasks')) {
             return Promise.reject(new Error('Network connection failed'));
           }
@@ -1343,12 +1499,20 @@ describe('App Component', () => {
         render(<App />);
 
         await waitFor(() => {
-          expect(screen.getByText(/Network connection failed/i)).toBeInTheDocument();
+          expect(
+            screen.getByText(/Network connection failed/i)
+          ).toBeInTheDocument();
         });
       });
 
       it('should display server error when task creation fails', async () => {
         global.fetch.mockImplementation((url, options) => {
+          if (options?.method === 'DELETE') {
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
+          }
           if (url.includes('/api/tasks') && options?.method === 'POST') {
             return Promise.resolve({
               ok: false,
@@ -1378,7 +1542,9 @@ describe('App Component', () => {
         const titleInput = screen.getByLabelText(/title/i);
         await user.type(titleInput, 'Test Task');
 
-        const createButton = screen.getByRole('button', { name: /create task/i });
+        const createButton = screen.getByRole('button', {
+          name: /create task/i,
+        });
         await user.click(createButton);
 
         // Should show error in the form
@@ -1403,6 +1569,12 @@ describe('App Component', () => {
             return Promise.resolve({
               ok: false,
               status: 500,
+            });
+          }
+          if (options?.method === 'DELETE') {
+            return Promise.resolve({
+              ok: true,
+              status: 204,
             });
           }
           if (url.includes('/api/tasks')) {
@@ -1433,14 +1605,22 @@ describe('App Component', () => {
         // Should show error in task list section
         await waitFor(() => {
           const taskListSection = document.querySelector('.task-list-section');
-          expect(taskListSection.textContent).toMatch(/HTTP error! status: 500/i);
+          expect(taskListSection.textContent).toMatch(
+            /HTTP error! status: 500/i
+          );
         });
       });
     });
 
     describe('Loading States', () => {
       it('should show loading indicator while fetching tasks', async () => {
-        global.fetch.mockImplementation((url) => {
+        global.fetch.mockImplementation((url, options) => {
+          if (options?.method === 'DELETE') {
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
+          }
           if (url.includes('/api/tasks')) {
             return new Promise((resolve) =>
               setTimeout(
@@ -1485,17 +1665,20 @@ describe('App Component', () => {
           if (url.includes('/api/tasks/1') && options?.method === 'DELETE') {
             deleteStarted = true;
             return new Promise((resolve) =>
-              setTimeout(
-                () => {
-                  taskExists = false;
-                  resolve({
-                    ok: true,
-                    status: 204,
-                  });
-                },
-                100
-              )
+              setTimeout(() => {
+                taskExists = false;
+                resolve({
+                  ok: true,
+                  status: 204,
+                });
+              }, 100)
             );
+          }
+          if (options?.method === 'DELETE') {
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
           }
           if (url.includes('/api/tasks')) {
             return Promise.resolve({
@@ -1538,7 +1721,13 @@ describe('App Component', () => {
 
     describe('Empty State Display', () => {
       it('should display empty state when no tasks exist', async () => {
-        global.fetch.mockImplementation((url) => {
+        global.fetch.mockImplementation((url, options) => {
+          if (options?.method === 'DELETE') {
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
+          }
           if (url.includes('/api/tasks')) {
             return Promise.resolve({
               ok: true,
@@ -1562,6 +1751,13 @@ describe('App Component', () => {
         let taskList = [];
 
         global.fetch.mockImplementation((url, options) => {
+          if (options?.method === 'DELETE') {
+            taskList = [];
+            return Promise.resolve({
+              ok: true,
+              status: 204,
+            });
+          }
           if (url.includes('/api/tasks') && options?.method === 'POST') {
             const body = JSON.parse(options.body);
             const newTask = {
@@ -1602,7 +1798,9 @@ describe('App Component', () => {
         const titleInput = screen.getByLabelText(/title/i);
         await user.type(titleInput, 'First Task');
 
-        const createButton = screen.getByRole('button', { name: /create task/i });
+        const createButton = screen.getByRole('button', {
+          name: /create task/i,
+        });
         await user.click(createButton);
 
         // Empty state should be gone
