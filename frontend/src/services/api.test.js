@@ -200,3 +200,79 @@ describe('API Service Property Tests', () => {
     );
   });
 });
+
+describe('API Service - deleteAllTasks', () => {
+  let originalFetch;
+
+  beforeEach(() => {
+    originalFetch = global.fetch;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it('should make DELETE request to /api/tasks', async () => {
+    // Mock successful response
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 204,
+    });
+
+    await taskApi.deleteAllTasks();
+
+    // Verify DELETE request was made to correct endpoint
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/tasks'),
+      expect.objectContaining({
+        method: 'DELETE',
+      })
+    );
+  });
+
+  it('should handle successful 204 response', async () => {
+    // Mock successful 204 No Content response
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 204,
+    });
+
+    // Should not throw
+    await expect(taskApi.deleteAllTasks()).resolves.toBeUndefined();
+  });
+
+  it('should throw Error on non-200 response', async () => {
+    // Mock error response
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+    });
+
+    // Should throw error
+    await expect(taskApi.deleteAllTasks()).rejects.toThrow('HTTP error! status: 500');
+  });
+
+  it('should throw Error on 401 unauthorized response', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+    });
+
+    await expect(taskApi.deleteAllTasks()).rejects.toThrow('HTTP error! status: 401');
+  });
+
+  it('should throw Error on 403 forbidden response', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+    });
+
+    await expect(taskApi.deleteAllTasks()).rejects.toThrow('HTTP error! status: 403');
+  });
+
+  it('should throw Error on network failure', async () => {
+    global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+
+    await expect(taskApi.deleteAllTasks()).rejects.toThrow('Network error');
+  });
+});
