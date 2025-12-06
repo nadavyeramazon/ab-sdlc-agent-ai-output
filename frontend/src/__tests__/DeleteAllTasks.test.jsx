@@ -548,9 +548,6 @@ describe('Delete All Tasks Feature', () => {
         },
       ];
 
-      // Track fetch calls for tasks endpoint
-      let fetchCallCount = 0;
-
       global.fetch.mockImplementation((url, options) => {
         if (url.includes('/api/tasks/all') && options?.method === 'DELETE') {
           return Promise.resolve({
@@ -559,7 +556,6 @@ describe('Delete All Tasks Feature', () => {
           });
         }
         if (url.includes('/api/tasks')) {
-          fetchCallCount++;
           return Promise.resolve({
             ok: true,
             json: async () => ({ tasks: mockTasks }),
