@@ -15,6 +15,7 @@ function App() {
     updateTask,
     deleteTask,
     toggleTaskComplete,
+    deleteAllTasks,
   } = useTasks();
 
   // Local state for edit mode
@@ -25,19 +26,21 @@ function App() {
   const [createError, setCreateError] = useState('');
   const [toggleLoading, setToggleLoading] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
+  const [deleteAllError, setDeleteAllError] = useState('');
 
   // Handle task creation
   const handleCreateTask = async (taskData) => {
     setCreateLoading(true);
     setCreateError('');
-    
+
     const success = await createTask(taskData);
-    
+
     setCreateLoading(false);
     if (!success) {
       setCreateError(error || 'Failed to create task');
     }
-    
+
     return success;
   };
 
@@ -51,7 +54,7 @@ function App() {
     const success = await updateTask(editingTask.id, taskData);
 
     setEditLoading(false);
-    
+
     if (success) {
       setEditingTask(null);
     } else {
@@ -75,6 +78,28 @@ function App() {
     setToggleLoading(null);
   };
 
+  // Handle delete all tasks
+  const handleDeleteAllTasks = async () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to delete all tasks? This action cannot be undone.'
+    );
+
+    if (!confirmed) return;
+
+    setDeleteAllLoading(true);
+    setDeleteAllError('');
+
+    const success = await deleteAllTasks();
+
+    setDeleteAllLoading(false);
+
+    if (!success) {
+      setDeleteAllError('Failed to delete all tasks');
+      // Auto-dismiss error after 5 seconds
+      setTimeout(() => setDeleteAllError(''), 5000);
+    }
+  };
+
   // Start editing a task
   const startEditTask = (task) => {
     setEditingTask(task);
@@ -92,7 +117,7 @@ function App() {
       <div className="container">
         <div className="app-header">
           <img src={logo} alt="Task Manager Logo" className="app-logo" />
-          <h1>Task Manager</h1>
+          <h1>SwiftPay Tasks</h1>
         </div>
 
         {/* Task List Section */}
@@ -125,8 +150,15 @@ function App() {
               deleteLoading={deleteLoading}
               onEdit={startEditTask}
               editLoading={editLoading}
+              onDeleteAll={handleDeleteAllTasks}
+              deleteAllLoading={deleteAllLoading}
             />
           </div>
+          {deleteAllError && (
+            <div className="error" style={{ marginTop: '1rem' }}>
+              {deleteAllError}
+            </div>
+          )}
         </div>
       </div>
     </div>
