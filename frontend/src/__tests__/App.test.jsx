@@ -1036,14 +1036,22 @@ describe('App Component', () => {
           },
         ];
 
+        // Clear any previous mocks and set up fresh
+        vi.clearAllMocks();
+
         global.fetch.mockImplementation((url, options) => {
+          // Handle DELETE requests
           if (options?.method === 'DELETE') {
             return Promise.resolve({
               ok: true,
               status: 204,
             });
           }
-          if (url.includes('/api/tasks')) {
+          // Handle GET /api/tasks
+          if (
+            url.includes('/api/tasks') &&
+            (!options?.method || options?.method === 'GET')
+          ) {
             return Promise.resolve({
               ok: true,
               json: async () => ({ tasks: mockTasks }),
@@ -1057,7 +1065,17 @@ describe('App Component', () => {
 
         render(<App />);
 
-        // Wait for the component to finish loading and rendering tasks
+        // First wait for loading to complete
+        await waitFor(
+          () => {
+            expect(
+              screen.queryByText('Loading tasks...')
+            ).not.toBeInTheDocument();
+          },
+          { timeout: 3000 }
+        );
+
+        // Then wait for the task to appear
         await waitFor(
           () => {
             expect(screen.getByText('Task 1')).toBeInTheDocument();
