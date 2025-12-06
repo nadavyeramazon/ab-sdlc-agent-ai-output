@@ -35,6 +35,23 @@ def mock_get_connection():
     return mock_conn
 
 
+# Custom strategies for generating test data
+@st.composite
+def task_create_strategy(draw):
+    """
+    Generate valid TaskCreate objects for property testing.
+
+    Generates titles that are non-empty and within length limits,
+    and descriptions within length limits.
+    """
+    # Generate non-empty title (1-200 chars)
+    title = draw(st.text(min_size=1, max_size=200).filter(lambda s: s.strip() != ""))
+    # Generate description (0-1000 chars)
+    description = draw(st.text(min_size=0, max_size=1000))
+
+    return TaskCreate(title=title, description=description)
+
+
 def create_mock_repository():
     """Create a mock repository with in-memory storage"""
     from app.repositories.task_repository import TaskRepository
@@ -79,11 +96,15 @@ def create_mock_repository():
             return True
         return False
 
+    def delete_all():
+        mock_tasks.clear()
+
     repo.get_all = get_all
     repo.get_by_id = get_by_id
     repo.create = create
     repo.update = update
     repo.delete = delete
+    repo.delete_all = delete_all
 
     return repo
 
@@ -343,9 +364,53 @@ class TestTaskAPIEndpoints:
     def test_delete_task_non_existent(self, client: TestClient) -> None:
         """Test DELETE /api/tasks/{id} with non-existent ID"""
         fake_id = "00000000-0000-0000-0000-000000000000"
-        response = client.delete(f"/api/tasks/{fake_id}")
+        response = client.delete(f"/api/tasks/{task_id}")
 
         assert response.status_code == 404
+
+    def test_delete_all_tasks_returns_204(self, client: TestClient) -> None:
+        """Test DELETE /api/tasks returns 204 No Content"""
+        # Create some tasks first
+        client.post("/api/tasks", json={"title": "Task 1", "description": "Description 1"})
+        client.post("/api/tasks", json={"title": "Task 2", "description": "Description 2"})
+
+        # Delete all tasks
+        response = client.delete("/api/tasks")
+        assert response.status_code == 204
+
+    def test_delete_all_tasks_removes_all_tasks(self, client: TestClient) -> None:
+        """Test that after deletion, GET /api/tasks returns empty list"""
+        # Create multiple tasks
+        client.post("/api/tasks", json={"title": "Task 1", "description": "Description 1"})
+        client.post("/api/tasks", json={"title": "Task 2", "description": "Description 2"})
+        client.post("/api/tasks", json={"title": "Task 3", "description": "Description 3"})
+
+        # Verify tasks exist
+        response = client.get("/api/tasks")
+        assert len(response.json()["tasks"]) == 3
+
+        # Delete all tasks
+        response = client.delete("/api/tasks")
+        assert response.status_code == 204
+
+        # Verify all tasks are removed
+        response = client.get("/api/tasks")
+        assert response.status_code == 200
+        assert len(response.json()["tasks"]) == 0
+
+    def test_delete_all_tasks_empty_db_returns_204(self, client: TestClient) -> None:
+        """Test that deleting when no tasks exist still returns 204 (idempotent)"""
+        # Verify database is empty
+        response = client.get("/api/tasks")
+        assert len(response.json()["tasks"]) == 0
+
+        # Delete all tasks (should not fail)
+        response = client.delete("/api/tasks")
+        assert response.status_code == 204
+
+        # Verify still empty
+        response = client.get("/api/tasks")
+        assert len(response.json()["tasks"]) == 0
 
 
 # Property-Based Tests
@@ -419,3 +484,47 @@ class TestTaskCreationProperties:
         # Test POST returns 422 for validation error (empty title)
         validation_error = client.post("/api/tasks", json={"title": "", "description": "Test"})
         assert validation_error.status_code == 422
+
+    @given(
+        st.lists(task_create_strategy(), min_size=1, max_size=5)
+    )
+    @settings(
+        max_examples=10,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+        deadline=2000
+    )
+    def test_property_bulk_delete_completeness(
+        self, client: TestClient, tasks_data
+    ) -> None:
+        """
+        Property: Bulk delete completeness
+        For any set of created tasks, after calling DELETE /api/tasks,
+        the task list should be empty.
+        """
+        # Create all tasks
+        created_ids = []
+        for task_data in tasks_data:
+            response = client.post(
+                "/api/tasks",
+                json={"title": task_data.title, "description": task_data.description}
+            )
+            assert response.status_code == 201
+            created_ids.append(response.json()["id"])
+
+        # Verify tasks were created
+        response = client.get("/api/tasks")
+        assert len(response.json()["tasks"]) == len(tasks_data)
+
+        # Delete all tasks
+        delete_response = client.delete("/api/tasks")
+        assert delete_response.status_code == 204
+
+        # Verify all tasks are removed
+        response = client.get("/api/tasks")
+        assert response.status_code == 200
+        assert len(response.json()["tasks"]) == 0
+
+        # Verify individual tasks are not retrievable
+        for task_id in created_ids:
+            response = client.get(f"/api/tasks/{task_id}")
+            assert response.status_code == 404
