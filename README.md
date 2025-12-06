@@ -56,7 +56,8 @@ project-root/
 │   │   ├── __tests__/
 │   │   │   └── App.test.jsx      # React component tests with fast-check
 │   │   ├── assets/
-│   │   │   └── logo.png          # Application logo
+│   │   │   ├── logo.png          # Application logo
+│   │   │   └── logo-swiftpay.png # SwiftPay branding logo
 │   │   ├── components/
 │   │   │   ├── TaskForm.jsx      # Task creation/edit form component
 │   │   │   ├── TaskItem.jsx      # Individual task display component
@@ -72,7 +73,7 @@ project-root/
 │   │   ├── utils/
 │   │   │   └── constants.js      # Shared constants
 │   │   ├── App.jsx               # Main application component
-│   │   ├── App.css               # Application styles
+│   │   ├── App.css               # Application styles (emerald green theme)
 │   │   └── main.jsx              # React entry point
 │   ├── index.html                # HTML template
 │   ├── package.json              # Frontend dependencies (includes fast-check)
@@ -154,7 +155,7 @@ App.jsx
   ├── TaskForm component (create/edit)
   ├── TaskList component (list container)
   │   └── TaskItem component (individual task)
-  └── CSS styles
+  └── CSS styles (emerald green theme)
 ```
 
 **Key Patterns:**
@@ -248,14 +249,51 @@ npm test
 -  **View Tasks**: Display all tasks ordered by creation date (newest first)
 -  **Edit Tasks**: Update task title and description
 -  **Delete Tasks**: Remove individual tasks from the list
--  **Delete All Tasks**: Remove all tasks at once with a single operation
+-  **Delete All Tasks**: Remove all tasks at once with confirmation dialog
 -  **Toggle Completion**: Mark tasks as complete or incomplete
 -  **Data Persistence**: Tasks persist in MySQL database across restarts
 -  **Input Validation**: Client and server-side validation for data integrity
 -  **Error Handling**: User-friendly error messages for all operations
 
+### User Interface Features
+-  **Modern Theme**: Clean emerald green color scheme (rebranded from purple)
+-  **SwiftPay Branding**: Updated logo for professional appearance
+-  **Responsive Design**: Works on desktop and mobile devices
+-  **Visual Feedback**: Loading states and disabled buttons during operations
+-  **Confirmation Dialogs**: Safety prompts for destructive actions (Delete All)
+-  **Empty State Messages**: Helpful hints when no tasks exist
+-  **Smooth Animations**: Hover effects and transitions for better UX
+
+### Delete All Tasks Feature
+
+The **Delete All Tasks** button provides a quick way to clear all tasks at once:
+
+**Location**: Appears above the task list when tasks exist
+
+**Behavior**:
+- Only visible when there are tasks to delete
+- Shows confirmation dialog before deletion
+- Displays loading state ("Deleting...") during operation
+- Button is disabled during deletion to prevent double-clicks
+- Hides automatically after all tasks are deleted
+
+**Safety Features**:
+- Confirmation dialog with clear warning message
+- Describes action as irreversible
+- User must explicitly confirm to proceed
+- Can cancel without making changes
+
+**Usage Example**:
+```javascript
+// User clicks "Delete All Tasks" button
+// → Confirmation dialog appears
+// → User confirms or cancels
+// → If confirmed, all tasks are deleted from database
+// → UI updates to show empty state
+```
+
 ### Frontend Features
--  Responsive task management UI
+-  Responsive task management UI with emerald green theme
 -  Task creation form with validation
 -  Inline task editing
 -  Visual distinction for completed tasks (strikethrough)
@@ -271,7 +309,7 @@ npm test
 ### Backend Features
 -  RESTful API with FastAPI
 -  Full CRUD operations for tasks
--  Bulk delete operation for all tasks
+-  Bulk delete operation for all tasks (DELETE /api/tasks)
 -  Pydantic models for request/response validation
 -  MySQL database persistence with connection pooling
 -  Repository pattern for data access abstraction
@@ -353,23 +391,35 @@ Create a new task.
 ```
 
 ### DELETE /api/tasks
-Delete all tasks at once.
+Delete all tasks at once (bulk delete operation).
 
 **Response (204 No Content):**
 No response body.
 
 **Example Usage:**
 ```bash
-# Delete all tasks
+# Delete all tasks via curl
 curl -X DELETE http://localhost:8000/api/tasks
+
+# Delete all tasks via JavaScript
+await fetch('http://localhost:8000/api/tasks', { method: 'DELETE' });
 ```
 
-**Use Case:**
+**Use Cases:**
 This endpoint is useful for:
-- Clearing all completed tasks
-- Resetting the task list during development
-- Bulk cleanup operations
+- Clearing all completed tasks after a milestone
+- Resetting the task list for a new project
+- Bulk cleanup operations during development
 - Testing and demo purposes
+- Removing all tasks before archiving
+
+**Frontend Integration:**
+The Delete All Tasks button in the UI:
+1. Displays only when tasks exist
+2. Shows confirmation dialog before deletion
+3. Calls this endpoint on confirmation
+4. Updates UI to show empty state after successful deletion
+5. Shows error message if operation fails
 
 **Note:** This operation is idempotent - calling it multiple times will always result in an empty task list and return 204.
 
@@ -605,6 +655,7 @@ npm run test:coverage
 -  Task creation flow (form → API → list update)
 -  Task editing flow (edit button → form → update → display)
 -  Task deletion flow (delete button → removal)
+-  Delete all tasks flow (button → confirmation → removal)
 -  Task completion toggle
 -  Error handling for failed API calls
 -  Loading states for all operations
@@ -612,6 +663,16 @@ npm run test:coverage
 -  Component rendering and props
 -  Custom hooks (useTasks)
 -  API service layer
+
+*Delete All Tasks Tests:*
+-  Button visibility (only shown when tasks exist)
+-  Confirmation dialog display
+-  User cancellation handling
+-  Successful bulk deletion
+-  Loading state during operation
+-  Button disabled state during operation
+-  Error handling for failed deletion
+-  Empty state after deletion
 
 *Property-Based Tests:*
 -  Task ordering consistency - tasks always ordered by creation date (newest first)
@@ -1110,6 +1171,19 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Props down, events up pattern for predictable data flow
 - Makes components reusable and testable
 - Separates concerns (UI, state, API)
+
+**Emerald Green Theme:**
+- Modern, professional appearance
+- Rebranded from original purple/blue theme
+- Consistent color palette across the application
+- High contrast for accessibility
+- Smooth hover effects and transitions for better UX
+
+**SwiftPay Branding:**
+- Updated logo for professional appearance
+- Maintains brand consistency
+- Easy to swap logos for different deployments
+- Scalable SVG/PNG format
 
 ### Development Philosophy
 
