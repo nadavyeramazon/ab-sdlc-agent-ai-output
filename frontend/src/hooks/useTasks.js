@@ -112,6 +112,23 @@ export function useTasks() {
   };
 
   /**
+   * Delete all tasks
+   * @returns {Promise<boolean>} True if successful, false otherwise
+   */
+  const deleteAll = async () => {
+    setError(null);
+    
+    try {
+      await taskApi.deleteAllTasks();
+      setTasks([]);
+      return true;
+    } catch (err) {
+      setError(err.message);
+      return false;
+    }
+  };
+
+  /**
    * Toggle task completion status
    * @param {string} taskId - ID of the task to toggle
    * @param {boolean} currentStatus - Current completion status
@@ -134,6 +151,7 @@ export function useTasks() {
     createTask,
     updateTask,
     deleteTask,
+    deleteAll,
     toggleTaskComplete,
   };
 }
