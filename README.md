@@ -40,7 +40,8 @@ project-root/
 │   │       └── task_service.py   # Business logic layer
 │   ├── tests/
 │   │   ├── test_main.py          # API endpoint tests with Hypothesis
-│   │   └── test_task_repository.py # Repository tests with Hypothesis
+│   │   ├── test_task_repository.py # Repository tests with Hypothesis
+│   │   └── test_delete_all_tasks.py # Delete all tasks tests
 │   ├── data/
 │   │   └── .gitkeep              # Placeholder for data directory
 │   ├── Dockerfile                # Backend container image
@@ -246,7 +247,7 @@ npm test
 -  **Create Tasks**: Add new tasks with title and description
 -  **View Tasks**: Display all tasks ordered by creation date (newest first)
 -  **Edit Tasks**: Update task title and description
--  **Delete Tasks**: Remove tasks from the list
+-  **Delete Tasks**: Remove individual tasks or all tasks at once
 -  **Toggle Completion**: Mark tasks as complete or incomplete
 -  **Data Persistence**: Tasks persist in MySQL database across restarts
 -  **Input Validation**: Client and server-side validation for data integrity
@@ -313,6 +314,11 @@ Retrieve all tasks ordered by creation date (newest first).
 }
 ```
 
+**Example:**
+```bash
+curl http://localhost:8000/api/tasks
+```
+
 ### POST /api/tasks
 Create a new task.
 
@@ -349,6 +355,13 @@ Create a new task.
 }
 ```
 
+**Example:**
+```bash
+curl -X POST http://localhost:8000/api/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "New Task", "description": "Task description"}'
+```
+
 ### GET /api/tasks/{task_id}
 Retrieve a specific task by ID.
 
@@ -369,6 +382,11 @@ Retrieve a specific task by ID.
 {
   "detail": "Task not found"
 }
+```
+
+**Example:**
+```bash
+curl http://localhost:8000/api/tasks/550e8400-e29b-41d4-a716-446655440000
 ```
 
 ### PUT /api/tasks/{task_id}
@@ -402,8 +420,15 @@ Update an existing task.
 }
 ```
 
+**Example:**
+```bash
+curl -X PUT http://localhost:8000/api/tasks/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Updated Task", "completed": true}'
+```
+
 ### DELETE /api/tasks/{task_id}
-Delete a task.
+Delete a specific task by ID.
 
 **Response (204 No Content):**
 No response body.
@@ -415,6 +440,28 @@ No response body.
 }
 ```
 
+**Example:**
+```bash
+curl -X DELETE http://localhost:8000/api/tasks/550e8400-e29b-41d4-a716-446655440000
+```
+
+### DELETE /api/tasks
+Delete all tasks from the database.
+
+**Response (204 No Content):**
+No response body.
+
+**Example:**
+```bash
+curl -X DELETE http://localhost:8000/api/tasks
+```
+
+**Notes:**
+- This endpoint removes ALL tasks permanently
+- Operation is idempotent - calling multiple times has the same effect as calling once
+- Returns 204 even if there are no tasks to delete
+- Use with caution as this operation cannot be undone
+
 ### GET /health
 Returns the health status of the backend.
 
@@ -423,6 +470,11 @@ Returns the health status of the backend.
 {
   "status": "healthy"
 }
+```
+
+**Example:**
+```bash
+curl http://localhost:8000/health
 ```
 
 ### Interactive API Documentation
@@ -525,6 +577,7 @@ pytest -v
 # Run specific test file
 pytest tests/test_main.py
 pytest tests/test_task_repository.py
+pytest tests/test_delete_all_tasks.py
 
 # Run with coverage
 pytest --cov=app --cov-report=html
@@ -551,6 +604,7 @@ npm run test:coverage
 
 *Unit Tests:*
 -  All API endpoints (GET, POST, PUT, DELETE)
+-  Delete all tasks endpoint (DELETE /tasks)
 -  Request validation (empty titles, length limits)
 -  HTTP status codes (200, 201, 204, 404, 422)
 -  Task repository CRUD operations
@@ -565,6 +619,8 @@ npm run test:coverage
 -  Task retrieval completeness - all stored tasks should be returned
 -  Completion toggle idempotence - toggling twice returns to original state
 -  Delete operation removes task - deleted tasks should not be retrievable
+-  Delete all removes all tasks - regardless of count, all tasks are removed
+-  Delete all idempotence - calling multiple times succeeds without error
 -  Update preserves identity - updates should not change ID or creation time
 -  Invalid update rejection - empty title updates should be rejected
 -  RESTful status codes - operations return correct HTTP status codes
@@ -894,7 +950,10 @@ docker compose restart mysql
 
 **Reset Data:**
 ```bash
-# Connect to MySQL and delete all tasks
+# Use the DELETE /api/tasks endpoint to delete all tasks
+curl -X DELETE http://localhost:8000/api/tasks
+
+# Or connect to MySQL and delete all tasks directly
 docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "DELETE FROM tasks;"
 
 # Or drop and recreate the database
