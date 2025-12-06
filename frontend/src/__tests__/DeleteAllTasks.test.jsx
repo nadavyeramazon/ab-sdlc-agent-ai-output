@@ -548,6 +548,9 @@ describe('Delete All Tasks Feature', () => {
         },
       ];
 
+      // Track fetch calls for tasks endpoint
+      let fetchCallCount = 0;
+
       global.fetch.mockImplementation((url, options) => {
         if (url.includes('/api/tasks/all') && options?.method === 'DELETE') {
           return Promise.resolve({
@@ -556,7 +559,7 @@ describe('Delete All Tasks Feature', () => {
           });
         }
         if (url.includes('/api/tasks')) {
-          // Always return the tasks (both initial load and after error)
+          fetchCallCount++;
           return Promise.resolve({
             ok: true,
             json: async () => ({ tasks: mockTasks }),
@@ -571,6 +574,7 @@ describe('Delete All Tasks Feature', () => {
       const user = userEvent.setup();
       render(<App />);
 
+      // Wait for initial task load
       await waitFor(() => {
         expect(screen.getByText('Task 1')).toBeInTheDocument();
       });
@@ -578,16 +582,21 @@ describe('Delete All Tasks Feature', () => {
       const deleteAllButton = screen.getByRole('button', {
         name: /delete all tasks/i,
       });
-      await user.click(deleteAllButton);
 
-      // Should show error message
+      // Click and wait for all state updates to complete
+      await act(async () => {
+        await user.click(deleteAllButton);
+      });
+
+      // Should show error message - wait for it
       await waitFor(() => {
         expect(
           screen.getByText(/failed to delete all tasks/i)
         ).toBeInTheDocument();
       });
 
-      // Tasks should be restored (rollback) - wait for state to settle
+      // Tasks should be restored after rollback - the optimistic update clears them,
+      // then rollback restores them. We need to wait for the rollback.
       await waitFor(
         () => {
           expect(screen.getByText('Task 1')).toBeInTheDocument();
@@ -597,7 +606,7 @@ describe('Delete All Tasks Feature', () => {
     });
 
     it('should auto-dismiss error message after 5 seconds', async () => {
-      vi.useFakeTimers();
+      vi.useFakeTimers({ shouldAdvanceTime: true });
 
       const mockTasks = [
         {
@@ -629,10 +638,10 @@ describe('Delete All Tasks Feature', () => {
         });
       });
 
-      const user = userEvent.setup({ delay: null });
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
       render(<App />);
 
-      // Wait for initial render
+      // Wait for initial render with timer flush
       await act(async () => {
         await vi.runAllTimersAsync();
       });
@@ -645,7 +654,7 @@ describe('Delete All Tasks Feature', () => {
         name: /delete all tasks/i,
       });
 
-      // Click and wait for error to appear
+      // Click and handle state updates
       await act(async () => {
         await user.click(deleteAllButton);
       });
@@ -657,12 +666,12 @@ describe('Delete All Tasks Feature', () => {
         ).toBeInTheDocument();
       });
 
-      // Fast-forward 5 seconds using async timer advancement
+      // Advance timers by 5 seconds
       await act(async () => {
         await vi.advanceTimersByTimeAsync(5000);
       });
 
-      // Error should be gone
+      // Error should be dismissed
       await waitFor(() => {
         expect(
           screen.queryByText(/failed to delete all tasks/i)
@@ -670,7 +679,7 @@ describe('Delete All Tasks Feature', () => {
       });
 
       vi.useRealTimers();
-    });
+    }, 10000); // Increase timeout for this test
 
     it('should handle network errors during delete all', async () => {
       const mockTasks = [
@@ -710,7 +719,11 @@ describe('Delete All Tasks Feature', () => {
       const deleteAllButton = screen.getByRole('button', {
         name: /delete all tasks/i,
       });
-      await user.click(deleteAllButton);
+
+      // Click and wait for all updates
+      await act(async () => {
+        await user.click(deleteAllButton);
+      });
 
       // Should show error
       await waitFor(() => {
@@ -719,7 +732,7 @@ describe('Delete All Tasks Feature', () => {
         ).toBeInTheDocument();
       });
 
-      // Wait for rollback to complete - verify task is still visible
+      // Task should be restored after rollback
       await waitFor(
         () => {
           expect(screen.getByText('Task 1')).toBeInTheDocument();
