@@ -418,7 +418,9 @@ describe('Delete All Tasks Feature', () => {
       await user.click(deleteAllButton);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /yes, delete all/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /yes, delete all/i })
+        ).toBeInTheDocument();
       });
 
       const confirmButton = screen.getByRole('button', {
@@ -490,7 +492,9 @@ describe('Delete All Tasks Feature', () => {
       await user.click(deleteAllButton);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /yes, delete all/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /yes, delete all/i })
+        ).toBeInTheDocument();
       });
 
       // Click confirm
@@ -506,7 +510,9 @@ describe('Delete All Tasks Feature', () => {
 
       // Buttons should be disabled during deletion
       await waitFor(() => {
-        const confirmBtn = screen.getByRole('button', { name: /deleting\.\.\./i });
+        const confirmBtn = screen.getByRole('button', {
+          name: /deleting\.\.\./i,
+        });
         expect(confirmBtn).toBeDisabled();
       });
 
@@ -567,7 +573,9 @@ describe('Delete All Tasks Feature', () => {
       await user.click(deleteAllButton);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /yes, delete all/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /yes, delete all/i })
+        ).toBeInTheDocument();
       });
 
       const confirmButton = screen.getByRole('button', {
@@ -577,7 +585,9 @@ describe('Delete All Tasks Feature', () => {
 
       // "Deleting..." should appear
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /deleting\.\.\./i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /deleting\.\.\./i })
+        ).toBeInTheDocument();
       });
     });
   });
@@ -628,7 +638,9 @@ describe('Delete All Tasks Feature', () => {
       await user.click(deleteAllButton);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /yes, delete all/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /yes, delete all/i })
+        ).toBeInTheDocument();
       });
 
       const confirmButton = screen.getByRole('button', {
@@ -642,8 +654,10 @@ describe('Delete All Tasks Feature', () => {
         expect(taskListSection.textContent).toMatch(/HTTP error! status: 500/i);
       });
 
-      // Tasks should still be present (deletion failed)
-      expect(screen.getByText('Task 1')).toBeInTheDocument();
+      // Tasks should still be present (deletion failed) - wrapped in waitFor to handle async rollback
+      await waitFor(() => {
+        expect(screen.getByText('Task 1')).toBeInTheDocument();
+      });
     });
 
     it('should handle network error during deletion', async () => {
@@ -688,7 +702,9 @@ describe('Delete All Tasks Feature', () => {
       await user.click(deleteAllButton);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /yes, delete all/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /yes, delete all/i })
+        ).toBeInTheDocument();
       });
 
       const confirmButton = screen.getByRole('button', {
@@ -699,11 +715,15 @@ describe('Delete All Tasks Feature', () => {
       // Error message should appear
       await waitFor(() => {
         const taskListSection = document.querySelector('.task-list-section');
-        expect(taskListSection.textContent).toMatch(/Network connection failed/i);
+        expect(taskListSection.textContent).toMatch(
+          /Network connection failed/i
+        );
       });
 
-      // Tasks should still be present (deletion failed)
-      expect(screen.getByText('Task 1')).toBeInTheDocument();
+      // Tasks should still be present (deletion failed) - wrapped in waitFor to handle async rollback
+      await waitFor(() => {
+        expect(screen.getByText('Task 1')).toBeInTheDocument();
+      });
     });
   });
 
@@ -756,7 +776,9 @@ describe('Delete All Tasks Feature', () => {
       await user.click(deleteAllButton);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /yes, delete all/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /yes, delete all/i })
+        ).toBeInTheDocument();
       });
 
       const confirmButton = screen.getByRole('button', {
@@ -771,7 +793,9 @@ describe('Delete All Tasks Feature', () => {
             /are you sure you want to delete all tasks\? this action cannot be undone\./i
           )
         ).not.toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: /yes, delete all/i })).not.toBeInTheDocument();
+        expect(
+          screen.queryByRole('button', { name: /yes, delete all/i })
+        ).not.toBeInTheDocument();
       });
     });
 
@@ -832,7 +856,9 @@ describe('Delete All Tasks Feature', () => {
       await user.click(deleteAllButton);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /yes, delete all/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /yes, delete all/i })
+        ).toBeInTheDocument();
       });
 
       const confirmButton = screen.getByRole('button', {
