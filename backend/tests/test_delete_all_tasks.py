@@ -32,7 +32,9 @@ def create_mock_repository():
 
     # Override methods to use in-memory storage
     def get_all():
-        return sorted(mock_tasks.values(), key=lambda t: t.created_at, reverse=True)
+        return sorted(
+            mock_tasks.values(), key=lambda t: t.created_at, reverse=True
+        )
 
     def get_by_id(task_id: str):
         return mock_tasks.get(task_id)
@@ -105,7 +107,8 @@ def test_repo():
     global mock_tasks
     mock_tasks = {}
 
-    with patch('app.repositories.task_repository.TaskRepository._initialize_database'):
+    repo_path = 'app.repositories.task_repository.TaskRepository._initialize_database'
+    with patch(repo_path):
         repo = create_mock_repository()
         yield repo
 
@@ -258,8 +261,10 @@ class TestDeleteAllTasksEndpoint:
     def test_delete_all_does_not_affect_individual_delete(self, client: TestClient):
         """Test that delete all and individual delete work independently"""
         # Create tasks
-        response1 = client.post("/api/tasks", json={"title": "Task 1", "description": "D1"})
-        task1_id = response1.json()["id"]
+        resp1 = client.post(
+            "/api/tasks", json={"title": "Task 1", "description": "D1"}
+        )
+        task1_id = resp1.json()["id"]
         client.post("/api/tasks", json={"title": "Task 2", "description": "D2"})
 
         # Delete one task individually
@@ -302,7 +307,11 @@ class TestDeleteAllTasksProperties:
     """Property-based tests for delete all functionality"""
 
     @given(st.integers(min_value=0, max_value=20))
-    @settings(max_examples=10, deadline=2000, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(
+        max_examples=10,
+        deadline=2000,
+        suppress_health_check=[HealthCheck.function_scoped_fixture]
+    )
     def test_property_delete_all_removes_exact_count(
         self, client: TestClient, task_count: int
     ):
@@ -331,7 +340,11 @@ class TestDeleteAllTasksProperties:
         assert len(response_after.json()["tasks"]) == 0
 
     @given(st.integers(min_value=0, max_value=5))
-    @settings(max_examples=10, deadline=2000, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(
+        max_examples=10,
+        deadline=2000,
+        suppress_health_check=[HealthCheck.function_scoped_fixture]
+    )
     def test_property_delete_all_is_idempotent(
         self, client: TestClient, repeat_count: int
     ):
