@@ -14,6 +14,7 @@ function App() {
     createTask,
     updateTask,
     deleteTask,
+    deleteAllTasks,
     toggleTaskComplete,
   } = useTasks();
 
@@ -25,19 +26,20 @@ function App() {
   const [createError, setCreateError] = useState('');
   const [toggleLoading, setToggleLoading] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
 
   // Handle task creation
   const handleCreateTask = async (taskData) => {
     setCreateLoading(true);
     setCreateError('');
-    
+
     const success = await createTask(taskData);
-    
+
     setCreateLoading(false);
     if (!success) {
       setCreateError(error || 'Failed to create task');
     }
-    
+
     return success;
   };
 
@@ -51,7 +53,7 @@ function App() {
     const success = await updateTask(editingTask.id, taskData);
 
     setEditLoading(false);
-    
+
     if (success) {
       setEditingTask(null);
     } else {
@@ -73,6 +75,19 @@ function App() {
     setToggleLoading(taskId);
     await toggleTaskComplete(taskId, currentStatus);
     setToggleLoading(null);
+  };
+
+  // Handle delete all tasks with confirmation
+  const handleDeleteAllTasks = async () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to delete ALL tasks? This action cannot be undone.'
+    );
+
+    if (!confirmed) return;
+
+    setDeleteAllLoading(true);
+    await deleteAllTasks();
+    setDeleteAllLoading(false);
   };
 
   // Start editing a task
@@ -127,6 +142,19 @@ function App() {
               editLoading={editLoading}
             />
           </div>
+
+          {/* Delete All Section */}
+          {tasks.length > 0 && (
+            <div className="delete-all-section">
+              <button
+                className="btn-danger"
+                onClick={handleDeleteAllTasks}
+                disabled={deleteAllLoading}
+              >
+                {deleteAllLoading ? 'Deleting...' : 'Delete All Tasks'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
