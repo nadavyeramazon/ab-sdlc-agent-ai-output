@@ -16,6 +16,7 @@ vi.mock('../services/api', () => ({
     createTask: vi.fn(),
     updateTask: vi.fn(),
     deleteTask: vi.fn(),
+    deleteAllTasks: vi.fn(),
     getTaskById: vi.fn(),
   },
 }));
@@ -32,13 +33,16 @@ describe('useTasks Hook Property Tests', () => {
   // Simple sanity test first
   it('sanity check: hook can be rendered and completes initial fetch', async () => {
     taskApi.getAllTasks.mockResolvedValue({ tasks: [] });
-    
+
     const { result } = renderHook(() => useTasks());
-    
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    }, { timeout: 1000 });
-    
+
+    await waitFor(
+      () => {
+        expect(result.current.loading).toBe(false);
+      },
+      { timeout: 1000 }
+    );
+
     expect(result.current.tasks).toEqual([]);
   });
 
@@ -46,17 +50,19 @@ describe('useTasks Hook Property Tests', () => {
    * Property 2: Hook state management
    * Feature: api-and-frontend-restructure, Property 2: Hook state management
    * Validates: Requirements 9.2
-   * 
-   * For any task operation performed through the useTasks hook, 
+   *
+   * For any task operation performed through the useTasks hook,
    * the hook should properly manage loading state (true during operation, false after completion)
-   * 
+   *
    * Note: The loading state in useTasks is specifically for fetchTasks operations.
    * This simplified version tests explicit fetchTasks calls after mount to avoid timing issues.
    */
   it('Property 2: Hook loading state is false after explicit fetchTasks completes', async () => {
     // Generator for ISO date strings
-    const isoDateArb = fc.integer({ min: 1577836800000, max: 1767225600000 }).map(ts => new Date(ts).toISOString());
-    
+    const isoDateArb = fc
+      .integer({ min: 1577836800000, max: 1767225600000 })
+      .map((ts) => new Date(ts).toISOString());
+
     // Generator for task objects
     const taskArb = fc.record({
       id: fc.uuid(),
@@ -74,9 +80,12 @@ describe('useTasks Hook Property Tests', () => {
     const { result } = renderHook(() => useTasks());
 
     // Wait for initial mount fetch to complete
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    }, { timeout: 1000 });
+    await waitFor(
+      () => {
+        expect(result.current.loading).toBe(false);
+      },
+      { timeout: 1000 }
+    );
 
     // Now run property test on explicit fetchTasks calls
     await fc.assert(
@@ -93,7 +102,7 @@ describe('useTasks Hook Property Tests', () => {
 
           // Property: Loading should be false after fetchTasks completes
           expect(result.current.loading).toBe(false);
-          
+
           // Property: Tasks should be updated with the fetched data
           expect(result.current.tasks).toEqual(tasks);
         }
@@ -106,14 +115,16 @@ describe('useTasks Hook Property Tests', () => {
    * Property 3: Hook state updates after operations
    * Feature: api-and-frontend-restructure, Property 3: Hook state updates after operations
    * Validates: Requirements 9.4
-   * 
-   * For any successful task operation (create, update, delete), 
+   *
+   * For any successful task operation (create, update, delete),
    * the tasks state in the hook should reflect the change immediately after the operation completes
    */
   it('Property 3: Hook state reflects changes after successful operations', async () => {
     // Generator for ISO date strings
-    const isoDateArb = fc.integer({ min: 1577836800000, max: 1767225600000 }).map(ts => new Date(ts).toISOString());
-    
+    const isoDateArb = fc
+      .integer({ min: 1577836800000, max: 1767225600000 })
+      .map((ts) => new Date(ts).toISOString());
+
     // Generator for task objects
     const taskArb = fc.record({
       id: fc.uuid(),
@@ -132,7 +143,9 @@ describe('useTasks Hook Property Tests', () => {
 
     // Generator for task update data
     const taskUpdateArb = fc.record({
-      title: fc.option(fc.string({ minLength: 1, maxLength: 100 }), { nil: undefined }),
+      title: fc.option(fc.string({ minLength: 1, maxLength: 100 }), {
+        nil: undefined,
+      }),
       description: fc.option(fc.string({ maxLength: 500 }), { nil: undefined }),
       completed: fc.option(fc.boolean(), { nil: undefined }),
     });
@@ -144,33 +157,32 @@ describe('useTasks Hook Property Tests', () => {
     const { result } = renderHook(() => useTasks());
 
     // Wait for initial mount fetch to complete
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    }, { timeout: 1000 });
+    await waitFor(
+      () => {
+        expect(result.current.loading).toBe(false);
+      },
+      { timeout: 1000 }
+    );
 
     // Test create operation
     await fc.assert(
-      fc.asyncProperty(
-        taskCreateArb,
-        taskArb,
-        async (createData, newTask) => {
-          // Mock createTask to return the new task
-          taskApi.createTask.mockResolvedValue(newTask);
+      fc.asyncProperty(taskCreateArb, taskArb, async (createData, newTask) => {
+        // Mock createTask to return the new task
+        taskApi.createTask.mockResolvedValue(newTask);
 
-          const initialLength = result.current.tasks.length;
+        const initialLength = result.current.tasks.length;
 
-          // Create a task
-          await act(async () => {
-            await result.current.createTask(createData);
-          });
+        // Create a task
+        await act(async () => {
+          await result.current.createTask(createData);
+        });
 
-          // Property: Tasks array should grow by 1
-          expect(result.current.tasks.length).toBe(initialLength + 1);
-          
-          // Property: New task should be at the beginning of the array
-          expect(result.current.tasks[0]).toEqual(newTask);
-        }
-      ),
+        // Property: Tasks array should grow by 1
+        expect(result.current.tasks.length).toBe(initialLength + 1);
+
+        // Property: New task should be at the beginning of the array
+        expect(result.current.tasks[0]).toEqual(newTask);
+      }),
       { numRuns: 50 } // Run 50 iterations for create
     );
 
@@ -183,7 +195,10 @@ describe('useTasks Hook Property Tests', () => {
           // Add the existing task to the state first
           taskApi.createTask.mockResolvedValue(existingTask);
           await act(async () => {
-            await result.current.createTask({ title: existingTask.title, description: existingTask.description });
+            await result.current.createTask({
+              title: existingTask.title,
+              description: existingTask.description,
+            });
           });
 
           // Create updated task
@@ -196,7 +211,9 @@ describe('useTasks Hook Property Tests', () => {
           });
 
           // Property: Task should be updated in the array
-          const foundTask = result.current.tasks.find(t => t.id === existingTask.id);
+          const foundTask = result.current.tasks.find(
+            (t) => t.id === existingTask.id
+          );
           expect(foundTask).toEqual(updatedTask);
         }
       ),
@@ -205,33 +222,35 @@ describe('useTasks Hook Property Tests', () => {
 
     // Test delete operation
     await fc.assert(
-      fc.asyncProperty(
-        taskArb,
-        async (taskToDelete) => {
-          // Add the task to the state first
-          taskApi.createTask.mockResolvedValue(taskToDelete);
-          await act(async () => {
-            await result.current.createTask({ title: taskToDelete.title, description: taskToDelete.description });
+      fc.asyncProperty(taskArb, async (taskToDelete) => {
+        // Add the task to the state first
+        taskApi.createTask.mockResolvedValue(taskToDelete);
+        await act(async () => {
+          await result.current.createTask({
+            title: taskToDelete.title,
+            description: taskToDelete.description,
           });
+        });
 
-          const lengthBeforeDelete = result.current.tasks.length;
+        const lengthBeforeDelete = result.current.tasks.length;
 
-          // Mock deleteTask
-          taskApi.deleteTask.mockResolvedValue();
+        // Mock deleteTask
+        taskApi.deleteTask.mockResolvedValue();
 
-          // Delete the task
-          await act(async () => {
-            await result.current.deleteTask(taskToDelete.id);
-          });
+        // Delete the task
+        await act(async () => {
+          await result.current.deleteTask(taskToDelete.id);
+        });
 
-          // Property: Tasks array should shrink by 1
-          expect(result.current.tasks.length).toBe(lengthBeforeDelete - 1);
-          
-          // Property: Deleted task should not be in the array
-          const foundTask = result.current.tasks.find(t => t.id === taskToDelete.id);
-          expect(foundTask).toBeUndefined();
-        }
-      ),
+        // Property: Tasks array should shrink by 1
+        expect(result.current.tasks.length).toBe(lengthBeforeDelete - 1);
+
+        // Property: Deleted task should not be in the array
+        const foundTask = result.current.tasks.find(
+          (t) => t.id === taskToDelete.id
+        );
+        expect(foundTask).toBeUndefined();
+      }),
       { numRuns: 50 } // Run 50 iterations for delete
     );
   });
@@ -240,8 +259,8 @@ describe('useTasks Hook Property Tests', () => {
    * Property 4: Hook error propagation
    * Feature: api-and-frontend-restructure, Property 4: Hook error propagation
    * Validates: Requirements 9.5
-   * 
-   * For any failed task operation, the useTasks hook should capture the error 
+   *
+   * For any failed task operation, the useTasks hook should capture the error
    * and expose it through the error state
    */
   it('Property 4: Hook captures and exposes errors from failed operations', async () => {
@@ -259,7 +278,9 @@ describe('useTasks Hook Property Tests', () => {
 
     // Generator for task update data
     const taskUpdateArb = fc.record({
-      title: fc.option(fc.string({ minLength: 1, maxLength: 100 }), { nil: undefined }),
+      title: fc.option(fc.string({ minLength: 1, maxLength: 100 }), {
+        nil: undefined,
+      }),
       description: fc.option(fc.string({ maxLength: 500 }), { nil: undefined }),
       completed: fc.option(fc.boolean(), { nil: undefined }),
     });
@@ -271,27 +292,27 @@ describe('useTasks Hook Property Tests', () => {
     const { result } = renderHook(() => useTasks());
 
     // Wait for initial mount fetch to complete
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    }, { timeout: 1000 });
+    await waitFor(
+      () => {
+        expect(result.current.loading).toBe(false);
+      },
+      { timeout: 1000 }
+    );
 
     // Test error propagation for fetchTasks
     await fc.assert(
-      fc.asyncProperty(
-        errorMessageArb,
-        async (errorMessage) => {
-          // Mock fetchTasks to throw an error
-          taskApi.getAllTasks.mockRejectedValue(new Error(errorMessage));
+      fc.asyncProperty(errorMessageArb, async (errorMessage) => {
+        // Mock fetchTasks to throw an error
+        taskApi.getAllTasks.mockRejectedValue(new Error(errorMessage));
 
-          // Call fetchTasks
-          await act(async () => {
-            await result.current.fetchTasks();
-          });
+        // Call fetchTasks
+        await act(async () => {
+          await result.current.fetchTasks();
+        });
 
-          // Property: Error should be captured and exposed
-          expect(result.current.error).toBe(errorMessage);
-        }
-      ),
+        // Property: Error should be captured and exposed
+        expect(result.current.error).toBe(errorMessage);
+      }),
       { numRuns: 30 } // Run 30 iterations for fetchTasks errors
     );
 
@@ -340,23 +361,158 @@ describe('useTasks Hook Property Tests', () => {
 
     // Test error propagation for deleteTask
     await fc.assert(
-      fc.asyncProperty(
-        taskIdArb,
-        errorMessageArb,
-        async (taskId, errorMessage) => {
-          // Mock deleteTask to throw an error (non-404)
-          taskApi.deleteTask.mockRejectedValue(new Error(errorMessage));
+      fc.asyncProperty(taskIdArb, errorMessageArb, async (taskId, errorMessage) => {
+        // Mock deleteTask to throw an error (non-404)
+        taskApi.deleteTask.mockRejectedValue(new Error(errorMessage));
 
-          // Call deleteTask
-          await act(async () => {
-            await result.current.deleteTask(taskId);
-          });
+        // Call deleteTask
+        await act(async () => {
+          await result.current.deleteTask(taskId);
+        });
 
-          // Property: Error should be captured and exposed
-          expect(result.current.error).toBe(errorMessage);
-        }
-      ),
+        // Property: Error should be captured and exposed
+        expect(result.current.error).toBe(errorMessage);
+      }),
       { numRuns: 30 } // Run 30 iterations for deleteTask errors
     );
+
+    // Test error propagation for deleteAllTasks
+    await fc.assert(
+      fc.asyncProperty(errorMessageArb, async (errorMessage) => {
+        // Mock deleteAllTasks to throw an error
+        taskApi.deleteAllTasks.mockRejectedValue(new Error(errorMessage));
+
+        // Call deleteAllTasks
+        await act(async () => {
+          await result.current.deleteAllTasks();
+        });
+
+        // Property: Error should be captured and exposed
+        expect(result.current.error).toBe(errorMessage);
+      }),
+      { numRuns: 30 } // Run 30 iterations for deleteAllTasks errors
+    );
+  });
+
+  /**
+   * Property 5: deleteAllTasks clears all tasks on success
+   * Tests that deleteAllTasks removes all tasks from state
+   */
+  it('Property 5: deleteAllTasks clears all tasks from state on success', async () => {
+    // Generator for ISO date strings
+    const isoDateArb = fc
+      .integer({ min: 1577836800000, max: 1767225600000 })
+      .map((ts) => new Date(ts).toISOString());
+
+    // Generator for task objects
+    const taskArb = fc.record({
+      id: fc.uuid(),
+      title: fc.string({ minLength: 1, maxLength: 100 }),
+      description: fc.string({ maxLength: 500 }),
+      completed: fc.boolean(),
+      created_at: isoDateArb,
+      updated_at: isoDateArb,
+    });
+
+    // Set up initial mock for mount
+    taskApi.getAllTasks.mockResolvedValue({ tasks: [] });
+
+    // Render the hook once before the property test
+    const { result } = renderHook(() => useTasks());
+
+    // Wait for initial mount fetch to complete
+    await waitFor(
+      () => {
+        expect(result.current.loading).toBe(false);
+      },
+      { timeout: 1000 }
+    );
+
+    await fc.assert(
+      fc.asyncProperty(
+        fc.array(taskArb, { minLength: 1, maxLength: 10 }),
+        async (tasks) => {
+          // Add tasks to state
+          for (const task of tasks) {
+            taskApi.createTask.mockResolvedValue(task);
+            await act(async () => {
+              await result.current.createTask({
+                title: task.title,
+                description: task.description,
+              });
+            });
+          }
+
+          // Verify tasks were added
+          expect(result.current.tasks.length).toBeGreaterThan(0);
+
+          // Mock deleteAllTasks
+          taskApi.deleteAllTasks.mockResolvedValue();
+
+          // Call deleteAllTasks
+          await act(async () => {
+            await result.current.deleteAllTasks();
+          });
+
+          // Property: All tasks should be removed from state
+          expect(result.current.tasks).toEqual([]);
+          expect(result.current.tasks.length).toBe(0);
+        }
+      ),
+      { numRuns: 50 } // Run 50 iterations
+    );
+  });
+
+  /**
+   * Unit test: deleteAllTasks returns true on success
+   */
+  it('Unit test: deleteAllTasks returns true on successful deletion', async () => {
+    // Set up initial mock for mount
+    taskApi.getAllTasks.mockResolvedValue({ tasks: [] });
+    const { result } = renderHook(() => useTasks());
+
+    await waitFor(
+      () => {
+        expect(result.current.loading).toBe(false);
+      },
+      { timeout: 1000 }
+    );
+
+    // Mock successful deleteAllTasks
+    taskApi.deleteAllTasks.mockResolvedValue();
+
+    let success;
+    await act(async () => {
+      success = await result.current.deleteAllTasks();
+    });
+
+    expect(success).toBe(true);
+  });
+
+  /**
+   * Unit test: deleteAllTasks returns false on error
+   */
+  it('Unit test: deleteAllTasks returns false when API call fails', async () => {
+    // Set up initial mock for mount
+    taskApi.getAllTasks.mockResolvedValue({ tasks: [] });
+    const { result } = renderHook(() => useTasks());
+
+    await waitFor(
+      () => {
+        expect(result.current.loading).toBe(false);
+      },
+      { timeout: 1000 }
+    );
+
+    // Mock failed deleteAllTasks
+    taskApi.deleteAllTasks.mockRejectedValue(new Error('Server error'));
+
+    let success;
+    await act(async () => {
+      success = await result.current.deleteAllTasks();
+    });
+
+    expect(success).toBe(false);
+    expect(result.current.error).toBe('Server error');
   });
 });
