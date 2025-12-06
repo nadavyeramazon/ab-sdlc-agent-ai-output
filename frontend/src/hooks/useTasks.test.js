@@ -16,6 +16,7 @@ vi.mock('../services/api', () => ({
     createTask: vi.fn(),
     updateTask: vi.fn(),
     deleteTask: vi.fn(),
+    deleteAllTasks: vi.fn(),
     getTaskById: vi.fn(),
   },
 }));
@@ -237,6 +238,67 @@ describe('useTasks Hook Property Tests', () => {
   });
 
   /**
+   * Property 3b: Hook state clears after deleteAllTasks
+   * Tests that deleteAllTasks removes all tasks from state
+   */
+  it('Property 3b: Hook state clears after successful deleteAllTasks', async () => {
+    // Generator for ISO date strings
+    const isoDateArb = fc.integer({ min: 1577836800000, max: 1767225600000 }).map(ts => new Date(ts).toISOString());
+    
+    // Generator for task objects
+    const taskArb = fc.record({
+      id: fc.uuid(),
+      title: fc.string({ minLength: 1, maxLength: 100 }),
+      description: fc.string({ maxLength: 500 }),
+      completed: fc.boolean(),
+      created_at: isoDateArb,
+      updated_at: isoDateArb,
+    });
+
+    // Set up initial mock for mount
+    taskApi.getAllTasks.mockResolvedValue({ tasks: [] });
+
+    // Render the hook once before the property test
+    const { result } = renderHook(() => useTasks());
+
+    // Wait for initial mount fetch to complete
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    }, { timeout: 1000 });
+
+    await fc.assert(
+      fc.asyncProperty(
+        fc.array(taskArb, { minLength: 1, maxLength: 10 }),
+        async (tasks) => {
+          // Add multiple tasks to the state
+          for (const task of tasks) {
+            taskApi.createTask.mockResolvedValue(task);
+            await act(async () => {
+              await result.current.createTask({ title: task.title, description: task.description });
+            });
+          }
+
+          // Verify tasks were added
+          expect(result.current.tasks.length).toBeGreaterThan(0);
+
+          // Mock deleteAllTasks
+          taskApi.deleteAllTasks.mockResolvedValue();
+
+          // Delete all tasks
+          await act(async () => {
+            await result.current.deleteAllTasks();
+          });
+
+          // Property: Tasks array should be empty
+          expect(result.current.tasks).toEqual([]);
+          expect(result.current.tasks.length).toBe(0);
+        }
+      ),
+      { numRuns: 50 } // Run 50 iterations for deleteAllTasks
+    );
+  });
+
+  /**
    * Property 4: Hook error propagation
    * Feature: api-and-frontend-restructure, Property 4: Hook error propagation
    * Validates: Requirements 9.5
@@ -357,6 +419,85 @@ describe('useTasks Hook Property Tests', () => {
         }
       ),
       { numRuns: 30 } // Run 30 iterations for deleteTask errors
+    );
+
+    // Test error propagation for deleteAllTasks
+    await fc.assert(
+      fc.asyncProperty(
+        errorMessageArb,
+        async (errorMessage) => {
+          // Mock deleteAllTasks to throw an error
+          taskApi.deleteAllTasks.mockRejectedValue(new Error(errorMessage));
+
+          // Call deleteAllTasks
+          await act(async () => {
+            await result.current.deleteAllTasks();
+          });
+
+          // Property: Error should be captured and exposed
+          expect(result.current.error).toBe(errorMessage);
+        }
+      ),
+      { numRuns: 30 } // Run 30 iterations for deleteAllTasks errors
+    );
+  });
+
+  /**
+   * Unit Test: deleteAllTasks rollback on error
+   * Tests that deleteAllTasks rolls back state when API call fails
+   */
+  it('Unit Test: deleteAllTasks rolls back state on error', async () => {
+    // Generator for task objects
+    const isoDateArb = fc.integer({ min: 1577836800000, max: 1767225600000 }).map(ts => new Date(ts).toISOString());
+    const taskArb = fc.record({
+      id: fc.uuid(),
+      title: fc.string({ minLength: 1, maxLength: 100 }),
+      description: fc.string({ maxLength: 500 }),
+      completed: fc.boolean(),
+      created_at: isoDateArb,
+      updated_at: isoDateArb,
+    });
+
+    // Set up initial mock for mount
+    taskApi.getAllTasks.mockResolvedValue({ tasks: [] });
+
+    // Render the hook
+    const { result } = renderHook(() => useTasks());
+
+    // Wait for initial mount fetch to complete
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    }, { timeout: 1000 });
+
+    await fc.assert(
+      fc.asyncProperty(
+        fc.array(taskArb, { minLength: 1, maxLength: 5 }),
+        async (tasks) => {
+          // Add tasks to the state
+          for (const task of tasks) {
+            taskApi.createTask.mockResolvedValue(task);
+            await act(async () => {
+              await result.current.createTask({ title: task.title, description: task.description });
+            });
+          }
+
+          const originalTasks = [...result.current.tasks];
+
+          // Mock deleteAllTasks to fail
+          taskApi.deleteAllTasks.mockRejectedValue(new Error('Delete all failed'));
+
+          // Try to delete all tasks
+          await act(async () => {
+            await result.current.deleteAllTasks();
+          });
+
+          // Property: Tasks should be rolled back to original state
+          expect(result.current.tasks).toEqual(originalTasks);
+          expect(result.current.tasks.length).toBe(originalTasks.length);
+          expect(result.current.error).toBe('Delete all failed');
+        }
+      ),
+      { numRuns: 30 }
     );
   });
 });
