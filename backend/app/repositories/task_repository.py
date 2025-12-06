@@ -243,3 +243,25 @@ class TaskRepository:
         except Error as e:
             print(f"Error deleting task {task_id}: {e}")
             raise
+
+    def delete_all(self) -> int:
+        """
+        Delete all tasks and persist the change.
+
+        Returns:
+            The count of deleted tasks
+        """
+        query = "DELETE FROM tasks"
+
+        try:
+            with self._get_connection() as connection:
+                cursor = connection.cursor()
+                cursor.execute(query)
+                rows_affected = cursor.rowcount
+                connection.commit()
+                cursor.close()
+
+                return rows_affected
+        except Error as e:
+            print(f"Error deleting all tasks: {e}")
+            raise
