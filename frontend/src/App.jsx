@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './App.css';
-import logo from './assets/logo.png';
+import logo from './assets/logo-swiftpay.png';
 import { useTasks } from './hooks/useTasks';
 import TaskForm from './components/TaskForm';
 import TaskList from './components/TaskList';
@@ -104,7 +104,7 @@ function App() {
     <div className="app">
       <div className="container">
         <div className="app-header">
-          <img src={logo} alt="Task Manager Logo" className="app-logo" />
+          <img src={logo} alt="SwiftPay Task Manager Logo" className="app-logo" />
           <h1>Task Manager</h1>
         </div>
 
