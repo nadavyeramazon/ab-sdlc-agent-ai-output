@@ -110,6 +110,12 @@ describe('API Service Property Tests', () => {
             hasValidationError: fc.constant(false),
             taskId: taskIdArb,
           }),
+          // Test deleteAllTasks with various error statuses
+          fc.record({
+            method: fc.constant('deleteAllTasks'),
+            status: httpErrorStatusArb,
+            hasValidationError: fc.constant(false),
+          }),
           // Test getTaskById with 404 errors
           fc.record({
             method: fc.constant('getTaskById'),
@@ -149,6 +155,9 @@ describe('API Service Property Tests', () => {
                 break;
               case 'deleteTask':
                 await taskApi.deleteTask(testCase.taskId);
+                break;
+              case 'deleteAllTasks':
+                await taskApi.deleteAllTasks();
                 break;
               case 'getTaskById':
                 await taskApi.getTaskById(testCase.taskId);
@@ -195,5 +204,41 @@ describe('API Service Property Tests', () => {
       ),
       { numRuns: 100 }
     );
+  });
+
+  /**
+   * Unit Test: deleteAllTasks success
+   * Tests that deleteAllTasks calls the correct endpoint with DELETE method
+   */
+  it('deleteAllTasks successfully calls DELETE /api/tasks', async () => {
+    // Mock successful response
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 204,
+    });
+
+    await taskApi.deleteAllTasks();
+
+    // Verify fetch was called with correct parameters
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/tasks'),
+      expect.objectContaining({
+        method: 'DELETE',
+      })
+    );
+  });
+
+  /**
+   * Unit Test: deleteAllTasks error handling
+   * Tests that deleteAllTasks throws error on failure
+   */
+  it('deleteAllTasks throws error when request fails', async () => {
+    // Mock error response
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+    });
+
+    await expect(taskApi.deleteAllTasks()).rejects.toThrow('HTTP error! status: 500');
   });
 });
