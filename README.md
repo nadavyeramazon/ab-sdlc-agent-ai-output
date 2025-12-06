@@ -40,7 +40,8 @@ project-root/
 │   │       └── task_service.py   # Business logic layer
 │   ├── tests/
 │   │   ├── test_main.py          # API endpoint tests with Hypothesis
-│   │   └── test_task_repository.py # Repository tests with Hypothesis
+│   │   ├── test_task_repository.py # Repository tests with Hypothesis
+│   │   └── test_delete_all_tasks.py # Bulk delete tests
 │   ├── data/
 │   │   └── .gitkeep              # Placeholder for data directory
 │   ├── Dockerfile                # Backend container image
@@ -246,7 +247,8 @@ npm test
 -  **Create Tasks**: Add new tasks with title and description
 -  **View Tasks**: Display all tasks ordered by creation date (newest first)
 -  **Edit Tasks**: Update task title and description
--  **Delete Tasks**: Remove tasks from the list
+-  **Delete Tasks**: Remove individual tasks from the list
+-  **Delete All Tasks**: Bulk delete all tasks at once
 -  **Toggle Completion**: Mark tasks as complete or incomplete
 -  **Data Persistence**: Tasks persist in MySQL database across restarts
 -  **Input Validation**: Client and server-side validation for data integrity
@@ -269,6 +271,7 @@ npm test
 ### Backend Features
 -  RESTful API with FastAPI
 -  Full CRUD operations for tasks
+-  Bulk delete operation for all tasks
 -  Pydantic models for request/response validation
 -  MySQL database persistence with connection pooling
 -  Repository pattern for data access abstraction
@@ -349,6 +352,27 @@ Create a new task.
 }
 ```
 
+### DELETE /api/tasks
+Delete all tasks (bulk delete operation).
+
+**Response (204 No Content):**
+No response body.
+
+**Usage Example:**
+```bash
+# Using curl
+curl -X DELETE http://localhost:8000/api/tasks
+
+# Using httpie
+http DELETE http://localhost:8000/api/tasks
+```
+
+**Notes:**
+- This endpoint deletes ALL tasks from the database
+- No confirmation is required
+- Returns 204 even if there are no tasks to delete
+- Use with caution in production environments
+
 ### GET /api/tasks/{task_id}
 Retrieve a specific task by ID.
 
@@ -403,7 +427,7 @@ Update an existing task.
 ```
 
 ### DELETE /api/tasks/{task_id}
-Delete a task.
+Delete a specific task by ID.
 
 **Response (204 No Content):**
 No response body.
@@ -525,6 +549,7 @@ pytest -v
 # Run specific test file
 pytest tests/test_main.py
 pytest tests/test_task_repository.py
+pytest tests/test_delete_all_tasks.py
 
 # Run with coverage
 pytest --cov=app --cov-report=html
@@ -551,9 +576,11 @@ npm run test:coverage
 
 *Unit Tests:*
 -  All API endpoints (GET, POST, PUT, DELETE)
+-  Bulk delete endpoint (DELETE /api/tasks)
 -  Request validation (empty titles, length limits)
 -  HTTP status codes (200, 201, 204, 404, 422)
 -  Task repository CRUD operations
+-  Repository bulk delete operation
 -  MySQL connection and persistence
 -  Error handling for database errors
 -  Service layer business logic
@@ -894,7 +921,10 @@ docker compose restart mysql
 
 **Reset Data:**
 ```bash
-# Connect to MySQL and delete all tasks
+# Delete all tasks using the API
+curl -X DELETE http://localhost:8000/api/tasks
+
+# Or connect to MySQL and delete manually
 docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "DELETE FROM tasks;"
 
 # Or drop and recreate the database
@@ -910,6 +940,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 # Then you can run SQL commands:
 # SELECT * FROM tasks;
 # DESCRIBE tasks;
+# DELETE FROM tasks;  -- Caution: deletes all tasks!
 # etc.
 ```
 
@@ -1115,6 +1146,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - **No Pagination**: All tasks loaded at once (could be issue with many tasks)
 - **No Task Deadlines**: No due date tracking
 - **Local Development Only**: Not configured for production deployment
+- **No Bulk Delete Confirmation**: DELETE /api/tasks has no confirmation mechanism
 
 ### Future Enhancements
 
@@ -1133,6 +1165,7 @@ Potential improvements for future versions:
    - Task search and filtering
    - Pagination for large task lists
    - Sorting options (priority, due date, etc.)
+   - Confirmation dialog for bulk delete
 
 3. **Collaboration**:
    - Task sharing between users
