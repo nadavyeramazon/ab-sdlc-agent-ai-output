@@ -44,7 +44,8 @@ export const taskApi = {
     if (!response.ok) {
       if (response.status === 422) {
         const errorData = await response.json();
-        throw new Error(errorData.detail?.[0]?.msg || 'Validation error');
+        const errorMsg = errorData.detail?.[0]?.msg?.trim();
+        throw new Error(errorMsg || 'Validation error');
       }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -74,7 +75,8 @@ export const taskApi = {
     if (!response.ok) {
       if (response.status === 422) {
         const errorData = await response.json();
-        throw new Error(errorData.detail?.[0]?.msg || 'Validation error');
+        const errorMsg = errorData.detail?.[0]?.msg?.trim();
+        throw new Error(errorMsg || 'Validation error');
       }
       if (response.status === 404) {
         throw new Error('Task not found. It may have been deleted.');
