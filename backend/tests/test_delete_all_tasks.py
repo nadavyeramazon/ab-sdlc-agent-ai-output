@@ -54,7 +54,9 @@ def create_mock_repository():
 
     # Override methods to use in-memory storage
     def get_all():
-        return sorted(mock_tasks.values(), key=lambda t: t.created_at, reverse=True)
+        return sorted(
+            mock_tasks.values(), key=lambda t: t.created_at, reverse=True
+        )
 
     def get_by_id(task_id: str):
         return mock_tasks.get(task_id)
@@ -122,12 +124,23 @@ def client() -> Generator[TestClient, None, None]:
 class TestDeleteAllTasksRepository:
     """Unit tests for TaskRepository.delete_all() method"""
 
-    def test_delete_all_returns_count_of_deleted_tasks(self, client: TestClient) -> None:
+    def test_delete_all_returns_count_of_deleted_tasks(
+        self, client: TestClient
+    ) -> None:
         """Test that delete_all() returns the count of deleted tasks"""
         # Create 3 tasks
-        client.post("/api/tasks", json={"title": "Task 1", "description": "Description 1"})
-        client.post("/api/tasks", json={"title": "Task 2", "description": "Description 2"})
-        client.post("/api/tasks", json={"title": "Task 3", "description": "Description 3"})
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 1", "description": "Description 1"}
+        )
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 2", "description": "Description 2"}
+        )
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 3", "description": "Description 3"}
+        )
 
         # Verify tasks exist
         response = client.get("/api/tasks")
@@ -161,7 +174,10 @@ class TestDeleteAllTasksRepository:
         for i in range(10):
             client.post(
                 "/api/tasks",
-                json={"title": f"Task {i+1}", "description": f"Description {i+1}"}
+                json={
+                    "title": f"Task {i+1}",
+                    "description": f"Description {i+1}"
+                }
             )
 
         # Verify tasks exist
@@ -180,33 +196,48 @@ class TestDeleteAllTasksRepository:
 class TestDeleteAllTasksEndpoint:
     """Integration tests for DELETE /tasks endpoint"""
 
-    def test_delete_all_tasks_endpoint_returns_204(self, client: TestClient) -> None:
+    def test_delete_all_tasks_endpoint_returns_204(
+        self, client: TestClient
+    ) -> None:
         """Test that DELETE /tasks returns 204 No Content"""
         # Create a task
-        client.post("/api/tasks", json={"title": "Test Task", "description": "Test Description"})
+        client.post(
+            "/api/tasks",
+            json={"title": "Test Task", "description": "Test Description"}
+        )
 
         # Delete all tasks
         response = client.delete("/api/tasks")
         assert response.status_code == 204
 
-    def test_delete_all_tasks_endpoint_no_response_body(self, client: TestClient) -> None:
+    def test_delete_all_tasks_endpoint_no_response_body(
+        self, client: TestClient
+    ) -> None:
         """Test that DELETE /tasks returns no response body"""
         # Create a task
-        client.post("/api/tasks", json={"title": "Test Task", "description": "Test Description"})
+        client.post(
+            "/api/tasks",
+            json={"title": "Test Task", "description": "Test Description"}
+        )
 
         # Delete all tasks
         response = client.delete("/api/tasks")
         assert response.status_code == 204
         assert response.text == ""
 
-    def test_delete_all_tasks_removes_all_tasks_from_list(self, client: TestClient) -> None:
+    def test_delete_all_tasks_removes_all_tasks_from_list(
+        self, client: TestClient
+    ) -> None:
         """Test that DELETE /tasks removes all tasks from GET /tasks response"""
         # Create multiple tasks
         task_ids = []
         for i in range(5):
             response = client.post(
                 "/api/tasks",
-                json={"title": f"Task {i+1}", "description": f"Description {i+1}"}
+                json={
+                    "title": f"Task {i+1}",
+                    "description": f"Description {i+1}"
+                }
             )
             task_ids.append(response.json()["id"])
 
@@ -238,8 +269,10 @@ class TestDeleteAllTasksEndpoint:
         response = client.delete("/api/tasks")
         assert response.status_code == 204
 
-    def test_delete_all_tasks_route_positioned_before_task_id(self, client: TestClient) -> None:
-        """Test that DELETE /tasks route is correctly positioned before DELETE /tasks/{task_id}"""
+    def test_delete_all_tasks_route_positioned_before_task_id(
+        self, client: TestClient
+    ) -> None:
+        """Test DELETE /tasks route is correctly positioned before task_id"""
         # Create a task
         response = client.post(
             "/api/tasks",
@@ -247,7 +280,7 @@ class TestDeleteAllTasksEndpoint:
         )
         task_id = response.json()["id"]
 
-        # Delete all tasks using DELETE /tasks (should not treat 'tasks' as task_id)
+        # Delete all tasks using DELETE /tasks (should not treat 'tasks' as id)
         response = client.delete("/api/tasks")
         assert response.status_code == 204
 
@@ -255,11 +288,19 @@ class TestDeleteAllTasksEndpoint:
         response = client.get(f"/api/tasks/{task_id}")
         assert response.status_code == 404
 
-    def test_can_create_tasks_after_delete_all(self, client: TestClient) -> None:
+    def test_can_create_tasks_after_delete_all(
+        self, client: TestClient
+    ) -> None:
         """Test that new tasks can be created after deleting all tasks"""
         # Create tasks
-        client.post("/api/tasks", json={"title": "Task 1", "description": "Description 1"})
-        client.post("/api/tasks", json={"title": "Task 2", "description": "Description 2"})
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 1", "description": "Description 1"}
+        )
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 2", "description": "Description 2"}
+        )
 
         # Delete all tasks
         response = client.delete("/api/tasks")
@@ -283,19 +324,26 @@ class TestDeleteAllTasksPropertyBased:
     """Property-based tests for delete all tasks feature"""
 
     @given(st.integers(min_value=0, max_value=20))
-    @settings(max_examples=10, deadline=2000, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(
+        max_examples=10,
+        deadline=2000,
+        suppress_health_check=[HealthCheck.function_scoped_fixture]
+    )
     def test_property_delete_all_removes_all_tasks(
         self, client: TestClient, num_tasks: int
     ) -> None:
         """
-        Property: For any number of tasks in the database, when delete_all is called,
-        retrieving all tasks should return an empty list.
+        Property: For any number of tasks in the database, when delete_all
+        is called, retrieving all tasks should return an empty list.
         """
         # Create specified number of tasks
         for i in range(num_tasks):
             client.post(
                 "/api/tasks",
-                json={"title": f"Task {i+1}", "description": f"Description {i+1}"}
+                json={
+                    "title": f"Task {i+1}",
+                    "description": f"Description {i+1}"
+                }
             )
 
         # Verify correct number of tasks created
@@ -311,7 +359,11 @@ class TestDeleteAllTasksPropertyBased:
         assert len(response.json()["tasks"]) == 0
 
     @given(st.lists(st.text(min_size=1, max_size=50), min_size=1, max_size=10))
-    @settings(max_examples=10, deadline=2000, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(
+        max_examples=10,
+        deadline=2000,
+        suppress_health_check=[HealthCheck.function_scoped_fixture]
+    )
     def test_property_delete_all_returns_204_regardless_of_tasks(
         self, client: TestClient, titles: list
     ) -> None:
@@ -321,9 +373,10 @@ class TestDeleteAllTasksPropertyBased:
         """
         # Create tasks with given titles
         for title in titles:
+            clean_title = title.strip() if title.strip() else "Default"
             client.post(
                 "/api/tasks",
-                json={"title": title.strip() if title.strip() else "Default", "description": "Test"}
+                json={"title": clean_title, "description": "Test"}
             )
 
         # Delete all tasks - should always return 204
@@ -332,7 +385,11 @@ class TestDeleteAllTasksPropertyBased:
         assert response.text == ""
 
     @given(st.integers(min_value=1, max_value=15))
-    @settings(max_examples=10, deadline=3000, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(
+        max_examples=10,
+        deadline=3000,
+        suppress_health_check=[HealthCheck.function_scoped_fixture]
+    )
     def test_property_delete_all_idempotent(
         self, client: TestClient, num_tasks: int
     ) -> None:
@@ -344,7 +401,10 @@ class TestDeleteAllTasksPropertyBased:
         for i in range(num_tasks):
             client.post(
                 "/api/tasks",
-                json={"title": f"Task {i+1}", "description": f"Description {i+1}"}
+                json={
+                    "title": f"Task {i+1}",
+                    "description": f"Description {i+1}"
+                }
             )
 
         # First delete all
