@@ -40,7 +40,8 @@ project-root/
 │   │       └── task_service.py   # Business logic layer
 │   ├── tests/
 │   │   ├── test_main.py          # API endpoint tests with Hypothesis
-│   │   └── test_task_repository.py # Repository tests with Hypothesis
+│   │   ├── test_task_repository.py # Repository tests with Hypothesis
+│   │   └── test_delete_all_tasks.py # Delete all tasks tests
 │   ├── data/
 │   │   └── .gitkeep              # Placeholder for data directory
 │   ├── Dockerfile                # Backend container image
@@ -246,7 +247,8 @@ npm test
 -  **Create Tasks**: Add new tasks with title and description
 -  **View Tasks**: Display all tasks ordered by creation date (newest first)
 -  **Edit Tasks**: Update task title and description
--  **Delete Tasks**: Remove tasks from the list
+-  **Delete Tasks**: Remove individual tasks from the list
+-  **Delete All Tasks**: Clear all tasks with a single operation
 -  **Toggle Completion**: Mark tasks as complete or incomplete
 -  **Data Persistence**: Tasks persist in MySQL database across restarts
 -  **Input Validation**: Client and server-side validation for data integrity
@@ -269,6 +271,7 @@ npm test
 ### Backend Features
 -  RESTful API with FastAPI
 -  Full CRUD operations for tasks
+-  Bulk delete operation (delete all tasks)
 -  Pydantic models for request/response validation
 -  MySQL database persistence with connection pooling
 -  Repository pattern for data access abstraction
@@ -403,7 +406,7 @@ Update an existing task.
 ```
 
 ### DELETE /api/tasks/{task_id}
-Delete a task.
+Delete a specific task by ID.
 
 **Response (204 No Content):**
 No response body.
@@ -413,6 +416,27 @@ No response body.
 {
   "detail": "Task not found"
 }
+```
+
+**Example:**
+```bash
+curl -X DELETE http://localhost:8000/api/tasks/550e8400-e29b-41d4-a716-446655440000
+```
+
+### DELETE /api/tasks
+Delete all tasks.
+
+**Response (204 No Content):**
+No response body.
+
+**Notes:**
+- This operation is idempotent - calling it multiple times is safe
+- Returns 204 even if there are no tasks to delete
+- Cannot be undone - all tasks will be permanently deleted
+
+**Example:**
+```bash
+curl -X DELETE http://localhost:8000/api/tasks
 ```
 
 ### GET /health
@@ -525,6 +549,7 @@ pytest -v
 # Run specific test file
 pytest tests/test_main.py
 pytest tests/test_task_repository.py
+pytest tests/test_delete_all_tasks.py
 
 # Run with coverage
 pytest --cov=app --cov-report=html
@@ -551,6 +576,7 @@ npm run test:coverage
 
 *Unit Tests:*
 -  All API endpoints (GET, POST, PUT, DELETE)
+-  Delete all tasks endpoint
 -  Request validation (empty titles, length limits)
 -  HTTP status codes (200, 201, 204, 404, 422)
 -  Task repository CRUD operations
@@ -565,6 +591,8 @@ npm run test:coverage
 -  Task retrieval completeness - all stored tasks should be returned
 -  Completion toggle idempotence - toggling twice returns to original state
 -  Delete operation removes task - deleted tasks should not be retrievable
+-  Delete all removes exact count - delete all removes all tasks
+-  Delete all idempotence - calling delete all multiple times is safe
 -  Update preserves identity - updates should not change ID or creation time
 -  Invalid update rejection - empty title updates should be rejected
 -  RESTful status codes - operations return correct HTTP status codes
