@@ -1,6 +1,6 @@
-# Task Manager Application
+# Task Manager Application (SwiftPay Edition)
 
-> A production-ready task management application with comprehensive linting, testing, and security configurations.
+> A production-ready task management application with comprehensive linting, testing, and security configurations, featuring SwiftPay green branding.
 
 A full-stack task management application with a React frontend and Python FastAPI backend, orchestrated with Docker Compose for local development. Create, view, update, and delete tasks with persistent MySQL storage.
 
@@ -15,6 +15,21 @@ This project is a complete CRUD application for managing tasks with:
 - **CI/CD**: GitHub Actions pipeline with sequential quality gates
 - **Orchestration**: Docker Compose for local development
 - **Hot Reload**: Live updates during development for both frontend and backend
+- **Branding**: SwiftPay green theme with modern UI design
+
+## 🎨 SwiftPay Branding
+
+The application features SwiftPay's signature green color scheme:
+
+**Color Palette:**
+- **Primary Green**: `#10b981` (emerald-500)
+- **Secondary Green**: `#059669` (emerald-600)
+- **Background Gradient**: Linear gradient from emerald-500 to emerald-600
+- **Accent Colors**: Consistent green theme throughout hover states and focus indicators
+
+**Logo:**
+- SwiftPay logo (64x64px) displayed in the application header
+- Responsive sizing on mobile devices (48x48px)
 
 ## 📁 Project Structure
 
@@ -56,23 +71,24 @@ project-root/
 │   │   ├── __tests__/
 │   │   │   └── App.test.jsx      # React component tests with fast-check
 │   │   ├── assets/
-│   │   │   └── logo.png          # Application logo
+│   │   │   ├── logo-swiftpay.png # SwiftPay logo (green branding)
+│   │   │   └── logo.png          # Original logo
 │   │   ├── components/
 │   │   │   ├── TaskForm.jsx      # Task creation/edit form component
 │   │   │   ├── TaskItem.jsx      # Individual task display component
 │   │   │   └── TaskList.jsx      # Task list container component
 │   │   ├── hooks/
 │   │   │   ├── useTasks.js       # Custom hook for task management
-│   │   │   └── useTasks.test.js  # Hook tests
+│   │   │   └── useTasks.test.js  # Hook tests (includes deleteAllTasks)
 │   │   ├── services/
 │   │   │   ├── api.js            # API client with fetch wrapper
-│   │   │   └── api.test.js       # API service tests
+│   │   │   └── api.test.js       # API service tests (includes deleteAllTasks)
 │   │   ├── test/
 │   │   │   └── setup.js          # Test environment setup
 │   │   ├── utils/
 │   │   │   └── constants.js      # Shared constants
 │   │   ├── App.jsx               # Main application component
-│   │   ├── App.css               # Application styles
+│   │   ├── App.css               # Application styles (green theme)
 │   │   └── main.jsx              # React entry point
 │   ├── index.html                # HTML template
 │   ├── package.json              # Frontend dependencies (includes fast-check)
@@ -152,9 +168,10 @@ App.jsx
   ├── useTasks hook (state management)
   │   └── api.js (HTTP client)
   ├── TaskForm component (create/edit)
+  ├── Delete All button (bulk delete)
   ├── TaskList component (list container)
   │   └── TaskItem component (individual task)
-  └── CSS styles
+  └── CSS styles (SwiftPay green theme)
 ```
 
 **Key Patterns:**
@@ -162,6 +179,7 @@ App.jsx
 - **Component Composition**: Small, focused components with single responsibilities
 - **Props Down, Events Up**: Data flows down via props, events bubble up
 - **Separation of Concerns**: API logic separated from UI components
+- **Confirmation Dialogs**: Native browser confirm() for destructive actions
 
 ## 🚀 Quick Start
 
@@ -248,15 +266,18 @@ npm test
 -  **View Tasks**: Display all tasks ordered by creation date (newest first)
 -  **Edit Tasks**: Update task title and description
 -  **Delete Tasks**: Remove individual tasks or delete all tasks at once
+-  **Bulk Delete**: Delete all tasks with a single click (with confirmation)
 -  **Toggle Completion**: Mark tasks as complete or incomplete
 -  **Data Persistence**: Tasks persist in MySQL database across restarts
 -  **Input Validation**: Client and server-side validation for data integrity
 -  **Error Handling**: User-friendly error messages for all operations
+-  **Confirmation Dialogs**: Safety confirmation before destructive bulk operations
 
 ### Frontend Features
--  Responsive task management UI
+-  Responsive task management UI with SwiftPay green branding
 -  Task creation form with validation
 -  Inline task editing
+-  **Delete All Button**: Bulk delete all tasks with confirmation dialog
 -  Visual distinction for completed tasks (strikethrough)
 -  Loading state indicators for all operations
 -  Error handling with user-friendly messages
@@ -266,11 +287,12 @@ npm test
 -  Comprehensive test coverage with property-based testing
 -  Custom hooks for state management (`useTasks`)
 -  Reusable component architecture
+-  **SwiftPay Branding**: Modern green color scheme throughout the UI
 
 ### Backend Features
 -  RESTful API with FastAPI
 -  Full CRUD operations for tasks
--  Bulk delete functionality for all tasks
+-  **Bulk delete functionality** for all tasks (DELETE /api/tasks)
 -  Pydantic models for request/response validation
 -  MySQL database persistence with connection pooling
 -  Repository pattern for data access abstraction
@@ -351,8 +373,8 @@ Create a new task.
 }
 ```
 
-### DELETE /api/tasks
-Delete all tasks from the database (bulk delete).
+### DELETE /api/tasks ⚠️ **NEW: Bulk Delete**
+Delete all tasks from the database (bulk delete operation).
 
 **Response (204 No Content):**
 No response body.
@@ -369,12 +391,22 @@ http DELETE http://localhost:8000/api/tasks
 fetch('http://localhost:8000/api/tasks', { method: 'DELETE' })
 ```
 
+**Frontend UI:**
+The "Delete All Tasks" button appears at the top of the task list when tasks exist:
+- Located between the task form and task list
+- Only visible when there are tasks to delete
+- Shows confirmation dialog: "Are you sure you want to delete ALL tasks? This action cannot be undone."
+- Displays loading state during deletion: "Deleting..."
+- Styled with danger button (red outline, red text, fills red on hover)
+
 **Notes:**
-- This endpoint deletes ALL tasks from the database
+- ⚠️ **Destructive Operation**: This endpoint deletes ALL tasks from the database
 - Returns 204 No Content on success (even if no tasks exist)
-- No authentication required
+- No authentication required (use with caution in production)
 - Operation is immediate and cannot be undone
+- Frontend shows confirmation dialog before executing
 - Useful for testing or clearing all data
+- Bulk delete is more efficient than deleting tasks individually
 
 ### GET /api/tasks/{task_id}
 Retrieve a specific task by ID.
@@ -579,7 +611,7 @@ npm run test:coverage
 
 *Unit Tests:*
 -  All API endpoints (GET, POST, PUT, DELETE)
--  Bulk delete endpoint (DELETE /api/tasks)
+-  **Bulk delete endpoint** (DELETE /api/tasks)
 -  Request validation (empty titles, length limits)
 -  HTTP status codes (200, 201, 204, 404, 422)
 -  Task repository CRUD operations
@@ -598,14 +630,23 @@ npm run test:coverage
 -  Invalid update rejection - empty title updates should be rejected
 -  RESTful status codes - operations return correct HTTP status codes
 -  Persistence across restarts - tasks survive backend restarts
--  Bulk delete completeness - delete_all removes all tasks
+-  **Bulk delete completeness** - delete_all removes all tasks
 
 **Frontend Test Suite:**
+
+*Unit Tests:*
+-  API service `deleteAllTasks()` function
+-  useTasks hook `deleteAllTasks()` function
+-  Delete All button rendering and behavior
+-  Confirmation dialog before bulk delete
+-  Loading state during bulk delete
+-  Error handling for failed bulk delete
 
 *Integration Tests:*
 -  Task creation flow (form → API → list update)
 -  Task editing flow (edit button → form → update → display)
 -  Task deletion flow (delete button → removal)
+-  **Bulk delete flow** (Delete All button → confirmation → deletion → empty state)
 -  Task completion toggle
 -  Error handling for failed API calls
 -  Loading states for all operations
@@ -616,6 +657,7 @@ npm run test:coverage
 
 *Property-Based Tests:*
 -  Task ordering consistency - tasks always ordered by creation date (newest first)
+-  **API error handling** - all failed operations (including deleteAllTasks) throw Error with message
 
 For detailed testing documentation:
 - Backend: See inline test documentation in `backend/tests/`
@@ -728,7 +770,7 @@ The CI pipeline executes in three distinct stages, each acting as a quality gate
                      ▼
          ┌───────────────────────┐
          │Docker Compose Validate│           ← Stage 3: Integration
-         └───────────┬───────────┘
+         └─��─────────┬───────────┘
                      │
                      ▼
          ┌───────────────────────┐
@@ -819,6 +861,7 @@ pytest --cov=app --cov-report=term-missing
 - Services: `frontend/src/services/`
 - Main App: `frontend/src/App.jsx`
 - Styles: `frontend/src/App.css`
+- Assets: `frontend/src/assets/` (includes SwiftPay logo)
 
 **Testing:**
 ```bash
@@ -829,6 +872,26 @@ npm run test:watch  # Watch mode
 
 **Access Frontend:**
 - Development: http://localhost:3000
+
+### Theme Customization
+
+To modify the SwiftPay green theme:
+
+1. **Update Color Variables** in `frontend/src/App.css`:
+   ```css
+   /* Primary color (currently emerald-500) */
+   background-color: #10b981;
+   
+   /* Secondary color (currently emerald-600) */
+   background-color: #059669;
+   ```
+
+2. **Replace Logo**: Place your logo file in `frontend/src/assets/` and update the import in `App.jsx`:
+   ```javascript
+   import logo from './assets/your-logo.png';
+   ```
+
+3. **Update Accent Colors**: Search for `rgba(16, 185, 129, X)` in `App.css` and adjust opacity values
 
 ### Viewing Logs
 
@@ -924,8 +987,10 @@ docker compose restart mysql
 
 **Reset Data:**
 ```bash
-# Delete all tasks using the bulk delete endpoint
+# Delete all tasks using the bulk delete endpoint (recommended)
 curl -X DELETE http://localhost:8000/api/tasks
+
+# Or use the frontend "Delete All Tasks" button
 
 # Or connect to MySQL and delete manually
 docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "DELETE FROM tasks;"
@@ -1005,6 +1070,14 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Check backend logs for database errors: `docker compose logs backend`
 - Ensure MySQL is healthy before backend starts (check healthcheck in docker-compose.yml)
 - Verify MySQL volume exists: `docker volume ls | grep mysql-data`
+
+### Bulk Delete not working
+- Verify backend DELETE /api/tasks endpoint is accessible: `curl -X DELETE http://localhost:8000/api/tasks`
+- Check browser console for JavaScript errors
+- Ensure confirmation dialog appears (check browser settings allow dialogs)
+- Verify Delete All button only appears when tasks exist
+- Check backend logs for errors: `docker compose logs backend`
+- Test API directly: `curl -X DELETE http://localhost:8000/api/tasks`
 
 ### CORS errors
 - Verify backend CORS is configured for `http://localhost:3000`
@@ -1115,6 +1188,18 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Makes components reusable and testable
 - Separates concerns (UI, state, API)
 
+**Bulk Delete with Confirmation:**
+- Native browser `window.confirm()` for simplicity (no external library needed)
+- Clear warning message to prevent accidental deletions
+- Loading state feedback during operation
+- Only visible when there are tasks to delete
+
+**SwiftPay Branding:**
+- Modern green color scheme (#10b981 emerald-500)
+- Consistent brand colors throughout UI (hover, focus, loading states)
+- Professional appearance suitable for production use
+- Easy to customize for different brands
+
 ### Development Philosophy
 
 **Code Quality First:**
@@ -1148,6 +1233,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - **No Pagination**: All tasks loaded at once (could be issue with many tasks)
 - **No Task Deadlines**: No due date tracking
 - **Local Development Only**: Not configured for production deployment
+- **No Undo for Bulk Delete**: Permanent deletion with confirmation only
 
 ### Future Enhancements
 
@@ -1166,7 +1252,8 @@ Potential improvements for future versions:
    - Task search and filtering
    - Pagination for large task lists
    - Sorting options (priority, due date, etc.)
-   - Undo/redo for bulk delete operations
+   - **Undo/redo for bulk delete operations**
+   - Soft delete (trash/recycle bin)
 
 3. **Collaboration**:
    - Task sharing between users
@@ -1321,3 +1408,5 @@ This is a demonstration project for educational purposes. See [LICENSE](LICENSE)
 **Built with ❤️ using Clean Architecture and Modern Development Practices**
 
 **Tested with  Property-Based Testing (Hypothesis & fast-check)**
+
+**Branded with  SwiftPay Green Theme (#10b981)**
