@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 
@@ -430,9 +430,12 @@ describe('Delete All Tasks Feature', () => {
       const deleteAllButton = screen.getByRole('button', {
         name: /delete all tasks/i,
       });
-      
+
       // Click the button - this starts the async operation
-      await user.click(deleteAllButton);
+      const clickPromise = user.click(deleteAllButton);
+
+      // Wait for the click to complete (confirm dialog)
+      await clickPromise;
 
       // Check if loading text is shown BEFORE resolving the promise
       await waitFor(() => {
@@ -442,11 +445,8 @@ describe('Delete All Tasks Feature', () => {
       });
 
       // Now resolve the delete operation
-      await act(async () => {
-        resolveDelete();
-        // Give the promise time to resolve and state to update
-        await deletePromise;
-      });
+      resolveDelete();
+      await deletePromise;
 
       // Wait for deletion to complete
       await waitFor(() => {
@@ -500,9 +500,12 @@ describe('Delete All Tasks Feature', () => {
       const deleteAllButton = screen.getByRole('button', {
         name: /delete all tasks/i,
       });
-      
+
       // Click the button
-      await user.click(deleteAllButton);
+      const clickPromise = user.click(deleteAllButton);
+
+      // Wait for the click to complete
+      await clickPromise;
 
       // Button should be disabled during operation
       await waitFor(() => {
@@ -511,10 +514,8 @@ describe('Delete All Tasks Feature', () => {
       });
 
       // Resolve the delete operation
-      await act(async () => {
-        resolveDelete();
-        await deletePromise;
-      });
+      resolveDelete();
+      await deletePromise;
 
       // Wait for completion
       await waitFor(() => {
@@ -612,7 +613,7 @@ describe('Delete All Tasks Feature', () => {
         });
       });
 
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const user = userEvent.setup({ delay: null });
       render(<App />);
 
       await waitFor(() => {
@@ -622,6 +623,8 @@ describe('Delete All Tasks Feature', () => {
       const deleteAllButton = screen.getByRole('button', {
         name: /delete all tasks/i,
       });
+
+      // Click and wait for error to appear
       await user.click(deleteAllButton);
 
       // Error should be visible
@@ -631,10 +634,8 @@ describe('Delete All Tasks Feature', () => {
         ).toBeInTheDocument();
       });
 
-      // Fast-forward 5 seconds
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(5000);
-      });
+      // Fast-forward 5 seconds using async timer advancement
+      await vi.advanceTimersByTimeAsync(5000);
 
       // Error should be gone
       await waitFor(() => {
@@ -644,7 +645,7 @@ describe('Delete All Tasks Feature', () => {
       });
 
       vi.useRealTimers();
-    }, 10000);
+    });
 
     it('should handle network errors during delete all', async () => {
       const mockTasks = [
