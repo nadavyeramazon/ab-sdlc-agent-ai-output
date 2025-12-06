@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './App.css';
-import logo from './assets/logo.png';
+import logo from './assets/logo-swiftpay.png';
 import { useTasks } from './hooks/useTasks';
 import TaskForm from './components/TaskForm';
 import TaskList from './components/TaskList';
@@ -14,6 +14,7 @@ function App() {
     createTask,
     updateTask,
     deleteTask,
+    deleteAll,
     toggleTaskComplete,
   } = useTasks();
 
@@ -25,6 +26,8 @@ function App() {
   const [createError, setCreateError] = useState('');
   const [toggleLoading, setToggleLoading] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
 
   // Handle task creation
   const handleCreateTask = async (taskData) => {
@@ -66,6 +69,14 @@ function App() {
     setDeleteLoading(taskId);
     await deleteTask(taskId);
     setDeleteLoading(null);
+  };
+
+  // Handle delete all tasks
+  const handleDeleteAll = async () => {
+    setDeleteAllLoading(true);
+    await deleteAll();
+    setDeleteAllLoading(false);
+    setShowDeleteAllConfirm(false);
   };
 
   // Handle task toggle
@@ -111,6 +122,41 @@ function App() {
               isEditing={!!editingTask}
             />
           </div>
+
+          {/* Delete All Tasks Section */}
+          {tasks.length > 0 && (
+            <div className="delete-all-section">
+              {!showDeleteAllConfirm ? (
+                <button
+                  className="btn-danger-outline"
+                  onClick={() => setShowDeleteAllConfirm(true)}
+                  disabled={deleteAllLoading}
+                >
+                  Delete All Tasks
+                </button>
+              ) : (
+                <div className="delete-all-confirm">
+                  <p className="confirm-message">Are you sure you want to delete all {tasks.length} task{tasks.length !== 1 ? 's' : ''}?</p>
+                  <div className="confirm-actions">
+                    <button
+                      className="btn-danger"
+                      onClick={handleDeleteAll}
+                      disabled={deleteAllLoading}
+                    >
+                      {deleteAllLoading ? 'Deleting...' : 'Yes, Delete All'}
+                    </button>
+                    <button
+                      className="btn-secondary"
+                      onClick={() => setShowDeleteAllConfirm(false)}
+                      disabled={deleteAllLoading}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Task List */}
           <div className="task-list-section">
