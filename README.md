@@ -1,8 +1,10 @@
-# Task Manager Application
+# Task Manager Application - SwiftPay Edition
 
 > A production-ready task management application with comprehensive linting, testing, and security configurations.
 
 A full-stack task management application with a React frontend and Python FastAPI backend, orchestrated with Docker Compose for local development. Create, view, update, and delete tasks with persistent MySQL storage.
+
+**🎨 Branded with SwiftPay's emerald green theme**
 
 ## 🎯 Overview
 
@@ -15,6 +17,7 @@ This project is a complete CRUD application for managing tasks with:
 - **CI/CD**: GitHub Actions pipeline with sequential quality gates
 - **Orchestration**: Docker Compose for local development
 - **Hot Reload**: Live updates during development for both frontend and backend
+- **Branding**: SwiftPay emerald green color scheme (#10b981)
 
 ## 📁 Project Structure
 
@@ -54,9 +57,11 @@ project-root/
 ├── frontend/                      # React + Vite frontend
 │   ├── src/
 │   │   ├── __tests__/
-│   │   │   └── App.test.jsx      # React component tests with fast-check
+│   │   │   ├── App.test.jsx      # React component tests with fast-check
+│   │   │   └── DeleteAllTasks.test.jsx # Delete all feature tests
 │   │   ├── assets/
-│   │   │   └── logo.png          # Application logo
+│   │   │   ├── logo.png          # Original application logo
+│   │   │   └── logo-swiftpay.png # SwiftPay branded logo (active)
 │   │   ├── components/
 │   │   │   ├── TaskForm.jsx      # Task creation/edit form component
 │   │   │   ├── TaskItem.jsx      # Individual task display component
@@ -72,7 +77,7 @@ project-root/
 │   │   ├── utils/
 │   │   │   └── constants.js      # Shared constants
 │   │   ├── App.jsx               # Main application component
-│   │   ├── App.css               # Application styles
+│   │   ├── App.css               # Application styles (emerald green theme)
 │   │   └── main.jsx              # React entry point
 │   ├── index.html                # HTML template
 │   ├── package.json              # Frontend dependencies (includes fast-check)
@@ -154,7 +159,7 @@ App.jsx
   ├── TaskForm component (create/edit)
   ├── TaskList component (list container)
   │   └── TaskItem component (individual task)
-  └── CSS styles
+  └── CSS styles (emerald green theme)
 ```
 
 **Key Patterns:**
@@ -162,6 +167,7 @@ App.jsx
 - **Component Composition**: Small, focused components with single responsibilities
 - **Props Down, Events Up**: Data flows down via props, events bubble up
 - **Separation of Concerns**: API logic separated from UI components
+- **SwiftPay Branding**: Emerald green color scheme throughout the UI
 
 ## 🚀 Quick Start
 
@@ -248,14 +254,46 @@ npm test
 -  **View Tasks**: Display all tasks ordered by creation date (newest first)
 -  **Edit Tasks**: Update task title and description
 -  **Delete Tasks**: Remove individual tasks from the list
--  **Delete All Tasks**: Remove all tasks at once
+-  **Delete All Tasks**: Remove all tasks at once with confirmation dialog
 -  **Toggle Completion**: Mark tasks as complete or incomplete
 -  **Data Persistence**: Tasks persist in MySQL database across restarts
 -  **Input Validation**: Client and server-side validation for data integrity
 -  **Error Handling**: User-friendly error messages for all operations
 
+### Delete All Tasks Feature
+
+The application includes a bulk delete feature with safety measures:
+
+**UI Components:**
+- **Delete All Button**: Appears only when tasks exist (hides when task list is empty)
+- **Confirmation Dialog**: Two-step process to prevent accidental deletion
+  - Step 1: Click "Delete All Tasks" button
+  - Step 2: Confirm with "Yes, Delete All" or cancel the action
+- **Visual Feedback**: Red warning styling to indicate destructive action
+- **Loading State**: Shows "Deleting..." during API call with disabled buttons
+
+**Safety Features:**
+-  Only visible when tasks exist
+-  Requires explicit confirmation before deletion
+-  Cannot be accidentally triggered
+-  Buttons disabled during deletion to prevent double-clicks
+-  Clear warning message: "This action cannot be undone"
+
+**User Flow:**
+1. User has one or more tasks in the list
+2. "Delete All Tasks" button appears with red outline styling
+3. User clicks button → Confirmation dialog appears
+4. User can either:
+   - Click "Yes, Delete All" → All tasks removed, empty state shown
+   - Click "Cancel" → Returns to normal view, tasks remain
+
+**API Integration:**
+- Calls `DELETE /api/tasks` endpoint
+- Handles success and error states appropriately
+- Updates UI optimistically after successful deletion
+
 ### Frontend Features
--  Responsive task management UI
+-  Responsive task management UI with SwiftPay emerald green theme
 -  Task creation form with validation
 -  Inline task editing
 -  Visual distinction for completed tasks (strikethrough)
@@ -267,6 +305,7 @@ npm test
 -  Comprehensive test coverage with property-based testing
 -  Custom hooks for state management (`useTasks`)
 -  Reusable component architecture
+-  Delete all tasks feature with confirmation dialog
 
 ### Backend Features
 -  RESTful API with FastAPI
@@ -282,6 +321,15 @@ npm test
 -  Auto-reload during development
 -  Comprehensive test coverage with property-based testing
 -  Clean architecture with layered design
+
+### UI/UX Features
+-  **SwiftPay Branding**: Emerald green color scheme (#10b981, #059669)
+-  **SwiftPay Logo**: Branded logo in the header
+-  **Consistent Theme**: Green accents on buttons, borders, and interactive elements
+-  **Hover Effects**: Enhanced with emerald green glow on task items
+-  **Focus States**: Green borders and shadows on form inputs
+-  **Responsive Design**: Mobile-friendly layout with proper breakpoints
+-  **Accessible Colors**: WCAG-compliant contrast ratios
 
 ### Code Quality Features
 -  **Pre-commit Hooks**: Automatic code formatting and linting before commits
@@ -429,6 +477,7 @@ No response body.
 - No request body required
 - Returns 204 even if database was already empty
 - Useful for clearing all tasks during testing or resetting the application
+- Frontend implements confirmation dialog before calling this endpoint
 
 **Example Usage:**
 ```bash
@@ -437,6 +486,9 @@ curl -X DELETE http://localhost:8000/api/tasks
 
 # Using httpie
 http DELETE http://localhost:8000/api/tasks
+
+# Using JavaScript fetch
+fetch('http://localhost:8000/api/tasks', { method: 'DELETE' });
 ```
 
 ### GET /health
@@ -603,6 +655,7 @@ npm run test:coverage
 -  Task creation flow (form → API → list update)
 -  Task editing flow (edit button → form → update → display)
 -  Task deletion flow (delete button → removal)
+-  Delete all tasks flow (button → confirmation → bulk deletion)
 -  Task completion toggle
 -  Error handling for failed API calls
 -  Loading states for all operations
@@ -611,12 +664,22 @@ npm run test:coverage
 -  Custom hooks (useTasks)
 -  API service layer
 
+*Delete All Tasks Tests:*
+-  Button visibility (only when tasks exist)
+-  Confirmation dialog appearance
+-  Cancel action (returns to normal state)
+-  Successful deletion (all tasks removed)
+-  Loading states during deletion
+-  Error handling for failed deletion
+-  API endpoint validation (DELETE /api/tasks)
+-  Mix of completed and incomplete tasks
+
 *Property-Based Tests:*
 -  Task ordering consistency - tasks always ordered by creation date (newest first)
 
 For detailed testing documentation:
 - Backend: See inline test documentation in `backend/tests/`
-- Frontend: See `frontend/TEST_GUIDE.md`
+- Frontend: See `frontend/TEST_GUIDE.md` and `frontend/src/__tests__/DeleteAllTasks.test.jsx`
 
 ## 🛠️ Pre-commit Hooks
 
@@ -815,7 +878,7 @@ pytest --cov=app --cov-report=term-missing
 - Hooks: `frontend/src/hooks/`
 - Services: `frontend/src/services/`
 - Main App: `frontend/src/App.jsx`
-- Styles: `frontend/src/App.css`
+- Styles: `frontend/src/App.css` (emerald green theme)
 
 **Testing:**
 ```bash
@@ -1112,6 +1175,12 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Makes components reusable and testable
 - Separates concerns (UI, state, API)
 
+**SwiftPay Branding:**
+- Emerald green color scheme (#10b981, #059669) for modern, professional look
+- Custom logo for brand recognition
+- Consistent theming throughout the application
+- Accessible color contrast for WCAG compliance
+
 ### Development Philosophy
 
 **Code Quality First:**
@@ -1317,3 +1386,5 @@ This is a demonstration project for educational purposes. See [LICENSE](LICENSE)
 **Built with ❤️ using Clean Architecture and Modern Development Practices**
 
 **Tested with  Property-Based Testing (Hypothesis & fast-check)**
+
+**Branded with  SwiftPay Emerald Green Theme**
