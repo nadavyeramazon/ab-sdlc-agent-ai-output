@@ -1063,13 +1063,16 @@ describe('App Component', () => {
 
         render(<App />);
 
-        // Use findByText which automatically waits for the element
-        await screen.findByText('Task 1');
-
-        // Now check for the delete all button
-        expect(
-          screen.getByRole('button', { name: /delete all tasks/i })
-        ).toBeInTheDocument();
+        // Use waitFor to wait for both the task and the button to appear
+        await waitFor(
+          () => {
+            expect(screen.getByText('Task 1')).toBeInTheDocument();
+            expect(
+              screen.getByRole('button', { name: /delete all tasks/i })
+            ).toBeInTheDocument();
+          },
+          { timeout: 5000 }
+        );
       });
 
       it('should complete full delete all flow with confirmation: button → confirm → API → state clear', async () => {
