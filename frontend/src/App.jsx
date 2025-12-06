@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './App.css';
-import logo from './assets/logo.png';
+import logo from './assets/logo-swiftpay.png';
 import { useTasks } from './hooks/useTasks';
 import TaskForm from './components/TaskForm';
 import TaskList from './components/TaskList';
@@ -14,6 +14,7 @@ function App() {
     createTask,
     updateTask,
     deleteTask,
+    deleteAllTasks,
     toggleTaskComplete,
   } = useTasks();
 
@@ -25,19 +26,20 @@ function App() {
   const [createError, setCreateError] = useState('');
   const [toggleLoading, setToggleLoading] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
 
   // Handle task creation
   const handleCreateTask = async (taskData) => {
     setCreateLoading(true);
     setCreateError('');
-    
+
     const success = await createTask(taskData);
-    
+
     setCreateLoading(false);
     if (!success) {
       setCreateError(error || 'Failed to create task');
     }
-    
+
     return success;
   };
 
@@ -51,7 +53,7 @@ function App() {
     const success = await updateTask(editingTask.id, taskData);
 
     setEditLoading(false);
-    
+
     if (success) {
       setEditingTask(null);
     } else {
@@ -66,6 +68,19 @@ function App() {
     setDeleteLoading(taskId);
     await deleteTask(taskId);
     setDeleteLoading(null);
+  };
+
+  // Handle delete all tasks with confirmation
+  const handleDeleteAllTasks = async () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to delete ALL tasks? This action cannot be undone.'
+    );
+
+    if (!confirmed) return;
+
+    setDeleteAllLoading(true);
+    await deleteAllTasks();
+    setDeleteAllLoading(false);
   };
 
   // Handle task toggle
@@ -115,6 +130,15 @@ function App() {
           {/* Task List */}
           <div className="task-list-section">
             <h3>Task List</h3>
+            {tasks.length > 0 && (
+              <button
+                className="btn-danger"
+                onClick={handleDeleteAllTasks}
+                disabled={deleteAllLoading}
+              >
+                {deleteAllLoading ? 'Deleting...' : 'Delete All Tasks'}
+              </button>
+            )}
             <TaskList
               tasks={tasks}
               loading={loading}
