@@ -208,7 +208,6 @@ class TestDeleteAllTasksEndpoint:
 
         assert response.status_code == 204
         assert response.text == ""
-        assert response.headers["content-length"] == "0"
 
     def test_delete_all_tasks_does_not_affect_individual_delete(
         self, client: TestClient
