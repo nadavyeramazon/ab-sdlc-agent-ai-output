@@ -1,13 +1,13 @@
-# Task Manager Application
+# Task Manager Application - SwiftPay Edition
 
-> A production-ready task management application with comprehensive linting, testing, and security configurations.
+> A production-ready task management application with comprehensive linting, testing, and security configurations, now featuring SwiftPay branding.
 
 A full-stack task management application with a React frontend and Python FastAPI backend, orchestrated with Docker Compose for local development. Create, view, update, and delete tasks with persistent MySQL storage.
 
 ## 🎯 Overview
 
 This project is a complete CRUD application for managing tasks with:
-- **Frontend**: React 18 + Vite with responsive UI and custom hooks
+- **Frontend**: React 18 + Vite with responsive UI, custom hooks, and SwiftPay green theme
 - **Backend**: Python FastAPI with clean architecture (repository pattern, dependency injection)
 - **Database**: MySQL 8.0 for persistent data storage with connection pooling
 - **Testing**: Comprehensive test suite with property-based testing (Hypothesis & fast-check)
@@ -15,6 +15,23 @@ This project is a complete CRUD application for managing tasks with:
 - **CI/CD**: GitHub Actions pipeline with sequential quality gates
 - **Orchestration**: Docker Compose for local development
 - **Hot Reload**: Live updates during development for both frontend and backend
+
+## 🎨 SwiftPay Branding
+
+The application now features SwiftPay's green color scheme throughout the UI:
+
+- **Primary Color**: Green (#10b981) - Used for buttons, focus states, and accents
+- **Hover Color**: Darker green (#059669) - Enhanced user interaction feedback
+- **Background Gradient**: Green gradient (from #10b981 to #059669)
+- **Logo**: SwiftPay logo displayed in the application header
+- **Consistent Theme**: All interactive elements follow the green color palette
+
+### Theme Colors Reference
+- Primary: `#10b981` (Emerald green)
+- Primary Hover: `#059669` (Darker emerald)
+- Checkbox Accent: `#10b981`
+- Loading Spinner: `#10b981`
+- Task Hover Border: `#10b981` with semi-transparent shadow
 
 ## 📁 Project Structure
 
@@ -55,7 +72,8 @@ project-root/
 │   │   ├── __tests__/
 │   │   │   └── App.test.jsx      # React component tests with fast-check
 │   │   ├── assets/
-│   │   │   └── logo.png          # Application logo
+│   │   │   ├── logo.png          # SwiftPay logo
+│   │   │   └── logo-swiftpay.png # SwiftPay branding asset
 │   │   ├── components/
 │   │   │   ├── TaskForm.jsx      # Task creation/edit form component
 │   │   │   ├── TaskItem.jsx      # Individual task display component
@@ -71,7 +89,7 @@ project-root/
 │   │   ├── utils/
 │   │   │   └── constants.js      # Shared constants
 │   │   ├── App.jsx               # Main application component
-│   │   ├── App.css               # Application styles
+│   │   ├── App.css               # Application styles (SwiftPay green theme)
 │   │   └── main.jsx              # React entry point
 │   ├── index.html                # HTML template
 │   ├── package.json              # Frontend dependencies (includes fast-check)
@@ -153,7 +171,7 @@ App.jsx
   ├── TaskForm component (create/edit)
   ├── TaskList component (list container)
   │   └── TaskItem component (individual task)
-  └── CSS styles
+  └── CSS styles (SwiftPay green theme)
 ```
 
 **Key Patterns:**
@@ -247,19 +265,53 @@ npm test
 -  **View Tasks**: Display all tasks ordered by creation date (newest first)
 -  **Edit Tasks**: Update task title and description
 -  **Delete Tasks**: Remove individual tasks or delete all tasks at once
+-  **Delete All Tasks**: Bulk delete operation with confirmation dialog (⚠️ irreversible)
 -  **Toggle Completion**: Mark tasks as complete or incomplete
 -  **Data Persistence**: Tasks persist in MySQL database across restarts
 -  **Input Validation**: Client and server-side validation for data integrity
 -  **Error Handling**: User-friendly error messages for all operations
 
+### Delete All Tasks Feature
+
+The application now includes a "Delete All Tasks" button for bulk deletion:
+
+**Location**: Displayed at the bottom of the task list (only when tasks exist)
+
+**Behavior**:
+- **Confirmation Dialog**: Shows browser confirmation before deletion
+  - Message: "Are you sure you want to delete ALL tasks? This action cannot be undone."
+  - User must confirm to proceed
+  - Can cancel to abort operation
+
+- **Loading State**: Button shows "Deleting..." during operation
+- **Disabled State**: Button is disabled while deletion is in progress
+- **Visual Design**: 
+  - White background with red border (#f56565)
+  - Red text (#c53030) for danger indication
+  - Hover state changes to red background with white text
+  - Full-width on mobile devices
+
+**API Integration**:
+- Calls `DELETE /api/tasks` endpoint
+- Removes all tasks from database in a single operation
+- Updates UI immediately upon success
+- Error handling with user-friendly messages
+
+**Usage Notes**:
+- ⚠️ **Warning**: This action is irreversible and cannot be undone
+- All tasks are permanently deleted from the database
+- No way to recover deleted tasks
+- Use with caution in production environments
+
 ### Frontend Features
--  Responsive task management UI
+-  Responsive task management UI with SwiftPay green theme
 -  Task creation form with validation
 -  Inline task editing
 -  Visual distinction for completed tasks (strikethrough)
 -  Loading state indicators for all operations
 -  Error handling with user-friendly messages
 -  Empty state messaging
+-  Delete all tasks functionality with confirmation
 -  Hot Module Replacement (HMR) for development
 -  Environment-based API URL configuration
 -  Comprehensive test coverage with property-based testing
@@ -269,7 +321,7 @@ npm test
 ### Backend Features
 -  RESTful API with FastAPI
 -  Full CRUD operations for tasks
--  Bulk delete operation to remove all tasks at once
+-  Bulk delete operation to remove all tasks at once (`DELETE /api/tasks`)
 -  Pydantic models for request/response validation
 -  MySQL database persistence with connection pooling
 -  Repository pattern for data access abstraction
@@ -361,7 +413,13 @@ No response body.
 curl -X DELETE http://localhost:8000/api/tasks
 ```
 
-**Note:** This operation removes all tasks from the database. Use with caution as it cannot be undone.
+**⚠️ Warning**: This operation removes all tasks from the database. Use with caution as it cannot be undone.
+
+**UI Integration**:
+- "Delete All Tasks" button appears at the bottom of the task list
+- Shows confirmation dialog before proceeding
+- Button displays "Deleting..." loading state during operation
+- Red danger styling to indicate destructive action
 
 ### GET /api/tasks/{task_id}
 Retrieve a specific task by ID.
@@ -572,6 +630,7 @@ npm run test:coverage
 -  Error handling for database errors
 -  Service layer business logic
 -  Dependency injection
+-  Bulk delete operation (DELETE /api/tasks)
 
 *Property-Based Tests:*
 -  Task creation persistence - any valid task should be retrievable after creation
@@ -583,6 +642,7 @@ npm run test:coverage
 -  Invalid update rejection - empty title updates should be rejected
 -  RESTful status codes - operations return correct HTTP status codes
 -  Persistence across restarts - tasks survive backend restarts
+-  Bulk delete completeness - all tasks removed after bulk delete
 
 **Frontend Test Suite:**
 
@@ -591,6 +651,7 @@ npm run test:coverage
 -  Task editing flow (edit button → form → update → display)
 -  Task deletion flow (delete button → removal)
 -  Task completion toggle
+-  Delete all tasks flow (button → confirmation → bulk delete)
 -  Error handling for failed API calls
 -  Loading states for all operations
 -  Empty state display
@@ -802,7 +863,7 @@ pytest --cov=app --cov-report=term-missing
 - Hooks: `frontend/src/hooks/`
 - Services: `frontend/src/services/`
 - Main App: `frontend/src/App.jsx`
-- Styles: `frontend/src/App.css`
+- Styles: `frontend/src/App.css` (SwiftPay green theme)
 
 **Testing:**
 ```bash
@@ -863,6 +924,7 @@ The application uses MySQL 8.0 for persistent data storage with the following ar
 - **Transaction Safety**: All writes committed immediately
 - **Error Handling**: Graceful handling of connection and query errors
 - **Repository Pattern**: Data access abstraction for easy testing and swapping
+- **Bulk Operations**: Support for deleting all tasks at once
 
 **Benefits:**
 -  ACID compliance for data integrity
@@ -1076,6 +1138,19 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Docker volume ensures data persistence
 - Easy to backup and restore
 
+**SwiftPay Branding:**
+- Green color scheme (#10b981, #059669) replaces previous purple/blue theme
+- Consistent branding across all UI elements (buttons, focus states, hover effects)
+- Logo updated to SwiftPay branding for professional appearance
+- Theme colors chosen for accessibility and visual appeal
+
+**Delete All Feature:**
+- Bulk deletion with single API call for efficiency
+- Confirmation dialog prevents accidental data loss
+- Loading states provide user feedback during operation
+- Danger styling (red) indicates destructive action
+- RESTful implementation (DELETE /api/tasks)
+
 **No Authentication:**
 - MVP scope focuses on core CRUD functionality
 - Authentication can be added later without major refactoring
@@ -1129,6 +1204,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - **No Pagination**: All tasks loaded at once (could be issue with many tasks)
 - **No Task Deadlines**: No due date tracking
 - **Local Development Only**: Not configured for production deployment
+- **No Undo for Delete All**: Bulk delete is irreversible
 
 ### Future Enhancements
 
@@ -1147,6 +1223,7 @@ Potential improvements for future versions:
    - Task search and filtering
    - Pagination for large task lists
    - Sorting options (priority, due date, etc.)
+   - Undo/redo for delete all operation
 
 3. **Collaboration**:
    - Task sharing between users
@@ -1301,3 +1378,5 @@ This is a demonstration project for educational purposes. See [LICENSE](LICENSE)
 **Built with ❤️ using Clean Architecture and Modern Development Practices**
 
 **Tested with  Property-Based Testing (Hypothesis & fast-check)**
+
+**Branded with  SwiftPay Green Theme**
