@@ -174,3 +174,29 @@ def delete_task(
     if not success:
         raise HTTPException(status_code=404, detail="Task not found")
     return None
+
+
+@router.delete("/tasks", status_code=204)
+def delete_all_tasks(
+    service: TaskService = Depends(get_task_service)
+) -> None:
+    """
+    Delete all tasks.
+
+    Args:
+        service: Injected TaskService instance
+
+    Returns:
+        No content (204 status)
+
+    Raises:
+        HTTPException 500: If deletion fails
+
+    Example:
+        Response: No content with 204 status code
+    """
+    try:
+        service.delete_all_tasks()
+        return None
+    except Exception:
+        raise HTTPException(status_code=500, detail="Failed to delete tasks")
