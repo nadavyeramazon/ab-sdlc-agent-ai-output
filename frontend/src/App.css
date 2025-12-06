@@ -15,7 +15,7 @@ body {
 
 .app {
   min-height: 100vh;
-  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -441,15 +441,15 @@ h1 {
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
-  background-color: #14b8a6;
+  background-color: #4299e1;
   color: white;
   white-space: nowrap;
 }
 
 .btn-edit:hover:not(:disabled) {
-  background-color: #0d9488;
+  background-color: #3182ce;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.4);
+  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4);
 }
 
 .btn-edit:active:not(:disabled) {
@@ -556,41 +556,38 @@ h1 {
   }
 }
 
-/* Delete All Button Styles */
-.delete-all-container {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #e2e8f0;
+/* Delete All Section */
+.delete-all-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e2e8f0;
 }
 
-.btn-delete-all {
-  padding: 0.75rem 1.5rem;
-  font-size: 0.9rem;
+.btn-danger {
+  padding: 0.875rem 1.75rem;
+  font-size: 0.95rem;
   font-weight: 600;
   border: 2px solid #fc8181;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
-  background-color: transparent;
+  background-color: white;
   color: #c53030;
-  align-self: flex-start;
 }
 
-.btn-delete-all:hover:not(:disabled) {
+.btn-danger:hover:not(:disabled) {
   background-color: #fc8181;
   color: white;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(252, 129, 129, 0.4);
 }
 
-.btn-delete-all:active:not(:disabled) {
+.btn-danger:active:not(:disabled) {
   transform: translateY(0);
 }
 
-.btn-delete-all:disabled {
+.btn-danger:disabled {
+  background-color: #f7fafc;
   border-color: #cbd5e0;
   color: #a0aec0;
   cursor: not-allowed;
@@ -599,12 +596,12 @@ h1 {
 }
 
 @media (max-width: 768px) {
-  .delete-all-container {
-    align-items: stretch;
+  .delete-all-section {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
   }
 
-  .btn-delete-all {
+  .btn-danger {
     width: 100%;
-    align-self: stretch;
   }
 }
