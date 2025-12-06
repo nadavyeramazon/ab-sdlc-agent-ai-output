@@ -170,7 +170,10 @@ class TestDeleteAllTasksEndpoint:
         """Test DELETE /api/tasks with multiple tasks"""
         # Create multiple tasks
         for i in range(5):
-            client.post("/api/tasks", json={"title": f"Task {i}", "description": f"Desc {i}"})
+            client.post(
+                "/api/tasks",
+                json={"title": f"Task {i}", "description": f"Desc {i}"}
+            )
 
         # Verify tasks exist
         get_response = client.get("/api/tasks")
@@ -188,8 +191,14 @@ class TestDeleteAllTasksEndpoint:
     def test_delete_all_tasks_idempotent(self, client: TestClient) -> None:
         """Test DELETE /api/tasks is idempotent (can be called multiple times)"""
         # Create tasks
-        client.post("/api/tasks", json={"title": "Task 1", "description": "Desc 1"})
-        client.post("/api/tasks", json={"title": "Task 2", "description": "Desc 2"})
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 1", "description": "Desc 1"}
+        )
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 2", "description": "Desc 2"}
+        )
 
         # First delete
         response1 = client.delete("/api/tasks")
@@ -222,8 +231,14 @@ class TestDeleteAllTasksEndpoint:
     def test_delete_all_then_create_new_task(self, client: TestClient) -> None:
         """Test that new tasks can be created after delete all"""
         # Create initial tasks
-        client.post("/api/tasks", json={"title": "Task 1", "description": "Desc 1"})
-        client.post("/api/tasks", json={"title": "Task 2", "description": "Desc 2"})
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 1", "description": "Desc 1"}
+        )
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 2", "description": "Desc 2"}
+        )
 
         # Delete all
         client.delete("/api/tasks")
@@ -246,11 +261,17 @@ class TestDeleteAllTasksEndpoint:
     ) -> None:
         """Test DELETE /api/tasks (all) does not conflict with DELETE /api/tasks/{id}"""
         # Create tasks
-        response1 = client.post("/api/tasks", json={"title": "Task 1", "description": "Desc 1"})
+        response1 = client.post(
+            "/api/tasks",
+            json={"title": "Task 1", "description": "Desc 1"}
+        )
         task1_id = response1.json()["id"]
 
-        response2 = client.post("/api/tasks", json={"title": "Task 2", "description": "Desc 2"})
-        task2_id = response2.json()["id"]
+        # Create second task (we don't need to store its ID)
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 2", "description": "Desc 2"}
+        )
 
         # Delete specific task by ID
         delete_by_id = client.delete(f"/api/tasks/{task1_id}")
@@ -295,7 +316,9 @@ class TestDeleteAllRepository:
         """Test that delete_all removes all tasks"""
         # Create multiple tasks
         for i in range(10):
-            test_repo.create(TaskCreate(title=f"Task {i}", description=f"Desc {i}"))
+            test_repo.create(
+                TaskCreate(title=f"Task {i}", description=f"Desc {i}")
+            )
 
         # Verify tasks exist
         assert len(test_repo.get_all()) == 10
