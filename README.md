@@ -2,15 +2,17 @@
 
 > A production-ready task management application with comprehensive linting, testing, and security configurations.
 
-A full-stack task management application with a React frontend and Python FastAPI backend, orchestrated with Docker Compose for local development. Create, view, update, and delete tasks with persistent storage.
+A full-stack task management application with a React frontend and Python FastAPI backend, orchestrated with Docker Compose for local development. Create, view, update, and delete tasks with persistent MySQL storage.
 
 ## 🎯 Overview
 
 This project is a complete CRUD application for managing tasks with:
-- **Frontend**: React 18 + Vite with responsive UI
-- **Backend**: Python FastAPI with RESTful API
-- **Database**: MySQL 8.0 for persistent data storage
+- **Frontend**: React 18 + Vite with responsive UI and custom hooks
+- **Backend**: Python FastAPI with clean architecture (repository pattern, dependency injection)
+- **Database**: MySQL 8.0 for persistent data storage with connection pooling
 - **Testing**: Comprehensive test suite with property-based testing (Hypothesis & fast-check)
+- **Code Quality**: Pre-commit hooks with Black, isort, flake8, Bandit, Prettier, ESLint
+- **CI/CD**: GitHub Actions pipeline with sequential quality gates
 - **Orchestration**: Docker Compose for local development
 - **Hot Reload**: Live updates during development for both frontend and backend
 
@@ -18,36 +20,147 @@ This project is a complete CRUD application for managing tasks with:
 
 ```
 project-root/
+├── .github/
+│   └── workflows/
+│       └── ci.yml                # CI/CD pipeline with sequential stages
+├── backend/                       # Python FastAPI backend
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py               # Application factory with FastAPI app
+│   │   ├── config.py             # Centralized configuration with Pydantic
+│   │   ├── dependencies.py       # Dependency injection providers
+│   │   ├── models/
+│   │   │   └── task.py           # Pydantic models (Task, TaskCreate, TaskUpdate)
+│   │   ├── repositories/
+│   │   │   └── task_repository.py # MySQL data access layer
+│   │   ├── routes/
+│   │   │   ├── health.py         # Health check endpoint
+│   │   │   └── tasks.py          # Task CRUD endpoints
+│   │   └── services/
+│   │       └── task_service.py   # Business logic layer
+│   ├── tests/
+│   │   ├── test_main.py          # API endpoint tests with Hypothesis
+│   │   └── test_task_repository.py # Repository tests with Hypothesis
+│   ├── data/
+│   │   └── .gitkeep              # Placeholder for data directory
+│   ├── Dockerfile                # Backend container image
+│   ├── pyproject.toml            # Python project configuration
+│   ├── requirements.txt          # Production dependencies
+│   ├── requirements-dev.txt      # Development dependencies
+│   ├── .env.example              # Environment variable template
+│   ├── .flake8                   # Flake8 linting configuration
+│   └── pytest.ini                # Pytest configuration (optional)
 ├── frontend/                      # React + Vite frontend
 │   ├── src/
-│   │   ├── App.jsx               # Main task manager component
-│   │   ├── App.test.jsx          # Comprehensive test suite with property tests
-│   │   ├── App.css               # Task manager styling
-│   │   ├── main.jsx              # React entry point
-│   │   └── test/
-│   │       └── setup.js          # Test configuration
+│   │   ├── __tests__/
+│   │   │   └── App.test.jsx      # React component tests with fast-check
+│   │   ├── assets/
+│   │   │   └── logo.png          # Application logo
+│   │   ├── components/
+│   │   │   ├── TaskForm.jsx      # Task creation/edit form component
+│   │   │   ├── TaskItem.jsx      # Individual task display component
+│   │   │   └── TaskList.jsx      # Task list container component
+│   │   ├── hooks/
+│   │   │   ├── useTasks.js       # Custom hook for task management
+│   │   │   └── useTasks.test.js  # Hook tests
+│   │   ├── services/
+│   │   │   ├── api.js            # API client with fetch wrapper
+│   │   │   └── api.test.js       # API service tests
+│   │   ├── test/
+│   │   │   └── setup.js          # Test environment setup
+│   │   ├── utils/
+│   │   │   └── constants.js      # Shared constants
+│   │   ├── App.jsx               # Main application component
+│   │   ├── App.css               # Application styles
+│   │   └── main.jsx              # React entry point
 │   ├── index.html                # HTML template
 │   ├── package.json              # Frontend dependencies (includes fast-check)
 │   ├── vite.config.js            # Vite configuration with test setup
 │   ├── .env.example              # Environment variable template
+│   ├── .eslintrc.json            # ESLint configuration
 │   ├── TEST_GUIDE.md             # Comprehensive testing documentation
-│   └── Dockerfile                # Frontend Docker image
-├── backend/                       # Python FastAPI backend
-│   ├── main.py                   # FastAPI application with task endpoints
-│   ├── task_repository.py        # Data persistence layer (MySQL)
-│   ├── test_main.py              # API endpoint tests with property tests
-│   ├── test_task_repository.py   # Repository tests with property tests
-│   ├── requirements.txt          # Backend dependencies (includes mysql-connector-python)
-│   ├── pytest.ini                # Pytest configuration
-│   ├── README_TESTS.md           # Backend testing documentation
-│   ├── .env.example              # Environment variable template
-│   └── Dockerfile                # Backend Docker image
-├── .github/
-│   └── workflows/
-│       └── ci.yml                # CI/CD pipeline
+│   └── Dockerfile                # Frontend container image
 ├── .gitignore                    # Git ignore rules
+├── .pre-commit-config.yaml       # Pre-commit hooks configuration
+├── docker-compose.yml            # Multi-service orchestration
+├── LICENSE                       # License file
 └── README.md                     # This file
 ```
+
+## 🏗️ Architecture
+
+### Backend Architecture
+
+The backend follows a clean, layered architecture with clear separation of concerns:
+
+```
+Request → Routes → Services → Repositories → Database
+          ↓         ↓           ↓
+       FastAPI   Business    Data Access
+                  Logic       Layer
+```
+
+**Layers:**
+
+1. **Routes Layer** (`app/routes/`):
+   - HTTP endpoints and request/response handling
+   - Request validation via Pydantic models
+   - HTTP status code management
+   - Error handling and exception mapping
+
+2. **Services Layer** (`app/services/`):
+   - Business logic and orchestration
+   - Coordinates between routes and repositories
+   - Transaction boundaries (if needed)
+   - Domain rules enforcement
+
+3. **Repository Layer** (`app/repositories/`):
+   - Database access abstraction
+   - CRUD operations
+   - Query construction
+   - Connection management with context managers
+
+4. **Models Layer** (`app/models/`):
+   - Pydantic models for validation
+   - Data transfer objects (DTOs)
+   - Request/response schemas
+
+5. **Configuration** (`app/config.py`):
+   - Centralized settings management
+   - Environment variable loading
+   - Type-safe configuration with Pydantic
+
+6. **Dependency Injection** (`app/dependencies.py`):
+   - FastAPI Depends() providers
+   - Service and repository instantiation
+   - Enables easy testing and mocking
+
+**Benefits:**
+- ✅ Easy to test each layer independently
+- ✅ Clear separation of concerns
+- ✅ Easier to swap implementations (e.g., switch from MySQL to PostgreSQL)
+- ✅ Follows SOLID principles
+- ✅ Scalable architecture for growing applications
+
+### Frontend Architecture
+
+The frontend uses a component-based architecture with custom hooks:
+
+```
+App.jsx
+  ├── useTasks hook (state management)
+  │   └── api.js (HTTP client)
+  ├── TaskForm component (create/edit)
+  ├── TaskList component (list container)
+  │   └── TaskItem component (individual task)
+  └── CSS styles
+```
+
+**Key Patterns:**
+- **Custom Hooks**: `useTasks` encapsulates all task-related state and API calls
+- **Component Composition**: Small, focused components with single responsibilities
+- **Props Down, Events Up**: Data flows down via props, events bubble up
+- **Separation of Concerns**: API logic separated from UI components
 
 ## 🚀 Quick Start
 
@@ -55,14 +168,14 @@ project-root/
 - Docker and Docker Compose installed
 - Git installed
 - Node.js 18+ (for local development without Docker)
+- Python 3.11+ (for local development without Docker)
 
 ### Run with Docker Compose (Recommended)
 
-1. **Clone the repository and checkout the feature branch**:
+1. **Clone the repository**:
    ```bash
    git clone https://github.com/nadavyeramazon/ab-sdlc-agent-ai-output.git
    cd ab-sdlc-agent-ai-output
-   git checkout feature/JIRA-777/fullstack-app
    ```
 
 2. **Start the application**:
@@ -87,19 +200,42 @@ project-root/
 #### Backend Setup
 ```bash
 cd backend
+
+# Install dependencies
 pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+pip install -r requirements-dev.txt
+
+# Configure environment (copy and edit .env)
+cp .env.example .env
+
+# Ensure MySQL is running and configured
+# Update DB_HOST, DB_PORT, etc. in .env if needed
+
+# Run the application
+uvicorn app.main:app --reload --port 8000
 ```
 
 #### Frontend Setup
 ```bash
 cd frontend
+
+# Install dependencies
 npm install
+
+# Configure environment (copy and edit .env)
+cp .env.example .env
+
+# Run the application
 npm run dev
 ```
 
 #### Run Tests
 ```bash
+# Backend tests
+cd backend
+pytest -v --cov=app --cov-report=term-missing
+
+# Frontend tests
 cd frontend
 npm test
 ```
@@ -112,7 +248,7 @@ npm test
 - ✅ **Edit Tasks**: Update task title and description
 - ✅ **Delete Tasks**: Remove tasks from the list
 - ✅ **Toggle Completion**: Mark tasks as complete or incomplete
-- ✅ **Data Persistence**: Tasks persist across application restarts
+- ✅ **Data Persistence**: Tasks persist in MySQL database across restarts
 - ✅ **Input Validation**: Client and server-side validation for data integrity
 - ✅ **Error Handling**: User-friendly error messages for all operations
 
@@ -127,17 +263,34 @@ npm test
 - ✅ Hot Module Replacement (HMR) for development
 - ✅ Environment-based API URL configuration
 - ✅ Comprehensive test coverage with property-based testing
+- ✅ Custom hooks for state management (`useTasks`)
+- ✅ Reusable component architecture
 
 ### Backend Features
 - ✅ RESTful API with FastAPI
 - ✅ Full CRUD operations for tasks
 - ✅ Pydantic models for request/response validation
-- ✅ JSON file-based persistence with in-memory caching
-- ✅ Automatic data directory and file creation
+- ✅ MySQL database persistence with connection pooling
+- ✅ Repository pattern for data access abstraction
+- ✅ Dependency injection for testability
+- ✅ Centralized configuration management
 - ✅ Proper HTTP status codes (200, 201, 204, 404, 422)
 - ✅ CORS enabled for frontend communication
 - ✅ Auto-reload during development
 - ✅ Comprehensive test coverage with property-based testing
+- ✅ Clean architecture with layered design
+
+### Code Quality Features
+- ✅ **Pre-commit Hooks**: Automatic code formatting and linting before commits
+  - Black (Python code formatting)
+  - isort (Python import sorting)
+  - flake8 (Python linting)
+  - Bandit (Python security checks)
+  - Prettier (JavaScript/CSS formatting)
+  - ESLint (JavaScript linting)
+- ✅ **CI/CD Pipeline**: Sequential quality gates in GitHub Actions
+- ✅ **Property-Based Testing**: Hypothesis (Python) and fast-check (JavaScript)
+- ✅ **Security Scanning**: Bandit for Python security vulnerabilities
 
 ## 📡 API Endpoints
 
@@ -153,8 +306,8 @@ Retrieve all tasks ordered by creation date (newest first).
       "title": "Complete project documentation",
       "description": "Update README with API docs and examples",
       "completed": false,
-      "created_at": "2024-01-15T10:30:00.000Z",
-      "updated_at": "2024-01-15T10:30:00.000Z"
+      "created_at": "2024-01-15T10:30:00.000000Z",
+      "updated_at": "2024-01-15T10:30:00.000000Z"
     }
   ]
 }
@@ -178,8 +331,8 @@ Create a new task.
   "title": "Complete project documentation",
   "description": "Update README with API docs and examples",
   "completed": false,
-  "created_at": "2024-01-15T10:30:00.000Z",
-  "updated_at": "2024-01-15T10:30:00.000Z"
+  "created_at": "2024-01-15T10:30:00.000000Z",
+  "updated_at": "2024-01-15T10:30:00.000000Z"
 }
 ```
 
@@ -206,8 +359,8 @@ Retrieve a specific task by ID.
   "title": "Complete project documentation",
   "description": "Update README with API docs and examples",
   "completed": false,
-  "created_at": "2024-01-15T10:30:00.000Z",
-  "updated_at": "2024-01-15T10:30:00.000Z"
+  "created_at": "2024-01-15T10:30:00.000000Z",
+  "updated_at": "2024-01-15T10:30:00.000000Z"
 }
 ```
 
@@ -237,8 +390,8 @@ Update an existing task.
   "title": "Updated title",
   "description": "Updated description",
   "completed": true,
-  "created_at": "2024-01-15T10:30:00.000Z",
-  "updated_at": "2024-01-15T11:45:00.000Z"
+  "created_at": "2024-01-15T10:30:00.000000Z",
+  "updated_at": "2024-01-15T11:45:00.000000Z"
 }
 ```
 
@@ -293,12 +446,26 @@ The backend uses environment variables for database configuration. When running 
 | `DB_PASSWORD` | MySQL password | `taskpassword` |
 | `DB_NAME` | MySQL database | `taskmanager` |
 | `TEST_DB_NAME` | Test database name | `taskmanager_test` |
+| `ENV` | Application environment | `development` |
+| `CORS_ORIGINS` | Allowed CORS origins (comma-separated) | `http://localhost:3000` |
 
 For local development without Docker, create a `.env` file in the `backend/` directory:
 
 ```bash
 cd backend
 cp .env.example .env
+```
+
+**Example `.env` file:**
+```
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=taskuser
+DB_PASSWORD=taskpassword
+DB_NAME=taskmanager
+TEST_DB_NAME=taskmanager_test
+ENV=development
+CORS_ORIGINS=http://localhost:3000
 ```
 
 ### Frontend Environment Variables
@@ -356,11 +523,12 @@ pytest
 pytest -v
 
 # Run specific test file
-pytest test_main.py
-pytest test_task_repository.py
+pytest tests/test_main.py
+pytest tests/test_task_repository.py
 
 # Run with coverage
-pytest --cov=. --cov-report=html
+pytest --cov=app --cov-report=html
+pytest --cov=app --cov-report=term-missing
 ```
 
 **Frontend Tests:**
@@ -377,36 +545,34 @@ npm run test:watch
 npm run test:coverage
 ```
 
-### Backend Test Coverage
+### Test Coverage
 
-The backend test suite includes:
+**Backend Test Suite:**
 
-**Unit Tests:**
+*Unit Tests:*
 - ✅ All API endpoints (GET, POST, PUT, DELETE)
 - ✅ Request validation (empty titles, length limits)
 - ✅ HTTP status codes (200, 201, 204, 404, 422)
 - ✅ Task repository CRUD operations
-- ✅ File persistence and data loading
-- ✅ Error handling for missing files and invalid data
+- ✅ MySQL connection and persistence
+- ✅ Error handling for database errors
+- ✅ Service layer business logic
+- ✅ Dependency injection
 
-**Property-Based Tests:**
-- ✅ **Property 1**: Task creation persistence - any valid task should be retrievable after creation
-- ✅ **Property 2**: Empty title rejection - any whitespace-only title should be rejected
-- ✅ **Property 3**: Task retrieval completeness - all stored tasks should be returned
-- ✅ **Property 4**: Completion toggle idempotence - toggling twice returns to original state
-- ✅ **Property 5**: Delete operation removes task - deleted tasks should not be retrievable
-- ✅ **Property 6**: Update preserves identity - updates should not change ID or creation time
-- ✅ **Property 7**: Invalid update rejection - empty title updates should be rejected
-- ✅ **Property 8**: RESTful status codes - operations return correct HTTP status codes
-- ✅ **Property 9**: Persistence across restarts - tasks survive backend restarts
+*Property-Based Tests:*
+- ✅ Task creation persistence - any valid task should be retrievable after creation
+- ✅ Empty title rejection - any whitespace-only title should be rejected
+- ✅ Task retrieval completeness - all stored tasks should be returned
+- ✅ Completion toggle idempotence - toggling twice returns to original state
+- ✅ Delete operation removes task - deleted tasks should not be retrievable
+- ✅ Update preserves identity - updates should not change ID or creation time
+- ✅ Invalid update rejection - empty title updates should be rejected
+- ✅ RESTful status codes - operations return correct HTTP status codes
+- ✅ Persistence across restarts - tasks survive backend restarts
 
-For detailed backend testing documentation, see [backend/README_TESTS.md](backend/README_TESTS.md).
+**Frontend Test Suite:**
 
-### Frontend Test Coverage
-
-The frontend test suite includes:
-
-**Integration Tests:**
+*Integration Tests:*
 - ✅ Task creation flow (form → API → list update)
 - ✅ Task editing flow (edit button → form → update → display)
 - ✅ Task deletion flow (delete button → removal)
@@ -414,77 +580,74 @@ The frontend test suite includes:
 - ✅ Error handling for failed API calls
 - ✅ Loading states for all operations
 - ✅ Empty state display
+- ✅ Component rendering and props
+- ✅ Custom hooks (useTasks)
+- ✅ API service layer
 
-**Property-Based Tests:**
-- ✅ **Property 10**: Task ordering consistency - tasks always ordered by creation date (newest first)
+*Property-Based Tests:*
+- ✅ Task ordering consistency - tasks always ordered by creation date (newest first)
 
-For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](frontend/TEST_GUIDE.md).
+For detailed testing documentation:
+- Backend: See inline test documentation in `backend/tests/`
+- Frontend: See `frontend/TEST_GUIDE.md`
 
-### Manual Testing Checklist
+## 🛠️ Pre-commit Hooks
 
-**Task Creation:**
-- [ ] Can create task with title only
-- [ ] Can create task with title and description
-- [ ] Cannot create task with empty title
-- [ ] Form clears after successful creation
-- [ ] New task appears at top of list
+This project uses pre-commit hooks to automatically enforce code quality standards before commits.
 
-**Task Display:**
-- [ ] All tasks display with title, description, status
-- [ ] Completed tasks show strikethrough styling
-- [ ] Tasks ordered by creation date (newest first)
-- [ ] Empty state message shows when no tasks exist
+### Setup Pre-commit Hooks
 
-**Task Editing:**
-- [ ] Edit button shows edit form with current data
-- [ ] Can update title and description
-- [ ] Cannot save with empty title
-- [ ] Cancel button discards changes
-- [ ] Updated task displays immediately
+```bash
+# Install pre-commit (if not already installed)
+pip install pre-commit
 
-**Task Completion:**
-- [ ] Can toggle task completion status
-- [ ] Visual styling updates immediately
-- [ ] Status persists after page refresh
+# Install the git hooks
+pre-commit install
+```
 
-**Task Deletion:**
-- [ ] Delete button removes task from list
-- [ ] Task removed immediately from UI
-- [ ] Deletion persists after page refresh
+### Configured Hooks
 
-**Error Handling:**
-- [ ] Validation errors display clearly
-- [ ] Network errors show user-friendly messages
-- [ ] Loading indicators show during operations
+**Python (Backend):**
+- **Black**: Automatic code formatting (PEP 8 compliant)
+- **isort**: Import statement sorting and organization
+- **flake8**: Linting for style and potential errors
+- **Bandit**: Security vulnerability scanning
 
-**Data Persistence:**
-- [ ] Tasks persist after browser refresh
-- [ ] Tasks persist after backend restart
-- [ ] Tasks persist after full Docker restart
+**JavaScript (Frontend):**
+- **Prettier**: Automatic code formatting
+- **ESLint**: Linting for React and JavaScript code
 
-**Integration:**
-- [ ] Services start with `docker compose up` within 10 seconds
-- [ ] No CORS errors in browser console
-- [ ] Hot reload works for both frontend and backend
-- [ ] API documentation accessible at /docs
+**General:**
+- Trailing whitespace removal
+- End-of-file fixer
+- YAML/JSON validation
+- Large file detection
+- Merge conflict detection
+- Private key detection
 
-### CI/CD Pipeline
+### Manual Hook Execution
 
-The project includes a comprehensive GitHub Actions workflow that implements a sequential, fail-fast approach to quality assurance. The pipeline is designed to catch simple issues early before investing time in more expensive operations.
+```bash
+# Run hooks on all files
+pre-commit run --all-files
 
-**Pipeline Triggers:**
+# Run specific hook
+pre-commit run black --all-files
+pre-commit run eslint --all-files
+
+# Update hook versions
+pre-commit autoupdate
+```
+
+## 🔄 CI/CD Pipeline
+
+The project includes a comprehensive GitHub Actions workflow that implements a sequential, fail-fast approach to quality assurance.
+
+### Pipeline Triggers
 - All pull requests to main/master branches
 - Direct pushes to main/master branches
 
-**Key Features:**
-- ✅ Sequential execution with explicit job dependencies
-- ✅ Fail-fast approach - stops at first failure
-- ✅ Parallel execution within stages for efficiency
-- ✅ Comprehensive testing including property-based tests (100+ iterations)
-- ✅ Full system integration validation with Docker Compose
-- ✅ Intelligent caching for faster subsequent runs
-
-#### Pipeline Stages
+### Pipeline Stages
 
 The CI pipeline executes in three distinct stages, each acting as a quality gate:
 
@@ -493,7 +656,7 @@ The CI pipeline executes in three distinct stages, each acting as a quality gate
 - **Frontend Linting**: Runs ESLint on JavaScript/React code
 - **Purpose**: Catch code style and syntax issues immediately
 - **Duration**: ~1-2 minutes
-- **Fail-Fast**: If linting fails, tests are skipped
+- **Fail-Fast**: If linting fails, subsequent stages are skipped
 
 **Stage 2: Testing (Parallel Execution, After Linting)**
 - **Backend Tests**: Runs pytest with coverage reporting
@@ -502,12 +665,12 @@ The CI pipeline executes in three distinct stages, each acting as a quality gate
 - **Frontend Tests**: Runs Vitest with React Testing Library
   - Integration tests for UI components
   - Property-based tests using fast-check (100+ iterations)
+  - Production build verification
 - **Purpose**: Verify functionality and correctness
 - **Duration**: ~2-3 minutes
 - **Fail-Fast**: If tests fail, Docker validation is skipped
 
-**Stage 3: Docker Validation (Sequential Execution, After Tests)**
-- **Docker Build Verification**: Builds backend and frontend images
+**Stage 3: Docker Integration (Sequential Execution, After Tests)**
 - **Docker Compose Validation**: 
   - Validates docker-compose.yml syntax
   - Starts all services (MySQL, backend, frontend)
@@ -518,7 +681,7 @@ The CI pipeline executes in three distinct stages, each acting as a quality gate
 - **Duration**: ~3-5 minutes
 - **Fail-Fast**: Stops immediately on any failure
 
-#### Dependency Graph
+### Dependency Graph
 
 ```
 ┌─────────────────┐     ┌─────────────────┐
@@ -532,13 +695,9 @@ The CI pipeline executes in three distinct stages, each acting as a quality gate
          │                       │
          └───────────┬───────────┘
                      │
-         ┌───────────▼───────────┐
-         │  Docker Build Verify  │           ← Stage 3: Docker (Sequential)
-         └───────────┬───────────┘
-                     │
                      ▼
          ┌───────────────────────┐
-         │Docker Compose Validate│
+         │Docker Compose Validate│           ← Stage 3: Integration
          └───────────┬───────────┘
                      │
                      ▼
@@ -547,192 +706,99 @@ The CI pipeline executes in three distinct stages, each acting as a quality gate
          └───────────────────────┘
 ```
 
-#### Execution Order and Fail-Fast Behavior
+### Key Features
+- ✅ Sequential execution with explicit job dependencies
+- ✅ Fail-fast approach - stops at first failure
+- ✅ Parallel execution within stages for efficiency
+- ✅ Comprehensive testing including property-based tests (100+ iterations)
+- ✅ Full system integration validation with Docker Compose
+- ✅ Intelligent caching for faster subsequent runs (pip, npm)
 
-The pipeline enforces strict execution order using GitHub Actions' `needs` keyword:
-
-1. **Linting runs first** (parallel):
-   - `backend-linting` (no dependencies)
-   - `frontend-linting` (no dependencies)
-   - If either fails → entire pipeline stops
-
-2. **Tests run after linting** (parallel):
-   - `backend-tests` needs `backend-linting`
-   - `frontend-tests` needs `frontend-linting`
-   - If either fails → Docker validation is skipped
-
-3. **Docker validation runs after tests** (sequential):
-   - `docker-build` (runs in parallel with tests for efficiency)
-   - `docker-compose-validation` needs `[backend-tests, frontend-tests, docker-build]`
-   - If any dependency fails → validation is skipped
-
-4. **Summary job confirms success**:
-   - `ci-success` needs all previous jobs
-   - Only runs if all checks pass
-
-**Fail-Fast Configuration:**
-- All critical steps use `continue-on-error: false` (or omit it, as false is default)
-- Failed jobs immediately stop the pipeline
-- Dependent jobs are automatically skipped
-- Clear status indicators show which stage failed
-
-#### Caching Strategy
-
-The pipeline uses intelligent caching to speed up subsequent runs:
-
-**Backend Cache:**
-```yaml
-key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt', 'backend/requirements-dev.txt') }}
-```
-- Caches pip packages based on requirements file hashes
-- Cache invalidates automatically when dependencies change
-- Typical speedup: 30-60 seconds per run
-
-**Frontend Cache:**
-```yaml
-key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
-```
-- Caches npm packages based on package.json hash
-- Cache invalidates automatically when dependencies change
-- Typical speedup: 45-90 seconds per run
-
-#### Testing the Pipeline Locally
-
-You can test the CI pipeline locally using [act](https://github.com/nektos/act), a tool that runs GitHub Actions locally:
-
-**Install act:**
-```bash
-# macOS
-brew install act
-
-# Linux
-curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
-
-# Windows (with Chocolatey)
-choco install act-cli
-```
-
-**Run the entire pipeline:**
-```bash
-# Run all jobs
-act pull_request
-
-# Run with verbose output
-act pull_request -v
-```
-
-**Run specific jobs:**
-```bash
-# Run only linting jobs
-act pull_request -j backend-linting
-act pull_request -j frontend-linting
-
-# Run only test jobs
-act pull_request -j backend-tests
-act pull_request -j frontend-tests
-
-# Run Docker validation
-act pull_request -j docker-compose-validation
-```
-
-**Simulate different scenarios:**
-```bash
-# Test with a specific event
-act push
-
-# Test with environment variables
-act pull_request --env NODE_VERSION=18 --env PYTHON_VERSION=3.11
-
-# Use a specific Docker image for the runner
-act pull_request -P ubuntu-latest=catthehacker/ubuntu:act-latest
-```
-
-**Limitations of local testing:**
-- Some GitHub-specific features may not work identically
-- Caching behavior may differ from GitHub's infrastructure
-- Secrets and environment variables need to be provided manually
-- Docker-in-Docker scenarios may require additional configuration
-
-**Alternative: Manual validation**
-```bash
-# Validate workflow syntax
-docker run --rm -v $(pwd):/repo ghcr.io/rhysd/actionlint:latest -color
-
-# Or install actionlint locally
-brew install actionlint  # macOS
-actionlint .github/workflows/ci.yml
-```
-
-#### Monitoring Pipeline Execution
-
-**In GitHub UI:**
-1. Navigate to the "Actions" tab in your repository
-2. Select a workflow run to see the execution graph
-3. Click on individual jobs to see detailed logs
-4. Failed jobs show clear error messages and logs
-
-**Status Checks:**
-- All jobs must pass before merging pull requests
-- Branch protection rules enforce CI success
-- Clear visual indicators show pipeline status
-
-**Debugging Failed Runs:**
-1. Check which stage failed (linting, tests, or Docker)
-2. Review the job logs for specific error messages
-3. For Docker failures, check the "Show Docker Compose logs" step
-4. Reproduce locally using the same commands from the workflow
-5. Use `act` to test fixes before pushing
-
-#### Pipeline Performance
-
-**Typical Execution Times:**
+### Typical Execution Times
 - **Linting Stage**: 1-2 minutes (parallel)
 - **Testing Stage**: 2-3 minutes (parallel, after linting)
 - **Docker Stage**: 3-5 minutes (sequential, after tests)
 - **Total Duration**: 6-10 minutes (with caching)
 - **First Run**: 10-15 minutes (without cache)
 
-**Optimization Features:**
-- Parallel execution within stages
-- Dependency caching (pip, npm)
-- Early termination on failures
-- Efficient Docker layer caching
-
-All property-based tests run with 100+ iterations in CI to ensure comprehensive coverage.
-
 ## 🔧 Development
 
-**Recommended Workflow:**
-1. Review requirements and design documents
-2. Implement feature following tasks.md
-3. Write tests (unit + property-based)
-4. Verify tests pass
-5. Manual testing
-6. Commit when all tests pass
+### Development Workflow
 
-### Making Changes
+1. **Setup Development Environment**:
+   ```bash
+   # Install pre-commit hooks
+   pre-commit install
+   
+   # Start services
+   docker compose up
+   ```
 
-**Frontend Changes:**
-1. Edit files in `frontend/src/`
-2. Changes are automatically reflected (HMR enabled)
-3. No restart needed
-4. Run tests: `cd frontend && npm test`
-5. Verify in browser: http://localhost:3000
+2. **Make Changes**:
+   - Edit files in `frontend/src/` or `backend/app/`
+   - Changes automatically reload (HMR enabled)
 
-**Backend Changes:**
-1. Edit files in `backend/`
-2. FastAPI auto-reloads with `--reload` flag
-3. No restart needed
-4. Run tests: `cd backend && pytest`
-5. Check API docs: http://localhost:8000/docs
+3. **Test Changes**:
+   ```bash
+   # Run backend tests
+   cd backend && pytest -v
+   
+   # Run frontend tests
+   cd frontend && npm test
+   ```
 
-**Adding New Features:**
-1. Update requirements.md with acceptance criteria
-2. Update design.md with correctness properties
-3. Update tasks.md with implementation steps
-4. Implement following the task list
-5. Write property-based tests for correctness properties
-6. Write unit tests for specific cases
+4. **Commit Changes**:
+   ```bash
+   git add .
+   git commit -m "Your message"
+   # Pre-commit hooks run automatically
+   ```
+
+5. **Push Changes**:
+   ```bash
+   git push
+   # CI/CD pipeline runs automatically
+   ```
+
+### Making Backend Changes
+
+**File Locations:**
+- Routes: `backend/app/routes/`
+- Services: `backend/app/services/`
+- Repositories: `backend/app/repositories/`
+- Models: `backend/app/models/`
+- Configuration: `backend/app/config.py`
+- Dependencies: `backend/app/dependencies.py`
+
+**Testing:**
+```bash
+cd backend
+pytest -v
+pytest --cov=app --cov-report=term-missing
+```
+
+**Access API Docs:**
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+### Making Frontend Changes
+
+**File Locations:**
+- Components: `frontend/src/components/`
+- Hooks: `frontend/src/hooks/`
+- Services: `frontend/src/services/`
+- Main App: `frontend/src/App.jsx`
+- Styles: `frontend/src/App.css`
+
+**Testing:**
+```bash
+cd frontend
+npm test
+npm run test:watch  # Watch mode
+```
+
+**Access Frontend:**
+- Development: http://localhost:3000
 
 ### Viewing Logs
 
@@ -740,11 +806,10 @@ All property-based tests run with 100+ iterations in CI to ensure comprehensive 
 # All services
 docker compose logs -f
 
-# Frontend only
+# Specific service
 docker compose logs -f frontend
-
-# Backend only
 docker compose logs -f backend
+docker compose logs -f mysql
 ```
 
 ### Rebuilding Images
@@ -756,13 +821,16 @@ docker compose build
 # Rebuild specific service
 docker compose build frontend
 docker compose build backend
+
+# Rebuild without cache
+docker compose build --no-cache
 ```
 
 ## 💾 Data Persistence
 
-### Storage Approach
+### MySQL Database
 
-The application uses MySQL 8.0 for persistent data storage:
+The application uses MySQL 8.0 for persistent data storage with the following architecture:
 
 **Database Schema:**
 - **Database**: `taskmanager`
@@ -775,11 +843,12 @@ The application uses MySQL 8.0 for persistent data storage:
   - `created_at` VARCHAR(30) NOT NULL - ISO timestamp
   - `updated_at` VARCHAR(30) NOT NULL - ISO timestamp
 
-**Architecture:**
+**Architecture Features:**
 - **Connection Pooling**: Context manager for efficient connection handling
 - **Auto-Initialization**: Database schema created automatically on startup
 - **Transaction Safety**: All writes committed immediately
 - **Error Handling**: Graceful handling of connection and query errors
+- **Repository Pattern**: Data access abstraction for easy testing and swapping
 
 **Benefits:**
 - ✅ ACID compliance for data integrity
@@ -788,6 +857,7 @@ The application uses MySQL 8.0 for persistent data storage:
 - ✅ Scalable storage
 - ✅ Production-ready database engine
 - ✅ Easy backup and restore with MySQL tools
+- ✅ Docker volume persistence across container restarts
 
 **Docker Volume:**
 MySQL data is stored in a Docker volume (`mysql-data`), ensuring:
@@ -797,7 +867,7 @@ MySQL data is stored in a Docker volume (`mysql-data`), ensuring:
 
 **Database Connection:**
 The backend connects to MySQL using:
-- Host: `mysql` (Docker service name)
+- Host: `mysql` (Docker service name) or `localhost` (local dev)
 - Port: 3306
 - Credentials configured via environment variables
 
@@ -845,199 +915,9 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 
 ## 📦 Dependencies
 
-### Frontend
-- **Production:**
-  - React 18.2.0 - UI library
-  - React-DOM 18.2.0 - React rendering
-  
-- **Development:**
-  - Vite 4.3.0 - Build tool and dev server
-  - @vitejs/plugin-react 4.0.0 - React plugin for Vite
-  - Vitest 1.0.4 - Test framework
-  - @testing-library/react 14.1.2 - React testing utilities
-  - @testing-library/user-event 14.5.1 - User interaction testing
-  - @testing-library/jest-dom 6.1.5 - DOM matchers
-  - jsdom 23.0.1 - DOM implementation for testing
-  - fast-check 3.15.0 - Property-based testing library
-
 ### Backend
 - **Production:**
   - FastAPI 0.104.1 - Web framework
   - Uvicorn[standard] 0.24.0 - ASGI server
   - Pydantic 2.5.0 - Data validation
-  - mysql-connector-python 8.2.0 - MySQL database driver
-  
-- **Development:**
-  - pytest 7.4.0 - Test framework
-  - pytest-cov 4.1.0 - Coverage reporting
-  - hypothesis 6.92.0 - Property-based testing library
-
-## 🐛 Troubleshooting
-
-### Frontend not loading
-- Ensure port 3000 is not in use: `lsof -i :3000`
-- Check frontend logs: `docker compose logs frontend`
-- Verify frontend container is running: `docker compose ps`
-- Clear browser cache and reload
-
-### Backend not responding
-- Ensure port 8000 is not in use: `lsof -i :8000`
-- Check backend logs: `docker compose logs backend`
-- Verify backend health: `curl http://localhost:8000/health`
-- Check if data directory exists: `ls -la backend/data/`
-
-### Tasks not persisting
-- Verify MySQL is running: `docker compose ps mysql`
-- Check MySQL logs: `docker compose logs mysql`
-- Verify database connection: `docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "SELECT COUNT(*) FROM tasks;"`
-- Check backend logs for database errors: `docker compose logs backend`
-- Ensure MySQL is healthy before backend starts: `docker compose config`
-
-### CORS errors
-- Verify backend CORS is configured for `http://localhost:3000`
-- Check that frontend is accessing correct API URL via VITE_API_URL
-- Ensure environment variables are loaded (restart dev server)
-
-### API returns 404 for tasks
-- Verify backend is running: `curl http://localhost:8000/health`
-- Check API endpoint: `curl http://localhost:8000/api/tasks`
-- Review backend logs: `docker compose logs backend`
-- Check MySQL connection: `docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "SELECT * FROM tasks;"`
-- Verify MySQL service is healthy: `docker compose ps`
-
-### Tests failing
-**Frontend:**
-- Clear node_modules: `rm -rf node_modules && npm install`
-- Check test setup: Ensure `src/test/setup.js` exists
-- Run with verbose: `npm test -- --reporter=verbose`
-
-**Backend:**
-- Clear pytest cache: `rm -rf .pytest_cache __pycache__`
-- Reinstall dependencies: `pip install -r requirements.txt`
-- Run with verbose: `pytest -v`
-- Check hypothesis examples: `ls -la .hypothesis/examples/`
-
-### Property-based tests failing
-- Property tests use random data and may find edge cases
-- Review the failing example in test output
-- Check if the failure reveals a bug or incorrect test assumption
-- Hypothesis stores failing examples in `.hypothesis/examples/`
-- fast-check shows counterexamples in test output
-
-### Docker Compose issues
-- Validate configuration: `docker compose config`
-- Rebuild images: `docker compose build --no-cache`
-- Remove volumes: `docker compose down -v`
-- Check disk space: `df -h`
-
-## 📝 Notes
-
-### Design Decisions
-
-**MySQL Database:**
-- Production-ready relational database
-- ACID compliance for data integrity
-- Supports concurrent access and transactions
-- Standard SQL for queries
-- Easy to scale and backup
-- Repository pattern allows swapping to other databases
-
-**No Authentication:**
-- MVP scope focuses on core CRUD functionality
-- Authentication can be added later without major refactoring
-- All tasks are currently shared (no user isolation)
-
-**Property-Based Testing:**
-- Catches edge cases that manual testing misses
-- Provides mathematical guarantees about correctness
-- Each property runs 100+ iterations with random data
-- Complements traditional unit tests
-
-**Spec-Driven Development:**
-- Requirements → Design → Tasks → Implementation
-- Correctness properties defined before implementation
-- Each property maps to specific acceptance criteria
-- Ensures implementation matches specification
-
-### Development Focus
-- Optimized for local development with comprehensive testing
-- Hot reload enabled for rapid iteration
-- Minimal external dependencies
-- Property-based testing for correctness guarantees
-- Clear separation of concerns (repository pattern)
-
-### Limitations
-- No authentication or authorization
-- No real-time updates (polling required)
-- No task sharing or collaboration features
-- Basic MySQL configuration (not optimized for high load)
-- Single MySQL instance (no replication or clustering)
-
-## 🤝 Contributing
-
-### Development Process
-
-2. **Create Feature Branch**:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-3. **Implement Changes**:
-   - Follow the spec-driven development approach
-   - Write implementation first
-   - Add property-based tests for correctness properties
-   - Add unit tests for specific cases
-
-4. **Run Tests**:
-   ```bash
-   # Backend tests
-   cd backend && pytest -v
-   
-   # Frontend tests
-   cd frontend && npm test
-   ```
-
-5. **Manual Testing**:
-   - Complete the manual testing checklist
-   - Verify data persistence
-   - Test error scenarios
-
-6. **Submit Pull Request**:
-   - Ensure all tests pass
-   - Update documentation if needed
-   - Reference related requirements/tasks
-
-**Pull Request Requirements:**
-- ✅ All automated tests must pass (unit + property-based)
-- ✅ Property-based tests run 100+ iterations
-- ✅ No new linting errors
-- ✅ Code coverage maintained or improved
-- ✅ Manual testing checklist completed
-- ✅ Documentation updated if API changes
-- ✅ Correctness properties validated
-
-## 📄 License
-
-This is a demonstration project for educational purposes.
-
-## 🔗 Resources
-
-### Documentation
-- [React Documentation](https://react.dev/)
-- [Vite Documentation](https://vitejs.dev/)
-- [Vitest Documentation](https://vitest.dev/)
-- [React Testing Library](https://testing-library.com/react)
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [Pydantic Documentation](https://docs.pydantic.dev/)
-- [Docker Compose Documentation](https://docs.docker.com/compose/)
-
-### Property-Based Testing
-- [Hypothesis Documentation](https://hypothesis.readthedocs.io/) - Python property-based testing
-- [fast-check Documentation](https://fast-check.dev/) - JavaScript property-based testing
-- [Property-Based Testing Guide](https://hypothesis.works/articles/what-is-property-based-testing/)
-
----
-
-**Built with ❤️ using spec-driven development 📋**
-
-**Tested with ✅ Property-Based Testing (Hypothesis & fast-check)**
+  - mysql-connector-python
