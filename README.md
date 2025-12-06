@@ -4,6 +4,13 @@
 
 A full-stack task management application with a React frontend and Python FastAPI backend, orchestrated with Docker Compose for local development. Create, view, update, and delete tasks with persistent MySQL storage.
 
+## 🎨 SwiftPay Theme
+
+The application features the **SwiftPay** brand identity with:
+- **Emerald Green Theme**: Modern gradient background (#10b981 to #059669)
+- **SwiftPay Logo**: Official SwiftPay branding in the header
+- **Professional UI**: Clean, modern interface with green accent colors throughout
+
 ## 🎯 Overview
 
 This project is a complete CRUD application for managing tasks with:
@@ -56,23 +63,24 @@ project-root/
 │   │   ├── __tests__/
 │   │   │   └── App.test.jsx      # React component tests with fast-check
 │   │   ├── assets/
-│   │   │   └── logo.png          # Application logo
+│   │   │   ├── logo-swiftpay.png # SwiftPay official logo
+│   │   │   └── logo.png          # Alternative logo
 │   │   ├── components/
 │   │   │   ├── TaskForm.jsx      # Task creation/edit form component
 │   │   │   ├── TaskItem.jsx      # Individual task display component
 │   │   │   └── TaskList.jsx      # Task list container component
 │   │   ├── hooks/
 │   │   │   ├── useTasks.js       # Custom hook for task management
-│   │   │   └── useTasks.test.js  # Hook tests
+│   │   │   └── useTasks.test.js  # Hook tests with deleteAllTasks
 │   │   ├── services/
-│   │   │   ├── api.js            # API client with fetch wrapper
+│   │   │   ├── api.js            # API client with deleteAllTasks method
 │   │   │   └── api.test.js       # API service tests
 │   │   ├── test/
 │   │   │   └── setup.js          # Test environment setup
 │   │   ├── utils/
 │   │   │   └── constants.js      # Shared constants
-│   │   ├── App.jsx               # Main application component
-│   │   ├── App.css               # Application styles
+│   │   ├── App.jsx               # Main app with SwiftPay branding
+│   │   ├── App.css               # SwiftPay green theme styles
 │   │   └── main.jsx              # React entry point
 │   ├── index.html                # HTML template
 │   ├── package.json              # Frontend dependencies (includes fast-check)
@@ -148,13 +156,14 @@ Request → Routes → Services → Repositories → Database
 The frontend uses a component-based architecture with custom hooks:
 
 ```
-App.jsx
-  ├── useTasks hook (state management)
-  │   └── api.js (HTTP client)
+App.jsx (SwiftPay Theme)
+  ├── useTasks hook (state management + deleteAllTasks)
+  │   └── api.js (HTTP client with deleteAllTasks)
   ├── TaskForm component (create/edit)
   ├── TaskList component (list container)
   │   └── TaskItem component (individual task)
-  └── CSS styles
+  ├── Delete All Button (with confirmation)
+  └── SwiftPay CSS styles (emerald green theme)
 ```
 
 **Key Patterns:**
@@ -248,17 +257,21 @@ npm test
 -  **View Tasks**: Display all tasks ordered by creation date (newest first)
 -  **Edit Tasks**: Update task title and description
 -  **Delete Tasks**: Remove individual tasks from the list
--  **Delete All Tasks**: Clear all tasks with a single operation
+-  **Delete All Tasks**: Clear all tasks with a single click (with confirmation dialog)
 -  **Toggle Completion**: Mark tasks as complete or incomplete
 -  **Data Persistence**: Tasks persist in MySQL database across restarts
 -  **Input Validation**: Client and server-side validation for data integrity
 -  **Error Handling**: User-friendly error messages for all operations
 
 ### Frontend Features
+-  **SwiftPay Theme**: Emerald green gradient background and accent colors
+-  **SwiftPay Branding**: Official SwiftPay logo in the header
 -  Responsive task management UI
 -  Task creation form with validation
 -  Inline task editing
 -  Visual distinction for completed tasks (strikethrough)
+-  **Delete All Button**: Prominent red outlined button (only visible when tasks exist)
+-  **Confirmation Dialog**: Native browser confirm for delete all action
 -  Loading state indicators for all operations
 -  Error handling with user-friendly messages
 -  Empty state messaging
@@ -433,11 +446,19 @@ No response body.
 - This operation is idempotent - calling it multiple times is safe
 - Returns 204 even if there are no tasks to delete
 - Cannot be undone - all tasks will be permanently deleted
+- Frontend shows confirmation dialog before calling this endpoint
 
 **Example:**
 ```bash
 curl -X DELETE http://localhost:8000/api/tasks
 ```
+
+**Frontend Implementation:**
+- **Button Visibility**: Delete All button only appears when tasks exist
+- **Confirmation Dialog**: Native `window.confirm()` dialog warns user before deletion
+- **Loading State**: Button shows "Deleting..." text during operation
+- **Disabled State**: Button is disabled while operation is in progress
+- **Error Handling**: Errors are displayed to user if deletion fails
 
 ### GET /health
 Returns the health status of the backend.
@@ -605,15 +626,19 @@ npm run test:coverage
 -  Task editing flow (edit button → form → update → display)
 -  Task deletion flow (delete button → removal)
 -  Task completion toggle
+-  **Delete all tasks flow** (button → confirmation → API call → state clear)
 -  Error handling for failed API calls
 -  Loading states for all operations
 -  Empty state display
 -  Component rendering and props
--  Custom hooks (useTasks)
--  API service layer
+-  Custom hooks (useTasks with deleteAllTasks)
+-  API service layer (including deleteAllTasks)
 
 *Property-Based Tests:*
 -  Task ordering consistency - tasks always ordered by creation date (newest first)
+-  **Delete all clears state** - deleteAllTasks removes all tasks from state
+-  **Delete all error handling** - errors are captured and exposed in error state
+-  **Delete all API consistency** - deleteAllTasks follows same error patterns as other operations
 
 For detailed testing documentation:
 - Backend: See inline test documentation in `backend/tests/`
@@ -817,6 +842,7 @@ pytest --cov=app --cov-report=term-missing
 - Services: `frontend/src/services/`
 - Main App: `frontend/src/App.jsx`
 - Styles: `frontend/src/App.css`
+- Assets: `frontend/src/assets/` (includes SwiftPay logo)
 
 **Testing:**
 ```bash
@@ -1016,6 +1042,12 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Verify MySQL connection and table exists
 - Ensure correct API prefix (/api) is used in frontend
 
+### Delete All button not visible
+- Verify tasks exist in the list (button only shows when tasks.length > 0)
+- Check browser console for JavaScript errors
+- Verify App.jsx is rendering the button component
+- Check CSS for display: none or visibility: hidden rules
+
 ### Tests failing
 **Backend:**
 - Clear pytest cache: `rm -rf .pytest_cache __pycache__`
@@ -1090,6 +1122,19 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Docker volume ensures data persistence
 - Easy to backup and restore
 
+**SwiftPay Branding:**
+- Emerald green theme (#10b981, #059669) for professional appearance
+- Official SwiftPay logo provides brand recognition
+- Color scheme applied consistently across UI elements
+- Modern gradient background creates visual appeal
+
+**Delete All Tasks Feature:**
+- Red outlined button follows danger action UI patterns
+- Only visible when tasks exist to avoid confusion
+- Native confirmation dialog prevents accidental deletion
+- Disabled state during operation prevents double-clicks
+- Clear visual feedback with loading text
+
 **No Authentication:**
 - MVP scope focuses on core CRUD functionality
 - Authentication can be added later without major refactoring
@@ -1161,6 +1206,7 @@ Potential improvements for future versions:
    - Task search and filtering
    - Pagination for large task lists
    - Sorting options (priority, due date, etc.)
+   - Undo functionality for delete all
 
 3. **Collaboration**:
    - Task sharing between users
@@ -1185,6 +1231,12 @@ Potential improvements for future versions:
    - Query optimization
    - Caching layer (Redis)
    - Connection pooling optimization
+
+7. **UI Enhancements**:
+   - Drag-and-drop task reordering
+   - Bulk selection for batch operations
+   - Custom themes beyond SwiftPay
+   - Dark mode support
 
 ## 🤝 Contributing
 
@@ -1315,3 +1367,5 @@ This is a demonstration project for educational purposes. See [LICENSE](LICENSE)
 **Built with ❤️ using Clean Architecture and Modern Development Practices**
 
 **Tested with  Property-Based Testing (Hypothesis & fast-check)**
+
+**Branded with 💚 SwiftPay Theme**
