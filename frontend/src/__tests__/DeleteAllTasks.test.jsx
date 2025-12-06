@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 
@@ -29,7 +29,11 @@ describe('Delete All Tasks Feature', () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    // Flush pending promises
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
     vi.restoreAllMocks();
   });
 
@@ -432,21 +436,17 @@ describe('Delete All Tasks Feature', () => {
       });
 
       // Click the button - this starts the async operation
-      const clickPromise = user.click(deleteAllButton);
+      await user.click(deleteAllButton);
 
-      // Wait for the click to complete (confirm dialog)
-      await clickPromise;
-
-      // Check if loading text is shown BEFORE resolving the promise
-      await waitFor(() => {
-        const button = screen.getByRole('button', { name: /deleting all/i });
-        expect(button).toBeInTheDocument();
-        expect(button).toBeDisabled();
+      // Wait for loading state to appear using findByRole (built-in waiting)
+      const loadingButton = await screen.findByRole('button', {
+        name: /deleting all/i,
       });
+      expect(loadingButton).toBeInTheDocument();
+      expect(loadingButton).toBeDisabled();
 
       // Now resolve the delete operation
       resolveDelete();
-      await deletePromise;
 
       // Wait for deletion to complete
       await waitFor(() => {
@@ -502,20 +502,16 @@ describe('Delete All Tasks Feature', () => {
       });
 
       // Click the button
-      const clickPromise = user.click(deleteAllButton);
+      await user.click(deleteAllButton);
 
-      // Wait for the click to complete
-      await clickPromise;
-
-      // Button should be disabled during operation
-      await waitFor(() => {
-        const button = screen.getByRole('button', { name: /deleting all/i });
-        expect(button).toBeDisabled();
+      // Button should be disabled during operation - use findByRole for waiting
+      const loadingButton = await screen.findByRole('button', {
+        name: /deleting all/i,
       });
+      expect(loadingButton).toBeDisabled();
 
       // Resolve the delete operation
       resolveDelete();
-      await deletePromise;
 
       // Wait for completion
       await waitFor(() => {
@@ -576,8 +572,10 @@ describe('Delete All Tasks Feature', () => {
         ).toBeInTheDocument();
       });
 
-      // Tasks should still be visible (rollback)
-      expect(screen.getByText('Task 1')).toBeInTheDocument();
+      // Wait for rollback to complete - tasks should be restored
+      await waitFor(() => {
+        expect(screen.getByText('Task 1')).toBeInTheDocument();
+      });
     });
 
     it('should auto-dismiss error message after 5 seconds', async () => {
@@ -635,7 +633,9 @@ describe('Delete All Tasks Feature', () => {
       });
 
       // Fast-forward 5 seconds using async timer advancement
-      await vi.advanceTimersByTimeAsync(5000);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5000);
+      });
 
       // Error should be gone
       await waitFor(() => {
@@ -694,8 +694,10 @@ describe('Delete All Tasks Feature', () => {
         ).toBeInTheDocument();
       });
 
-      // Verify task is still visible (rollback)
-      expect(screen.getByText('Task 1')).toBeInTheDocument();
+      // Wait for rollback to complete - verify task is still visible
+      await waitFor(() => {
+        expect(screen.getByText('Task 1')).toBeInTheDocument();
+      });
     });
   });
 
