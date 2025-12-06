@@ -10,7 +10,7 @@ This test suite covers:
 """
 
 from typing import Generator
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -362,11 +362,10 @@ class TestDeleteAllIntegration:
     def test_delete_all_with_mixed_task_states(self, client: TestClient):
         """Test delete_all removes tasks with different completion states"""
         # Create tasks with different states
-        task1_response = client.post(
+        client.post(
             "/api/tasks",
             json={"title": "Incomplete Task", "description": "Not done"}
         )
-        task1_id = task1_response.json()["id"]
 
         task2_response = client.post(
             "/api/tasks",
