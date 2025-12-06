@@ -920,4 +920,370 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
   - FastAPI 0.104.1 - Web framework
   - Uvicorn[standard] 0.24.0 - ASGI server
   - Pydantic 2.5.0 - Data validation
-  - mysql-connector-python
+  - python-multipart 0.0.6 - Form data parsing
+  - mysql-connector-python 8.2.0 - MySQL database driver
+  
+- **Development & Testing:**
+  - pytest 7.4.3 - Test framework
+  - pytest-cov 4.1.0 - Coverage reporting
+  - httpx 0.25.2 - HTTP client for testing
+  - hypothesis 6.148.2 - Property-based testing library
+
+### Frontend
+- **Production:**
+  - React 18.2.0 - UI library
+  - React-DOM 18.2.0 - React rendering
+  
+- **Development & Testing:**
+  - Vite 4.3.0 - Build tool and dev server
+  - @vitejs/plugin-react 4.0.0 - React plugin for Vite
+  - Vitest 1.0.4 - Test framework
+  - @testing-library/react 14.1.2 - React testing utilities
+  - @testing-library/user-event 14.5.1 - User interaction testing
+  - @testing-library/jest-dom 6.1.5 - DOM matchers
+  - jsdom 23.0.1 - DOM implementation for testing
+  - fast-check 4.3.0 - Property-based testing library
+  - ESLint 8.55.0 - JavaScript linting
+  - eslint-plugin-react 7.33.2 - React-specific linting rules
+  - eslint-plugin-react-hooks 4.6.0 - React Hooks linting rules
+  - eslint-plugin-vitest 0.3.10 - Vitest-specific linting rules
+
+## 🐛 Troubleshooting
+
+### Frontend not loading
+- Ensure port 3000 is not in use: `lsof -i :3000` (macOS/Linux) or `netstat -ano | findstr :3000` (Windows)
+- Check frontend logs: `docker compose logs frontend`
+- Verify frontend container is running: `docker compose ps`
+- Clear browser cache and reload
+- Check VITE_API_URL environment variable is set correctly
+- Verify Node modules are installed: `cd frontend && npm install`
+
+### Backend not responding
+- Ensure port 8000 is not in use: `lsof -i :8000` (macOS/Linux) or `netstat -ano | findstr :8000` (Windows)
+- Check backend logs: `docker compose logs backend`
+- Verify backend health: `curl http://localhost:8000/health`
+- Check MySQL connection: `docker compose logs mysql`
+- Verify environment variables are set correctly
+
+### Tasks not persisting
+- Verify MySQL is running: `docker compose ps mysql`
+- Check MySQL logs for errors: `docker compose logs mysql`
+- Verify database connection: `docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "SELECT COUNT(*) FROM tasks;"`
+- Check backend logs for database errors: `docker compose logs backend`
+- Ensure MySQL is healthy before backend starts (check healthcheck in docker-compose.yml)
+- Verify MySQL volume exists: `docker volume ls | grep mysql-data`
+
+### CORS errors
+- Verify backend CORS is configured for `http://localhost:3000`
+- Check CORS_ORIGINS environment variable in backend
+- Ensure frontend is accessing correct API URL via VITE_API_URL
+- Check browser console for specific CORS error messages
+- Restart both frontend and backend after environment changes
+
+### API returns 404 for tasks
+- Verify backend is running: `curl http://localhost:8000/health`
+- Check API endpoint: `curl http://localhost:8000/api/tasks`
+- Review backend logs: `docker compose logs backend`
+- Check routes are registered: Visit http://localhost:8000/docs
+- Verify MySQL connection and table exists
+- Ensure correct API prefix (/api) is used in frontend
+
+### Tests failing
+**Backend:**
+- Clear pytest cache: `rm -rf .pytest_cache __pycache__`
+- Reinstall dependencies: `pip install -r requirements.txt -r requirements-dev.txt`
+- Run with verbose output: `pytest -v`
+- Check hypothesis examples: `ls -la .hypothesis/examples/`
+- Ensure MySQL is running for integration tests
+
+**Frontend:**
+- Clear node_modules and reinstall: `rm -rf node_modules package-lock.json && npm install`
+- Check test setup: Ensure `src/test/setup.js` exists
+- Run with verbose output: `npm test -- --reporter=verbose`
+- Clear Vitest cache: `rm -rf node_modules/.vitest`
+
+### Property-based tests failing
+- Property tests use random data and may find edge cases
+- Review the failing example in test output
+- Check if the failure reveals a bug or incorrect test assumption
+- Hypothesis stores failing examples in `.hypothesis/examples/`
+- fast-check shows counterexamples in test output
+- Run tests multiple times to verify reproducibility
+
+### Docker Compose issues
+- Validate configuration: `docker compose config`
+- Rebuild images: `docker compose build --no-cache`
+- Remove volumes: `docker compose down -v` (⚠️ This deletes data!)
+- Check disk space: `df -h` (Linux/macOS) or `wmic logicaldisk get` (Windows)
+- Verify Docker daemon is running: `docker ps`
+- Check for port conflicts: Ensure ports 3000, 8000, 3306 are available
+
+### Pre-commit hooks failing
+- Update hooks: `pre-commit autoupdate`
+- Run manually: `pre-commit run --all-files`
+- Check specific hook: `pre-commit run <hook-name> --all-files`
+- Clear cache: `pre-commit clean`
+- Reinstall hooks: `pre-commit uninstall && pre-commit install`
+
+### MySQL connection errors
+- Verify MySQL container is running: `docker compose ps mysql`
+- Check MySQL is accepting connections: `docker compose exec mysql mysqladmin ping`
+- Verify credentials match environment variables
+- Check MySQL logs: `docker compose logs mysql`
+- Ensure healthcheck passes before backend starts
+- Wait 10-15 seconds after starting MySQL before running backend
+
+## 📝 Design Decisions & Notes
+
+### Architecture Decisions
+
+**Clean Architecture with Layered Design:**
+- Separates concerns into distinct layers (routes, services, repositories)
+- Makes code easier to test, maintain, and scale
+- Allows swapping implementations (e.g., different databases) without affecting business logic
+- Follows SOLID principles and dependency inversion
+
+**Repository Pattern:**
+- Abstracts data access logic from business logic
+- Makes it easy to swap MySQL for another database (PostgreSQL, MongoDB, etc.)
+- Simplifies testing by allowing mock repositories
+- Provides a clean interface for data operations
+
+**Dependency Injection:**
+- Uses FastAPI's Depends() for automatic dependency resolution
+- Enables easy testing with mock services/repositories
+- Promotes loose coupling between components
+- Makes code more maintainable and testable
+
+**MySQL Database:**
+- Production-ready relational database with ACID guarantees
+- Supports concurrent access and transactions
+- Standard SQL for queries makes it familiar to developers
+- Docker volume ensures data persistence
+- Easy to backup and restore
+
+**No Authentication:**
+- MVP scope focuses on core CRUD functionality
+- Authentication can be added later without major refactoring
+- All tasks are currently shared (no user isolation)
+- Simplifies development and testing
+
+**Property-Based Testing:**
+- Catches edge cases that manual testing misses
+- Provides mathematical guarantees about correctness
+- Each property runs 100+ iterations with random data
+- Complements traditional unit tests
+- Helps discover bugs early in development
+
+**Component-Based Frontend:**
+- Small, focused components with single responsibilities
+- Custom hooks (`useTasks`) encapsulate state and API logic
+- Props down, events up pattern for predictable data flow
+- Makes components reusable and testable
+- Separates concerns (UI, state, API)
+
+### Development Philosophy
+
+**Code Quality First:**
+- Pre-commit hooks enforce standards before code is committed
+- CI/CD pipeline validates quality at multiple stages
+- Property-based testing provides correctness guarantees
+- Comprehensive test coverage for confidence in changes
+
+**Developer Experience:**
+- Hot reload for instant feedback during development
+- Automatic API documentation with FastAPI
+- Clear error messages and validation
+- Comprehensive README and inline documentation
+
+**Production Readiness:**
+- MySQL for reliable data persistence
+- Docker Compose for consistent environments
+- Health checks for service monitoring
+- Error handling throughout the application
+- Security scanning with Bandit
+
+### Limitations
+
+- **No Authentication/Authorization**: All tasks are shared, no user isolation
+- **No Real-time Updates**: Requires manual refresh or polling
+- **No Collaboration**: No task sharing or multi-user features
+- **Basic MySQL Configuration**: Not optimized for high load or replication
+- **No Task Categories/Tags**: Simple flat task list structure
+- **No Task Priorities**: All tasks treated equally
+- **No Search/Filter**: Must scroll through all tasks
+- **No Pagination**: All tasks loaded at once (could be issue with many tasks)
+- **No Task Deadlines**: No due date tracking
+- **Local Development Only**: Not configured for production deployment
+
+### Future Enhancements
+
+Potential improvements for future versions:
+
+1. **Authentication & Authorization**:
+   - User registration and login
+   - JWT token-based authentication
+   - Role-based access control
+   - User-specific task lists
+
+2. **Advanced Features**:
+   - Task categories and tags
+   - Priority levels
+   - Due dates and reminders
+   - Task search and filtering
+   - Pagination for large task lists
+   - Sorting options (priority, due date, etc.)
+
+3. **Collaboration**:
+   - Task sharing between users
+   - Comments on tasks
+   - Task assignment
+   - Activity history
+
+4. **Real-time Updates**:
+   - WebSocket support
+   - Live updates when others modify tasks
+   - Notifications for changes
+
+5. **Deployment**:
+   - Production Docker configuration
+   - Kubernetes manifests
+   - CI/CD deployment pipeline
+   - Environment-specific configurations
+   - Database migrations
+
+6. **Performance**:
+   - Database indexing
+   - Query optimization
+   - Caching layer (Redis)
+   - Connection pooling optimization
+
+## 🤝 Contributing
+
+### Getting Started
+
+1. **Fork the repository**
+2. **Clone your fork**:
+   ```bash
+   git clone https://github.com/your-username/ab-sdlc-agent-ai-output.git
+   cd ab-sdlc-agent-ai-output
+   ```
+
+3. **Install pre-commit hooks**:
+   ```bash
+   pip install pre-commit
+   pre-commit install
+   ```
+
+4. **Create a feature branch**:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+5. **Make your changes**:
+   - Follow existing code style and patterns
+   - Add tests for new functionality
+   - Update documentation as needed
+
+6. **Run tests**:
+   ```bash
+   # Backend tests
+   cd backend && pytest -v
+   
+   # Frontend tests
+   cd frontend && npm test
+   ```
+
+7. **Run pre-commit hooks**:
+   ```bash
+   pre-commit run --all-files
+   ```
+
+8. **Commit your changes**:
+   ```bash
+   git add .
+   git commit -m "feat: Add your feature description"
+   ```
+
+9. **Push to your fork**:
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+10. **Create a Pull Request**
+
+### Commit Message Guidelines
+
+Follow conventional commits format:
+
+- `feat:` New feature
+- `fix:` Bug fix
+- `docs:` Documentation changes
+- `style:` Code style changes (formatting, etc.)
+- `refactor:` Code refactoring
+- `test:` Adding or updating tests
+- `chore:` Maintenance tasks
+
+### Pull Request Requirements
+
+- ✅ All automated tests must pass (unit + property-based)
+- ✅ Property-based tests run 100+ iterations
+- ✅ No new linting errors
+- ✅ Code coverage maintained or improved
+- ✅ Documentation updated if needed
+- ✅ Pre-commit hooks pass
+- ✅ Descriptive PR title and description
+
+### Code Style
+
+**Python:**
+- Follow PEP 8 style guide
+- Use Black for formatting (line length: 100)
+- Use type hints where appropriate
+- Document functions and classes with docstrings
+
+**JavaScript:**
+- Use ESLint recommended rules
+- Use Prettier for formatting
+- Use meaningful variable and function names
+- Add JSDoc comments for complex functions
+
+## 📄 License
+
+This is a demonstration project for educational purposes. See [LICENSE](LICENSE) file for details.
+
+## 🔗 Resources
+
+### Documentation
+- [FastAPI Documentation](https://fastapi.tiangolo.com/) - Backend framework
+- [Pydantic Documentation](https://docs.pydantic.dev/) - Data validation
+- [React Documentation](https://react.dev/) - Frontend framework
+- [Vite Documentation](https://vitejs.dev/) - Build tool
+- [Vitest Documentation](https://vitest.dev/) - Testing framework
+- [React Testing Library](https://testing-library.com/react) - Component testing
+- [Docker Compose Documentation](https://docs.docker.com/compose/) - Container orchestration
+- [MySQL Documentation](https://dev.mysql.com/doc/) - Database
+
+### Property-Based Testing
+- [Hypothesis Documentation](https://hypothesis.readthedocs.io/) - Python property-based testing
+- [fast-check Documentation](https://fast-check.dev/) - JavaScript property-based testing
+- [Property-Based Testing Guide](https://hypothesis.works/articles/what-is-property-based-testing/)
+
+### Code Quality Tools
+- [Black Documentation](https://black.readthedocs.io/) - Python code formatter
+- [flake8 Documentation](https://flake8.pycqa.org/) - Python linting
+- [ESLint Documentation](https://eslint.org/) - JavaScript linting
+- [Prettier Documentation](https://prettier.io/) - Code formatter
+- [pre-commit Documentation](https://pre-commit.com/) - Git hooks
+
+### Testing Resources
+- [pytest Documentation](https://docs.pytest.org/) - Python testing
+- [Hypothesis Strategies](https://hypothesis.readthedocs.io/en/latest/data.html) - Data generation
+- [Testing Library Queries](https://testing-library.com/docs/queries/about) - DOM queries
+- [Vitest API](https://vitest.dev/api/) - Test API reference
+
+---
+
+**Built with ❤️ using Clean Architecture and Modern Development Practices**
+
+**Tested with ✅ Property-Based Testing (Hypothesis & fast-check)**
