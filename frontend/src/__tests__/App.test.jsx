@@ -718,8 +718,10 @@ describe('App Component', () => {
         expect(taskListSection.textContent).toMatch(/HTTP error! status: 500/i);
       });
 
-      // Tasks should still be visible (operation failed)
-      expect(screen.getByText('Task 1')).toBeInTheDocument();
+      // Tasks should still be visible (operation failed) - wrapped in waitFor to ensure React has finished rendering
+      await waitFor(() => {
+        expect(screen.getByText('Task 1')).toBeInTheDocument();
+      });
 
       confirmSpy.mockRestore();
     });
