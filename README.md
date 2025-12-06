@@ -246,7 +246,7 @@ npm test
 -  **Create Tasks**: Add new tasks with title and description
 -  **View Tasks**: Display all tasks ordered by creation date (newest first)
 -  **Edit Tasks**: Update task title and description
--  **Delete Tasks**: Remove tasks from the list
+-  **Delete Tasks**: Remove individual tasks or delete all tasks at once
 -  **Toggle Completion**: Mark tasks as complete or incomplete
 -  **Data Persistence**: Tasks persist in MySQL database across restarts
 -  **Input Validation**: Client and server-side validation for data integrity
@@ -269,6 +269,7 @@ npm test
 ### Backend Features
 -  RESTful API with FastAPI
 -  Full CRUD operations for tasks
+-  Bulk delete operation to remove all tasks at once
 -  Pydantic models for request/response validation
 -  MySQL database persistence with connection pooling
 -  Repository pattern for data access abstraction
@@ -349,6 +350,19 @@ Create a new task.
 }
 ```
 
+### DELETE /api/tasks
+Delete all tasks at once (bulk delete operation).
+
+**Response (204 No Content):**
+No response body.
+
+**Usage:**
+```bash
+curl -X DELETE http://localhost:8000/api/tasks
+```
+
+**Note:** This operation removes all tasks from the database. Use with caution as it cannot be undone.
+
 ### GET /api/tasks/{task_id}
 Retrieve a specific task by ID.
 
@@ -403,7 +417,7 @@ Update an existing task.
 ```
 
 ### DELETE /api/tasks/{task_id}
-Delete a task.
+Delete a specific task by ID.
 
 **Response (204 No Content):**
 No response body.
