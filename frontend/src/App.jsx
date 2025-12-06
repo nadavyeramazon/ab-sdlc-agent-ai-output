@@ -14,6 +14,7 @@ function App() {
     createTask,
     updateTask,
     deleteTask,
+    deleteAllTasks,
     toggleTaskComplete,
   } = useTasks();
 
@@ -25,6 +26,7 @@ function App() {
   const [createError, setCreateError] = useState('');
   const [toggleLoading, setToggleLoading] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
 
   // Handle task creation
   const handleCreateTask = async (taskData) => {
@@ -66,6 +68,17 @@ function App() {
     setDeleteLoading(taskId);
     await deleteTask(taskId);
     setDeleteLoading(null);
+  };
+
+  // Handle delete all tasks
+  const handleDeleteAllTasks = async () => {
+    if (!window.confirm('Are you sure you want to delete ALL tasks? This action cannot be undone.')) {
+      return;
+    }
+    
+    setDeleteAllLoading(true);
+    await deleteAllTasks();
+    setDeleteAllLoading(false);
   };
 
   // Handle task toggle
@@ -111,6 +124,19 @@ function App() {
               isEditing={!!editingTask}
             />
           </div>
+
+          {/* Delete All Button - only show when tasks exist */}
+          {tasks.length > 0 && (
+            <div className="delete-all-section">
+              <button
+                className="btn-danger-outline"
+                onClick={handleDeleteAllTasks}
+                disabled={deleteAllLoading}
+              >
+                {deleteAllLoading ? 'Deleting...' : 'Delete All Tasks'}
+              </button>
+            </div>
+          )}
 
           {/* Task List */}
           <div className="task-list-section">

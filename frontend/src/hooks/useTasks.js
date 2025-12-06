@@ -112,6 +112,30 @@ export function useTasks() {
   };
 
   /**
+   * Delete all tasks
+   * @returns {Promise<boolean>} True if successful, false otherwise
+   */
+  const deleteAllTasks = async () => {
+    setError(null);
+    
+    // Store original tasks for rollback on error
+    const originalTasks = [...tasks];
+    
+    // Optimistic update: clear all tasks immediately
+    setTasks([]);
+    
+    try {
+      await taskApi.deleteAllTasks();
+      return true;
+    } catch (err) {
+      // Rollback on error
+      setTasks(originalTasks);
+      setError(err.message);
+      return false;
+    }
+  };
+
+  /**
    * Toggle task completion status
    * @param {string} taskId - ID of the task to toggle
    * @param {boolean} currentStatus - Current completion status
@@ -134,6 +158,7 @@ export function useTasks() {
     createTask,
     updateTask,
     deleteTask,
+    deleteAllTasks,
     toggleTaskComplete,
   };
 }
