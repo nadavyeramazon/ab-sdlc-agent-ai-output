@@ -111,6 +111,7 @@ npm test
 - ✅ **View Tasks**: Display all tasks ordered by creation date (newest first)
 - ✅ **Edit Tasks**: Update task title and description
 - ✅ **Delete Tasks**: Remove tasks from the list
+- ✅ **Delete All Tasks**: Remove all tasks at once
 - ✅ **Toggle Completion**: Mark tasks as complete or incomplete
 - ✅ **Data Persistence**: Tasks persist across application restarts
 - ✅ **Input Validation**: Client and server-side validation for data integrity
@@ -131,10 +132,11 @@ npm test
 ### Backend Features
 - ✅ RESTful API with FastAPI
 - ✅ Full CRUD operations for tasks
+- ✅ Bulk delete operation for all tasks
 - ✅ Pydantic models for request/response validation
-- ✅ JSON file-based persistence with in-memory caching
-- ✅ Automatic data directory and file creation
-- ✅ Proper HTTP status codes (200, 201, 204, 404, 422)
+- ✅ MySQL database persistence
+- ✅ Automatic database schema initialization
+- ✅ Proper HTTP status codes (200, 201, 204, 404, 422, 500)
 - ✅ CORS enabled for frontend communication
 - ✅ Auto-reload during development
 - ✅ Comprehensive test coverage with property-based testing
@@ -249,8 +251,38 @@ Update an existing task.
 }
 ```
 
+### DELETE /api/tasks/all
+Delete all tasks from the database.
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "deletedCount": 5
+}
+```
+
+**Response (500 Internal Server Error):**
+```json
+{
+  "detail": "Failed to delete tasks"
+}
+```
+
+**Example Usage:**
+```bash
+# Delete all tasks using curl
+curl -X DELETE http://localhost:8000/api/tasks/all
+
+# Response when tasks exist
+{"success": true, "deletedCount": 3}
+
+# Response when no tasks exist
+{"success": true, "deletedCount": 0}
+```
+
 ### DELETE /api/tasks/{task_id}
-Delete a task.
+Delete a single task by ID.
 
 **Response (204 No Content):**
 No response body.
@@ -286,7 +318,7 @@ The backend uses environment variables for database configuration. When running 
 **Available Variables:**
 
 | Variable | Description | Default |
-|----------|-------------|---------|
+|----------|-------------|---------||
 | `DB_HOST` | MySQL host | `mysql` |
 | `DB_PORT` | MySQL port | `3306` |
 | `DB_USER` | MySQL user | `taskuser` |
@@ -313,7 +345,7 @@ cp .env.example .env
 **Available Variables:**
 
 | Variable | Description | Default |
-|----------|-------------|---------|
+|----------|-------------|---------||
 | `VITE_API_URL` | Backend API URL | `http://localhost:8000` |
 
 **Example `.env` file:**
@@ -358,6 +390,7 @@ pytest -v
 # Run specific test file
 pytest test_main.py
 pytest test_task_repository.py
+pytest test_delete_all_tasks.py
 
 # Run with coverage
 pytest --cov=. --cov-report=html
@@ -383,11 +416,13 @@ The backend test suite includes:
 
 **Unit Tests:**
 - ✅ All API endpoints (GET, POST, PUT, DELETE)
+- ✅ Delete all tasks endpoint
 - ✅ Request validation (empty titles, length limits)
-- ✅ HTTP status codes (200, 201, 204, 404, 422)
+- ✅ HTTP status codes (200, 201, 204, 404, 422, 500)
 - ✅ Task repository CRUD operations
-- ✅ File persistence and data loading
-- ✅ Error handling for missing files and invalid data
+- ✅ Bulk delete operations
+- ✅ MySQL database operations
+- ✅ Error handling for database failures
 
 **Property-Based Tests:**
 - ✅ **Property 1**: Task creation persistence - any valid task should be retrievable after creation
@@ -451,6 +486,9 @@ For detailed frontend testing documentation, see [frontend/TEST_GUIDE.md](fronte
 - [ ] Delete button removes task from list
 - [ ] Task removed immediately from UI
 - [ ] Deletion persists after page refresh
+- [ ] Delete all removes all tasks
+- [ ] Delete all works when no tasks exist
+- [ ] Delete all returns correct count
 
 **Error Handling:**
 - [ ] Validation errors display clearly
