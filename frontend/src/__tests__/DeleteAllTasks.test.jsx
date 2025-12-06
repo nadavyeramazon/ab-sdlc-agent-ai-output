@@ -536,8 +536,6 @@ describe('Delete All Tasks Feature', () => {
         },
       ];
 
-      let fetchCallCount = 0;
-
       global.fetch.mockImplementation((url, options) => {
         if (url.includes('/api/tasks/all') && options?.method === 'DELETE') {
           return Promise.resolve({
@@ -546,7 +544,6 @@ describe('Delete All Tasks Feature', () => {
           });
         }
         if (url.includes('/api/tasks')) {
-          fetchCallCount++;
           // Always return the tasks (both initial load and after error)
           return Promise.resolve({
             ok: true,
