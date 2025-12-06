@@ -15,6 +15,7 @@ This project is a complete CRUD application for managing tasks with:
 - **CI/CD**: GitHub Actions pipeline with sequential quality gates
 - **Orchestration**: Docker Compose for local development
 - **Hot Reload**: Live updates during development for both frontend and backend
+- **Branding**: SwiftPay green theme with modern, clean design
 
 ## 📁 Project Structure
 
@@ -56,7 +57,8 @@ project-root/
 │   │   ├── __tests__/
 │   │   │   └── App.test.jsx      # React component tests with fast-check
 │   │   ├── assets/
-│   │   │   └── logo.png          # Application logo
+│   │   │   ├── logo.png          # Original application logo
+│   │   │   └── logo-swiftpay.png # SwiftPay branding logo
 │   │   ├── components/
 │   │   │   ├── TaskForm.jsx      # Task creation/edit form component
 │   │   │   ├── TaskItem.jsx      # Individual task display component
@@ -72,7 +74,7 @@ project-root/
 │   │   ├── utils/
 │   │   │   └── constants.js      # Shared constants
 │   │   ├── App.jsx               # Main application component
-│   │   ├── App.css               # Application styles
+│   │   ├── App.css               # Application styles with SwiftPay theme
 │   │   └── main.jsx              # React entry point
 │   ├── index.html                # HTML template
 │   ├── package.json              # Frontend dependencies (includes fast-check)
@@ -154,7 +156,7 @@ App.jsx
   ├── TaskForm component (create/edit)
   ├── TaskList component (list container)
   │   └── TaskItem component (individual task)
-  └── CSS styles
+  └── CSS styles (SwiftPay green theme)
 ```
 
 **Key Patterns:**
@@ -248,16 +250,83 @@ npm test
 -  **View Tasks**: Display all tasks ordered by creation date (newest first)
 -  **Edit Tasks**: Update task title and description
 -  **Delete Tasks**: Remove individual tasks from the list
--  **Delete All Tasks**: Bulk delete all tasks at once
+-  **Delete All Tasks**: Bulk delete all tasks with inline confirmation UI
 -  **Toggle Completion**: Mark tasks as complete or incomplete
 -  **Data Persistence**: Tasks persist in MySQL database across restarts
 -  **Input Validation**: Client and server-side validation for data integrity
 -  **Error Handling**: User-friendly error messages for all operations
 
+### Delete All Tasks Feature
+
+The "Delete All Tasks" feature provides a safe way to clear all tasks at once:
+
+**User Interface:**
+- Delete All button appears only when tasks exist (`tasks.length > 0`)
+- Clicking the button reveals an inline confirmation dialog
+- Confirmation shows the exact number of tasks to be deleted
+- Two action buttons: "Yes, Delete All" and "Cancel"
+- Loading state with "Deleting..." text during operation
+- Buttons are disabled during deletion to prevent double-clicks
+- Confirmation dialog automatically closes after successful deletion
+
+**Implementation:**
+- **API Endpoint**: `DELETE /api/tasks` - Deletes all tasks in the database
+- **Frontend Hook**: `deleteAll()` function in `useTasks` hook
+- **State Management**: 
+  - `showDeleteAllConfirm`: Controls confirmation dialog visibility
+  - `deleteAllLoading`: Manages loading state during deletion
+- **Optimistic Updates**: Tasks cleared from UI immediately after successful API call
+
+**Usage Example:**
+```javascript
+// In useTasks hook
+const { deleteAll } = useTasks();
+
+// Call the function
+const handleDeleteAll = async () => {
+  const success = await deleteAll();
+  if (success) {
+    console.log('All tasks deleted');
+  }
+};
+```
+
+**Styling:**
+- Red/pink color scheme for danger action
+- Outlined button for initial state
+- Filled red button for confirmation
+- Responsive layout for mobile devices
+- Clear visual separation from other UI elements
+
+### Theme & Branding
+
+**SwiftPay Green Theme:**
+- Primary color: `#10b981` (green-500)
+- Secondary color: `#059669` (green-600)
+- Gradient background: Linear gradient from green-500 to green-600
+- Accent elements use the green color scheme
+- Clean, modern design with consistent spacing
+- Professional appearance suitable for financial/payment applications
+
+**Color Usage:**
+- Background gradient: Emerald green tones
+- Primary buttons: Green with hover effects
+- Focus states: Green border with subtle shadow
+- Task hover states: Green border and shadow
+- Loading indicators: Green spinner
+- Checkbox accent: Green
+
+**Logo:**
+- SwiftPay branding logo (`logo-swiftpay.png`)
+- Displayed in the app header
+- 64x64 pixels on desktop, 48x48 on mobile
+- Properly sized and positioned
+
 ### Frontend Features
--  Responsive task management UI
+-  Responsive task management UI with SwiftPay branding
 -  Task creation form with validation
 -  Inline task editing
+-  Bulk delete with confirmation dialog
 -  Visual distinction for completed tasks (strikethrough)
 -  Loading state indicators for all operations
 -  Error handling with user-friendly messages
@@ -365,13 +434,25 @@ curl -X DELETE http://localhost:8000/api/tasks
 
 # Using httpie
 http DELETE http://localhost:8000/api/tasks
+
+# Using JavaScript fetch
+await fetch('http://localhost:8000/api/tasks', { method: 'DELETE' });
 ```
 
 **Notes:**
 - This endpoint deletes ALL tasks from the database
-- No confirmation is required
+- No confirmation is required at the API level
 - Returns 204 even if there are no tasks to delete
+- Frontend provides confirmation dialog for safety
 - Use with caution in production environments
+
+**Frontend Integration:**
+The frontend implements a safe confirmation dialog before calling this endpoint:
+1. User clicks "Delete All Tasks" button (only visible when tasks exist)
+2. Inline confirmation dialog appears showing task count
+3. User confirms with "Yes, Delete All" button
+4. Frontend calls `DELETE /api/tasks`
+5. Tasks are cleared from UI on success
 
 ### GET /api/tasks/{task_id}
 Retrieve a specific task by ID.
@@ -603,13 +684,14 @@ npm run test:coverage
 -  Task creation flow (form → API → list update)
 -  Task editing flow (edit button → form → update → display)
 -  Task deletion flow (delete button → removal)
+-  Bulk delete flow (delete all button → confirmation → deletion)
 -  Task completion toggle
 -  Error handling for failed API calls
 -  Loading states for all operations
 -  Empty state display
 -  Component rendering and props
--  Custom hooks (useTasks)
--  API service layer
+-  Custom hooks (useTasks with deleteAll function)
+-  API service layer (including deleteAllTasks method)
 
 *Property-Based Tests:*
 -  Task ordering consistency - tasks always ordered by creation date (newest first)
@@ -921,7 +1003,7 @@ docker compose restart mysql
 
 **Reset Data:**
 ```bash
-# Delete all tasks using the API
+# Delete all tasks using the bulk delete API
 curl -X DELETE http://localhost:8000/api/tasks
 
 # Or connect to MySQL and delete manually
@@ -1113,6 +1195,12 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Makes components reusable and testable
 - Separates concerns (UI, state, API)
 
+**SwiftPay Branding:**
+- Modern green color scheme for financial/payment brand identity
+- Clean, professional appearance suitable for business applications
+- Consistent color usage throughout UI components
+- Enhanced user experience with cohesive visual design
+
 ### Development Philosophy
 
 **Code Quality First:**
@@ -1146,7 +1234,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - **No Pagination**: All tasks loaded at once (could be issue with many tasks)
 - **No Task Deadlines**: No due date tracking
 - **Local Development Only**: Not configured for production deployment
-- **No Bulk Delete Confirmation**: DELETE /api/tasks has no confirmation mechanism
+- **Delete All Requires Frontend Confirmation**: API endpoint has no built-in confirmation (by design)
 
 ### Future Enhancements
 
@@ -1165,7 +1253,7 @@ Potential improvements for future versions:
    - Task search and filtering
    - Pagination for large task lists
    - Sorting options (priority, due date, etc.)
-   - Confirmation dialog for bulk delete
+   - Server-side confirmation for bulk delete
 
 3. **Collaboration**:
    - Task sharing between users
@@ -1190,6 +1278,12 @@ Potential improvements for future versions:
    - Query optimization
    - Caching layer (Redis)
    - Connection pooling optimization
+
+7. **Branding & Customization**:
+   - Theme customization UI
+   - Multiple brand themes
+   - Dark mode support
+   - Custom logo upload
 
 ## 🤝 Contributing
 
@@ -1320,3 +1414,5 @@ This is a demonstration project for educational purposes. See [LICENSE](LICENSE)
 **Built with ❤️ using Clean Architecture and Modern Development Practices**
 
 **Tested with  Property-Based Testing (Hypothesis & fast-check)**
+
+**Branded with 💚 SwiftPay Green Theme**
