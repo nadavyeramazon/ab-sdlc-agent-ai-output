@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 
@@ -27,6 +27,10 @@ describe('Delete All Tasks Feature', () => {
         json: async () => ({ message: 'Default response' }),
       });
     });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('Delete All Button Rendering', () => {
@@ -392,26 +396,22 @@ describe('Delete All Tasks Feature', () => {
         },
       ];
 
-      let taskList = [...mockTasks];
-      let deleteStarted = false;
+      let resolveDelete;
+      const deletePromise = new Promise((resolve) => {
+        resolveDelete = resolve;
+      });
 
       global.fetch.mockImplementation((url, options) => {
         if (url.includes('/api/tasks/all') && options?.method === 'DELETE') {
-          deleteStarted = true;
-          return new Promise((resolve) =>
-            setTimeout(() => {
-              taskList = [];
-              resolve({
-                ok: true,
-                json: async () => ({ success: true, deletedCount: 1 }),
-              });
-            }, 100)
-          );
+          return deletePromise.then(() => ({
+            ok: true,
+            json: async () => ({ success: true, deletedCount: 1 }),
+          }));
         }
         if (url.includes('/api/tasks')) {
           return Promise.resolve({
             ok: true,
-            json: async () => ({ tasks: taskList }),
+            json: async () => ({ tasks: mockTasks }),
           });
         }
         return Promise.resolve({
@@ -432,16 +432,16 @@ describe('Delete All Tasks Feature', () => {
       });
       await user.click(deleteAllButton);
 
-      // Wait for delete to start
-      await waitFor(() => {
-        expect(deleteStarted).toBe(true);
-      });
-
       // Check if loading text is shown
       await waitFor(() => {
         const button = screen.getByRole('button', { name: /deleting all/i });
         expect(button).toBeInTheDocument();
         expect(button).toBeDisabled();
+      });
+
+      // Resolve the delete operation
+      act(() => {
+        resolveDelete();
       });
 
       // Wait for deletion to complete
@@ -462,18 +462,17 @@ describe('Delete All Tasks Feature', () => {
         },
       ];
 
+      let resolveDelete;
+      const deletePromise = new Promise((resolve) => {
+        resolveDelete = resolve;
+      });
+
       global.fetch.mockImplementation((url, options) => {
         if (url.includes('/api/tasks/all') && options?.method === 'DELETE') {
-          return new Promise((resolve) =>
-            setTimeout(
-              () =>
-                resolve({
-                  ok: true,
-                  json: async () => ({ success: true, deletedCount: 1 }),
-                }),
-              100
-            )
-          );
+          return deletePromise.then(() => ({
+            ok: true,
+            json: async () => ({ success: true, deletedCount: 1 }),
+          }));
         }
         if (url.includes('/api/tasks')) {
           return Promise.resolve({
@@ -503,6 +502,16 @@ describe('Delete All Tasks Feature', () => {
       await waitFor(() => {
         const button = screen.getByRole('button', { name: /deleting all/i });
         expect(button).toBeDisabled();
+      });
+
+      // Resolve the delete operation
+      act(() => {
+        resolveDelete();
+      });
+
+      // Wait for completion
+      await waitFor(() => {
+        expect(screen.getByText('No tasks yet')).toBeInTheDocument();
       });
     });
   });
@@ -553,11 +562,15 @@ describe('Delete All Tasks Feature', () => {
 
       // Should show error message
       await waitFor(() => {
-        expect(screen.getByText(/failed to delete all tasks/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/failed to delete all tasks/i)
+        ).toBeInTheDocument();
       });
 
       // Tasks should still be visible (rollback)
-      expect(screen.getByText('Task 1')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Task 1')).toBeInTheDocument();
+      });
     });
 
     it('should auto-dismiss error message after 5 seconds', async () => {
@@ -593,7 +606,7 @@ describe('Delete All Tasks Feature', () => {
         });
       });
 
-      const user = userEvent.setup();
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
       render(<App />);
 
       await waitFor(() => {
@@ -607,15 +620,21 @@ describe('Delete All Tasks Feature', () => {
 
       // Error should be visible
       await waitFor(() => {
-        expect(screen.getByText(/failed to delete all tasks/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/failed to delete all tasks/i)
+        ).toBeInTheDocument();
       });
 
       // Fast-forward 5 seconds
-      vi.advanceTimersByTime(5000);
+      await act(async () => {
+        vi.advanceTimersByTime(5000);
+      });
 
       // Error should be gone
       await waitFor(() => {
-        expect(screen.queryByText(/failed to delete all tasks/i)).not.toBeInTheDocument();
+        expect(
+          screen.queryByText(/failed to delete all tasks/i)
+        ).not.toBeInTheDocument();
       });
 
       vi.useRealTimers();
@@ -663,10 +682,15 @@ describe('Delete All Tasks Feature', () => {
 
       // Should show error and rollback
       await waitFor(() => {
-        expect(screen.getByText(/failed to delete all tasks/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/failed to delete all tasks/i)
+        ).toBeInTheDocument();
       });
 
-      expect(screen.getByText('Task 1')).toBeInTheDocument();
+      // Verify task is still visible (rollback)
+      await waitFor(() => {
+        expect(screen.getByText('Task 1')).toBeInTheDocument();
+      });
     });
   });
 
