@@ -4,6 +4,7 @@ Comprehensive backend tests for FastAPI application.
 This test suite covers:
 - /health endpoint (GET)
 - Task API endpoints (CRUD operations)
+- DELETE /api/tasks endpoint (bulk deletion)
 - Response validation
 - Status codes
 - JSON structure
@@ -79,11 +80,15 @@ def create_mock_repository():
             return True
         return False
 
+    def delete_all():
+        mock_tasks.clear()
+
     repo.get_all = get_all
     repo.get_by_id = get_by_id
     repo.create = create
     repo.update = update
     repo.delete = delete
+    repo.delete_all = delete_all
 
     return repo
 
@@ -348,6 +353,113 @@ class TestTaskAPIEndpoints:
         assert response.status_code == 404
 
 
+class TestDeleteAllTasksEndpoint:
+    """Test suite for DELETE /api/tasks endpoint (bulk deletion)"""
+
+    def test_delete_all_tasks_empty_list(self, client: TestClient) -> None:
+        """Test DELETE /api/tasks with no tasks in database"""
+        # Verify no tasks exist
+        response = client.get("/api/tasks")
+        assert len(response.json()["tasks"]) == 0
+
+        # Delete all tasks (should succeed even with empty list)
+        response = client.delete("/api/tasks")
+        assert response.status_code == 204
+
+        # Verify still no tasks
+        response = client.get("/api/tasks")
+        assert len(response.json()["tasks"]) == 0
+
+    def test_delete_all_tasks_single_task(self, client: TestClient) -> None:
+        """Test DELETE /api/tasks with one task in database"""
+        # Create a task
+        create_response = client.post(
+            "/api/tasks", json={"title": "Test Task", "description": "Test Description"}
+        )
+        assert create_response.status_code == 201
+
+        # Verify task exists
+        get_response = client.get("/api/tasks")
+        assert len(get_response.json()["tasks"]) == 1
+
+        # Delete all tasks
+        delete_response = client.delete("/api/tasks")
+        assert delete_response.status_code == 204
+
+        # Verify all tasks deleted
+        get_response = client.get("/api/tasks")
+        assert len(get_response.json()["tasks"]) == 0
+
+    def test_delete_all_tasks_multiple_tasks(self, client: TestClient) -> None:
+        """Test DELETE /api/tasks with multiple tasks in database"""
+        # Create multiple tasks
+        for i in range(5):
+            response = client.post(
+                "/api/tasks", json={"title": f"Task {i}", "description": f"Description {i}"}
+            )
+            assert response.status_code == 201
+
+        # Verify tasks exist
+        get_response = client.get("/api/tasks")
+        assert len(get_response.json()["tasks"]) == 5
+
+        # Delete all tasks
+        delete_response = client.delete("/api/tasks")
+        assert delete_response.status_code == 204
+
+        # Verify all tasks deleted
+        get_response = client.get("/api/tasks")
+        assert len(get_response.json()["tasks"]) == 0
+
+    def test_delete_all_tasks_no_content_body(self, client: TestClient) -> None:
+        """Test DELETE /api/tasks returns no content in response body"""
+        # Create a task
+        client.post("/api/tasks", json={"title": "Test", "description": "Test"})
+
+        # Delete all tasks
+        response = client.delete("/api/tasks")
+        assert response.status_code == 204
+
+        # Verify no content in response body
+        assert response.text == ""
+
+    def test_delete_all_tasks_idempotent(self, client: TestClient) -> None:
+        """Test DELETE /api/tasks is idempotent (can be called multiple times)"""
+        # Create tasks
+        client.post("/api/tasks", json={"title": "Task 1", "description": "Desc 1"})
+        client.post("/api/tasks", json={"title": "Task 2", "description": "Desc 2"})
+
+        # First delete - should succeed
+        response = client.delete("/api/tasks")
+        assert response.status_code == 204
+
+        # Verify tasks deleted
+        get_response = client.get("/api/tasks")
+        assert len(get_response.json()["tasks"]) == 0
+
+        # Second delete - should still succeed (idempotent)
+        response = client.delete("/api/tasks")
+        assert response.status_code == 204
+
+        # Verify still no tasks
+        get_response = client.get("/api/tasks")
+        assert len(get_response.json()["tasks"]) == 0
+
+    def test_delete_all_tasks_wrong_methods(self, client: TestClient) -> None:
+        """Test that only DELETE method is allowed on /api/tasks for bulk deletion"""
+        # GET is allowed (returns list of tasks)
+        response = client.get("/api/tasks")
+        assert response.status_code == 200
+
+        # POST is allowed (creates new task)
+        response = client.post("/api/tasks", json={"title": "Test", "description": "Test"})
+        assert response.status_code == 201
+
+        # PUT is not allowed on /api/tasks (no task ID)
+        response = client.put("/api/tasks", json={"title": "Test"})
+        assert response.status_code == 405
+
+
 # Property-Based Tests
 class TestTaskCreationProperties:
     """Property-based tests for task creation and management"""
@@ -419,3 +531,44 @@ class TestTaskCreationProperties:
         # Test POST returns 422 for validation error (empty title)
         validation_error = client.post("/api/tasks", json={"title": "", "description": "Test"})
         assert validation_error.status_code == 422
+
+    @given(st.integers(min_value=1, max_value=10))
+    @settings(
+        max_examples=10,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+        deadline=2000
+    )
+    def test_property_delete_all_removes_all_tasks(
+        self, client: TestClient, num_tasks: int
+    ) -> None:
+        """
+        Property: Delete all completeness
+        For any number of tasks created, DELETE /api/tasks should remove
+        all tasks, leaving an empty task list.
+        """
+        # Create num_tasks tasks
+        task_ids = []
+        for i in range(num_tasks):
+            response = client.post(
+                "/api/tasks",
+                json={"title": f"Task {i}", "description": f"Description {i}"}
+            )
+            assert response.status_code == 201
+            task_ids.append(response.json()["id"])
+
+        # Verify all tasks exist
+        get_response = client.get("/api/tasks")
+        assert len(get_response.json()["tasks"]) == num_tasks
+
+        # Delete all tasks
+        delete_response = client.delete("/api/tasks")
+        assert delete_response.status_code == 204
+
+        # Verify all tasks deleted
+        get_response = client.get("/api/tasks")
+        assert len(get_response.json()["tasks"]) == 0
+
+        # Verify each individual task is deleted
+        for task_id in task_ids:
+            task_response = client.get(f"/api/tasks/{task_id}")
+            assert task_response.status_code == 404
