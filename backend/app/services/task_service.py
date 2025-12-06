@@ -85,3 +85,12 @@ class TaskService:
             True if task was deleted, False if task was not found
         """
         return self.repository.delete(task_id)
+
+    def delete_all_tasks(self) -> int:
+        """
+        Delete all tasks.
+
+        Returns:
+            Number of tasks deleted
+        """
+        return self.repository.delete_all()
