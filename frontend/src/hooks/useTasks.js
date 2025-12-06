@@ -120,11 +120,16 @@ export function useTasks() {
     setDeleteAllLoading(true);
     setError(null);
 
+    // Store original tasks for rollback on error
+    const originalTasks = [...tasks];
+
     try {
       await taskApi.deleteAllTasks();
       setTasks([]);
       return true;
     } catch (err) {
+      // Rollback on error - restore original tasks
+      setTasks(originalTasks);
       setError(err.message);
       return false;
     } finally {
