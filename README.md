@@ -40,7 +40,8 @@ project-root/
 │   │       └── task_service.py   # Business logic layer
 │   ├── tests/
 │   │   ├── test_main.py          # API endpoint tests with Hypothesis
-│   │   └── test_task_repository.py # Repository tests with Hypothesis
+│   │   ├── test_task_repository.py # Repository tests with Hypothesis
+│   │   └── test_delete_all_tasks.py # DELETE all tasks endpoint tests
 │   ├── data/
 │   │   └── .gitkeep              # Placeholder for data directory
 │   ├── Dockerfile                # Backend container image
@@ -246,7 +247,7 @@ npm test
 -  **Create Tasks**: Add new tasks with title and description
 -  **View Tasks**: Display all tasks ordered by creation date (newest first)
 -  **Edit Tasks**: Update task title and description
--  **Delete Tasks**: Remove tasks from the list
+-  **Delete Tasks**: Remove individual tasks or all tasks at once
 -  **Toggle Completion**: Mark tasks as complete or incomplete
 -  **Data Persistence**: Tasks persist in MySQL database across restarts
 -  **Input Validation**: Client and server-side validation for data integrity
@@ -349,6 +350,33 @@ Create a new task.
 }
 ```
 
+### DELETE /api/tasks
+Delete all tasks from the database.
+
+**Request:** No request body required.
+
+**Response (204 No Content):**
+No response body. Returns empty response with HTTP 204 status code.
+
+**Usage Notes:**
+- This endpoint deletes ALL tasks from the database
+- Use with caution as this operation cannot be undone
+- Returns 204 even when no tasks exist (idempotent operation)
+- Useful for clearing test data or resetting the application state
+
+**Example using curl:**
+```bash
+curl -X DELETE http://localhost:8000/api/tasks
+```
+
+**Example using JavaScript:**
+```javascript
+const response = await fetch('http://localhost:8000/api/tasks', {
+  method: 'DELETE'
+});
+// response.status === 204
+```
+
 ### GET /api/tasks/{task_id}
 Retrieve a specific task by ID.
 
@@ -403,7 +431,7 @@ Update an existing task.
 ```
 
 ### DELETE /api/tasks/{task_id}
-Delete a task.
+Delete a specific task by ID.
 
 **Response (204 No Content):**
 No response body.
@@ -525,6 +553,7 @@ pytest -v
 # Run specific test file
 pytest tests/test_main.py
 pytest tests/test_task_repository.py
+pytest tests/test_delete_all_tasks.py
 
 # Run with coverage
 pytest --cov=app --cov-report=html
@@ -551,6 +580,7 @@ npm run test:coverage
 
 *Unit Tests:*
 -  All API endpoints (GET, POST, PUT, DELETE)
+-  DELETE all tasks endpoint
 -  Request validation (empty titles, length limits)
 -  HTTP status codes (200, 201, 204, 404, 422)
 -  Task repository CRUD operations
@@ -896,6 +926,9 @@ docker compose restart mysql
 ```bash
 # Connect to MySQL and delete all tasks
 docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "DELETE FROM tasks;"
+
+# Or use the API endpoint (requires backend running)
+curl -X DELETE http://localhost:8000/api/tasks
 
 # Or drop and recreate the database
 docker compose exec mysql mysql -u root -prootpassword -e "DROP DATABASE taskmanager; CREATE DATABASE taskmanager;"
