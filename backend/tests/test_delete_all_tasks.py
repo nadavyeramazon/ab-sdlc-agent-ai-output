@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
-from hypothesis import given, settings
+from hypothesis import given, settings, HealthCheck
 from hypothesis import strategies as st
 
 from app.main import create_app
@@ -302,7 +302,7 @@ class TestDeleteAllTasksProperties:
     """Property-based tests for delete all functionality"""
 
     @given(st.integers(min_value=0, max_value=20))
-    @settings(max_examples=10, deadline=2000)
+    @settings(max_examples=10, deadline=2000, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_property_delete_all_removes_exact_count(
         self, client: TestClient, task_count: int
     ):
@@ -331,7 +331,7 @@ class TestDeleteAllTasksProperties:
         assert len(response_after.json()["tasks"]) == 0
 
     @given(st.integers(min_value=0, max_value=5))
-    @settings(max_examples=10, deadline=2000)
+    @settings(max_examples=10, deadline=2000, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_property_delete_all_is_idempotent(
         self, client: TestClient, repeat_count: int
     ):
