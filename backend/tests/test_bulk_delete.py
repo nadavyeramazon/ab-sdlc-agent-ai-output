@@ -15,7 +15,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
-from hypothesis import given, settings
+from hypothesis import given, settings, HealthCheck
 from hypothesis import strategies as st
 
 from app.main import create_app
@@ -295,7 +295,7 @@ class TestBulkDeleteProperties:
     """Property-based tests for bulk delete functionality"""
 
     @given(st.integers(min_value=0, max_value=20))
-    @settings(max_examples=10, deadline=2000)
+    @settings(max_examples=10, deadline=2000, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_property_delete_all_removes_all_tasks(
         self, client: TestClient, num_tasks: int
     ) -> None:
@@ -330,7 +330,7 @@ class TestBulkDeleteProperties:
         mock_tasks = {}
 
     @given(st.integers(min_value=1, max_value=10))
-    @settings(max_examples=5, deadline=2000)
+    @settings(max_examples=5, deadline=2000, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_property_delete_all_then_recreate_works(
         self, client: TestClient, num_cycles: int
     ) -> None:
