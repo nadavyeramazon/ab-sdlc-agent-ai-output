@@ -55,7 +55,11 @@ def create_mock_repository():
 
     # Override methods to use in-memory storage
     def get_all():
-        return sorted(mock_tasks.values(), key=lambda t: t.created_at, reverse=True)
+        return sorted(
+            mock_tasks.values(),
+            key=lambda t: t.created_at,
+            reverse=True
+        )
 
     def get_by_id(task_id: str):
         return mock_tasks.get(task_id)
@@ -123,7 +127,9 @@ def client() -> Generator[TestClient, None, None]:
 class TestBulkDeleteEndpoint:
     """Unit tests for DELETE /api/tasks endpoint (bulk delete)"""
 
-    def test_delete_all_tasks_empty_database(self, client: TestClient) -> None:
+    def test_delete_all_tasks_empty_database(
+        self, client: TestClient
+    ) -> None:
         """Test DELETE /api/tasks with empty database returns 204"""
         response = client.delete("/api/tasks")
 
@@ -153,13 +159,18 @@ class TestBulkDeleteEndpoint:
         assert verify_response.status_code == 200
         assert len(verify_response.json()["tasks"]) == 0
 
-    def test_delete_all_tasks_multiple_tasks(self, client: TestClient) -> None:
+    def test_delete_all_tasks_multiple_tasks(
+        self, client: TestClient
+    ) -> None:
         """Test DELETE /api/tasks removes multiple tasks successfully"""
         # Create multiple tasks
         for i in range(5):
             response = client.post(
                 "/api/tasks",
-                json={"title": f"Task {i}", "description": f"Description {i}"}
+                json={
+                    "title": f"Task {i}",
+                    "description": f"Description {i}"
+                }
             )
             assert response.status_code == 201
 
@@ -178,10 +189,16 @@ class TestBulkDeleteEndpoint:
         assert len(verify_response.json()["tasks"]) == 0
 
     def test_delete_all_tasks_idempotent(self, client: TestClient) -> None:
-        """Test DELETE /api/tasks is idempotent (can be called multiple times)"""
+        """Test DELETE /api/tasks is idempotent (multiple calls)"""
         # Create tasks
-        client.post("/api/tasks", json={"title": "Task 1", "description": "Desc 1"})
-        client.post("/api/tasks", json={"title": "Task 2", "description": "Desc 2"})
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 1", "description": "Desc 1"}
+        )
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 2", "description": "Desc 2"}
+        )
 
         # First delete
         response1 = client.delete("/api/tasks")
@@ -195,10 +212,15 @@ class TestBulkDeleteEndpoint:
         get_response = client.get("/api/tasks")
         assert len(get_response.json()["tasks"]) == 0
 
-    def test_delete_all_then_create_new_task(self, client: TestClient) -> None:
+    def test_delete_all_then_create_new_task(
+        self, client: TestClient
+    ) -> None:
         """Test creating new task after bulk delete works correctly"""
         # Create and delete tasks
-        client.post("/api/tasks", json={"title": "Task 1", "description": "Desc 1"})
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 1", "description": "Desc 1"}
+        )
         client.delete("/api/tasks")
 
         # Create new task after delete
@@ -214,7 +236,9 @@ class TestBulkDeleteEndpoint:
         assert len(tasks) == 1
         assert tasks[0]["title"] == "New Task"
 
-    def test_delete_all_tasks_no_body_required(self, client: TestClient) -> None:
+    def test_delete_all_tasks_no_body_required(
+        self, client: TestClient
+    ) -> None:
         """Test DELETE /api/tasks does not require request body"""
         response = client.delete("/api/tasks")
 
@@ -224,7 +248,7 @@ class TestBulkDeleteEndpoint:
     def test_delete_all_tasks_with_completed_and_incomplete(
         self, client: TestClient
     ) -> None:
-        """Test DELETE /api/tasks removes both completed and incomplete tasks"""
+        """Test DELETE /api/tasks removes completed and incomplete tasks"""
         # Create tasks with different completion status
         task1_response = client.post(
             "/api/tasks",
@@ -257,7 +281,7 @@ class TestBulkDeleteRepository:
     """Unit tests for repository delete_all() method"""
 
     def test_repository_delete_all_returns_count(self) -> None:
-        """Test that repository delete_all() returns count of deleted tasks"""
+        """Test that repository delete_all() returns deleted count"""
         global mock_tasks
         mock_tasks = {}
 
@@ -277,7 +301,7 @@ class TestBulkDeleteRepository:
         mock_tasks = {}
 
     def test_repository_delete_all_empty_returns_zero(self) -> None:
-        """Test that repository delete_all() returns 0 for empty database"""
+        """Test repository delete_all() returns 0 for empty database"""
         global mock_tasks
         mock_tasks = {}
 
@@ -295,7 +319,11 @@ class TestBulkDeleteProperties:
     """Property-based tests for bulk delete functionality"""
 
     @given(st.integers(min_value=0, max_value=20))
-    @settings(max_examples=10, deadline=2000, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(
+        max_examples=10,
+        deadline=2000,
+        suppress_health_check=[HealthCheck.function_scoped_fixture]
+    )
     def test_property_delete_all_removes_all_tasks(
         self, client: TestClient, num_tasks: int
     ) -> None:
@@ -310,7 +338,10 @@ class TestBulkDeleteProperties:
         for i in range(num_tasks):
             response = client.post(
                 "/api/tasks",
-                json={"title": f"Task {i}", "description": f"Description {i}"}
+                json={
+                    "title": f"Task {i}",
+                    "description": f"Description {i}"
+                }
             )
             assert response.status_code == 201
 
@@ -330,7 +361,11 @@ class TestBulkDeleteProperties:
         mock_tasks = {}
 
     @given(st.integers(min_value=1, max_value=10))
-    @settings(max_examples=5, deadline=2000, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(
+        max_examples=5,
+        deadline=2000,
+        suppress_health_check=[HealthCheck.function_scoped_fixture]
+    )
     def test_property_delete_all_then_recreate_works(
         self, client: TestClient, num_cycles: int
     ) -> None:
