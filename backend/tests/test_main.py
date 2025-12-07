@@ -55,7 +55,11 @@ def create_mock_repository():
 
     # Override methods to use in-memory storage
     def get_all():
-        return sorted(mock_tasks.values(), key=lambda t: t.created_at, reverse=True)
+        return sorted(
+            mock_tasks.values(),
+            key=lambda t: t.created_at,
+            reverse=True
+        )
 
     def get_by_id(task_id: str):
         return mock_tasks.get(task_id)
@@ -137,14 +141,20 @@ class TestApplicationInitialization:
         assert response.status_code == 200
 
         # Test individual task route
-        response = client.post("/api/tasks", json={"title": "Test", "description": "Test"})
+        response = client.post(
+            "/api/tasks",
+            json={"title": "Test", "description": "Test"}
+        )
         assert response.status_code == 201
         task_id = response.json()["id"]
 
         response = client.get(f"/api/tasks/{task_id}")
         assert response.status_code == 200
 
-        response = client.put(f"/api/tasks/{task_id}", json={"title": "Updated"})
+        response = client.put(
+            f"/api/tasks/{task_id}",
+            json={"title": "Updated"}
+        )
         assert response.status_code == 200
 
         response = client.delete(f"/api/tasks/{task_id}")
@@ -153,11 +163,15 @@ class TestApplicationInitialization:
     def test_cors_is_configured(self, client: TestClient) -> None:
         """Test that CORS middleware is configured correctly"""
         # Make request with Origin header
-        response = client.get("/api/tasks", headers={"Origin": "http://localhost:3000"})
+        response = client.get(
+            "/api/tasks",
+            headers={"Origin": "http://localhost:3000"}
+        )
 
         # Check CORS headers are present
         assert "access-control-allow-origin" in response.headers
-        assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
+        cors_header = response.headers["access-control-allow-origin"]
+        assert cors_header == "http://localhost:3000"
 
     def test_openapi_docs_accessible(self, client: TestClient) -> None:
         """Test that OpenAPI documentation is accessible"""
@@ -167,7 +181,8 @@ class TestApplicationInitialization:
 
         openapi_spec = response.json()
         assert openapi_spec["info"]["title"] == "Task Manager API"
-        assert openapi_spec["info"]["description"] == "A RESTful API for managing tasks"
+        spec_desc = "A RESTful API for managing tasks"
+        assert openapi_spec["info"]["description"] == spec_desc
         assert openapi_spec["info"]["version"] == "1.0.0"
 
         # Verify routes are documented
@@ -222,8 +237,10 @@ class TestHealthEndpoint:
             assert response.status_code == 200
             assert data["status"] == "healthy"
 
-    def test_health_endpoint_with_trailing_slash(self, client: TestClient) -> None:
-        """Test /health endpoint with trailing slash (should fail as not defined)"""
+    def test_health_endpoint_with_trailing_slash(
+        self, client: TestClient
+    ) -> None:
+        """Test /health endpoint with trailing slash (should fail)"""
         response = client.get("/health/")
 
         # FastAPI by default doesn't redirect, so this should return 404
@@ -241,17 +258,24 @@ class TestCORSConfiguration:
 
     def test_cors_headers_present(self, client: TestClient) -> None:
         """Test that CORS headers are present in responses"""
-        response = client.get("/api/tasks", headers={"Origin": "http://localhost:3000"})
+        response = client.get(
+            "/api/tasks",
+            headers={"Origin": "http://localhost:3000"}
+        )
 
         # CORS headers should be present
         assert "access-control-allow-origin" in response.headers
 
     def test_cors_allows_frontend_origin(self, client: TestClient) -> None:
         """Test that CORS allows requests from frontend origin"""
-        response = client.get("/api/tasks", headers={"Origin": "http://localhost:3000"})
+        response = client.get(
+            "/api/tasks",
+            headers={"Origin": "http://localhost:3000"}
+        )
 
         assert response.status_code == 200
-        assert response.headers.get("access-control-allow-origin") == "http://localhost:3000"
+        cors_header = response.headers.get("access-control-allow-origin")
+        assert cors_header == "http://localhost:3000"
 
 
 class TestApplicationRoutes:
@@ -284,7 +308,8 @@ class TestTaskAPIEndpoints:
     def test_post_task_valid_data(self, client: TestClient) -> None:
         """Test POST /api/tasks with valid data"""
         response = client.post(
-            "/api/tasks", json={"title": "New Task", "description": "Task description"}
+            "/api/tasks",
+            json={"title": "New Task", "description": "Task description"}
         )
 
         assert response.status_code == 201
@@ -298,13 +323,21 @@ class TestTaskAPIEndpoints:
 
     def test_post_task_invalid_empty_title(self, client: TestClient) -> None:
         """Test POST /api/tasks with empty title"""
-        response = client.post("/api/tasks", json={"title": "", "description": "Description"})
+        response = client.post(
+            "/api/tasks",
+            json={"title": "", "description": "Description"}
+        )
 
         assert response.status_code == 422
 
-    def test_post_task_invalid_whitespace_title(self, client: TestClient) -> None:
+    def test_post_task_invalid_whitespace_title(
+        self, client: TestClient
+    ) -> None:
         """Test POST /api/tasks with whitespace-only title"""
-        response = client.post("/api/tasks", json={"title": "   ", "description": "Description"})
+        response = client.post(
+            "/api/tasks",
+            json={"title": "   ", "description": "Description"}
+        )
 
         assert response.status_code == 422
 
@@ -312,16 +345,18 @@ class TestTaskAPIEndpoints:
         """Test POST /api/tasks with title exceeding 200 characters"""
         long_title = "a" * 201
         response = client.post(
-            "/api/tasks", json={"title": long_title, "description": "Description"}
+            "/api/tasks",
+            json={"title": long_title, "description": "Description"}
         )
 
         assert response.status_code == 422
 
     def test_post_task_description_too_long(self, client: TestClient) -> None:
-        """Test POST /api/tasks with description exceeding 1000 characters"""
+        """Test POST /api/tasks with description exceeding 1000 chars"""
         long_description = "a" * 1001
         response = client.post(
-            "/api/tasks", json={"title": "Valid Title", "description": long_description}
+            "/api/tasks",
+            json={"title": "Valid Title", "description": long_description}
         )
 
         assert response.status_code == 422
@@ -336,7 +371,10 @@ class TestTaskAPIEndpoints:
     def test_put_task_non_existent(self, client: TestClient) -> None:
         """Test PUT /api/tasks/{id} with non-existent ID"""
         fake_id = "00000000-0000-0000-0000-000000000000"
-        response = client.put(f"/api/tasks/{fake_id}", json={"title": "Updated Title"})
+        response = client.put(
+            f"/api/tasks/{fake_id}",
+            json={"title": "Updated Title"}
+        )
 
         assert response.status_code == 404
 
@@ -358,7 +396,9 @@ class TestTaskCreationProperties:
         suppress_health_check=[HealthCheck.function_scoped_fixture],
         deadline=1000
     )
-    def test_property_empty_title_rejection(self, client: TestClient, empty_title: str) -> None:
+    def test_property_empty_title_rejection(
+        self, client: TestClient, empty_title: str
+    ) -> None:
         """
         Property: Empty title rejection
         For any string composed entirely of whitespace or empty string,
@@ -366,7 +406,8 @@ class TestTaskCreationProperties:
         validation error (422 status).
         """
         response = client.post(
-            "/api/tasks", json={"title": empty_title, "description": "Test description"}
+            "/api/tasks",
+            json={"title": empty_title, "description": "Test description"}
         )
 
         # Should return validation error
@@ -392,7 +433,8 @@ class TestTaskCreationProperties:
         """
         # Test POST returns 201 for successful create
         create_response = client.post(
-            "/api/tasks", json={"title": title.strip(), "description": description}
+            "/api/tasks",
+            json={"title": title.strip(), "description": description}
         )
         assert create_response.status_code == 201
         task_id = create_response.json()["id"]
@@ -404,7 +446,10 @@ class TestTaskCreationProperties:
         # Test PUT returns 200 for successful update
         update_response = client.put(
             f"/api/tasks/{task_id}",
-            json={"title": "Updated " + title.strip()[:50], "completed": True},
+            json={
+                "title": "Updated " + title.strip()[:50],
+                "completed": True
+            },
         )
         assert update_response.status_code == 200
 
@@ -417,5 +462,8 @@ class TestTaskCreationProperties:
         assert not_found_response.status_code == 404
 
         # Test POST returns 422 for validation error (empty title)
-        validation_error = client.post("/api/tasks", json={"title": "", "description": "Test"})
+        validation_error = client.post(
+            "/api/tasks",
+            json={"title": "", "description": "Test"}
+        )
         assert validation_error.status_code == 422
