@@ -13,7 +13,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from app.main import create_app
@@ -293,7 +293,7 @@ class TestDeleteAllTasksEndpoint:
 class TestDeleteAllTasksProperties:
     """Property-based tests for delete_all_tasks feature"""
 
-    @settings(max_examples=10, deadline=2000)
+    @settings(max_examples=10, deadline=2000, suppress_health_check=[HealthCheck.function_scoped_fixture])
     @given(tasks_data=st.lists(task_create_strategy(), min_size=1, max_size=10))
     def test_property_delete_all_removes_all_tasks(
         self, client: TestClient, tasks_data: list
@@ -319,7 +319,7 @@ class TestDeleteAllTasksProperties:
         response = client.get("/api/tasks")
         assert len(response.json()["tasks"]) == 0
 
-    @settings(max_examples=10, deadline=2000)
+    @settings(max_examples=10, deadline=2000, suppress_health_check=[HealthCheck.function_scoped_fixture])
     @given(tasks_data=st.lists(task_create_strategy(), min_size=1, max_size=10))
     def test_property_delete_all_makes_tasks_unretrievable_by_id(
         self, client: TestClient, tasks_data: list
@@ -348,7 +348,7 @@ class TestDeleteAllTasksProperties:
             response = client.get(f"/api/tasks/{task_id}")
             assert response.status_code == 404
 
-    @settings(max_examples=5, deadline=2000)
+    @settings(max_examples=5, deadline=2000, suppress_health_check=[HealthCheck.function_scoped_fixture])
     @given(
         first_batch=st.lists(task_create_strategy(), min_size=1, max_size=5),
         second_batch=st.lists(task_create_strategy(), min_size=1, max_size=5),
