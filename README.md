@@ -40,7 +40,8 @@ project-root/
 │   │       └── task_service.py   # Business logic layer
 │   ├── tests/
 │   │   ├── test_main.py          # API endpoint tests with Hypothesis
-│   │   └── test_task_repository.py # Repository tests with Hypothesis
+│   │   ├── test_task_repository.py # Repository tests with Hypothesis
+│   │   └── test_bulk_delete.py   # Bulk delete endpoint tests
 │   ├── data/
 │   │   └── .gitkeep              # Placeholder for data directory
 │   ├── Dockerfile                # Backend container image
@@ -246,7 +247,8 @@ npm test
 -  **Create Tasks**: Add new tasks with title and description
 -  **View Tasks**: Display all tasks ordered by creation date (newest first)
 -  **Edit Tasks**: Update task title and description
--  **Delete Tasks**: Remove tasks from the list
+-  **Delete Tasks**: Remove individual tasks from the list
+-  **Delete All Tasks**: Bulk delete all tasks at once
 -  **Toggle Completion**: Mark tasks as complete or incomplete
 -  **Data Persistence**: Tasks persist in MySQL database across restarts
 -  **Input Validation**: Client and server-side validation for data integrity
@@ -269,6 +271,7 @@ npm test
 ### Backend Features
 -  RESTful API with FastAPI
 -  Full CRUD operations for tasks
+-  Bulk delete operation for all tasks
 -  Pydantic models for request/response validation
 -  MySQL database persistence with connection pooling
 -  Repository pattern for data access abstraction
@@ -403,7 +406,7 @@ Update an existing task.
 ```
 
 ### DELETE /api/tasks/{task_id}
-Delete a task.
+Delete a specific task by ID.
 
 **Response (204 No Content):**
 No response body.
@@ -414,6 +417,45 @@ No response body.
   "detail": "Task not found"
 }
 ```
+
+**Example:**
+```bash
+curl -X DELETE http://localhost:8000/api/tasks/550e8400-e29b-41d4-a716-446655440000
+```
+
+### DELETE /api/tasks
+Delete all tasks (bulk delete operation).
+
+**Request:**
+- No request body required
+- No path parameters
+
+**Response (204 No Content):**
+No response body. Always returns 204 even if no tasks exist (idempotent operation).
+
+**Behavior:**
+- Deletes all tasks from the database
+- Idempotent: Can be called multiple times safely
+- Returns 204 even on empty database
+- Operation is immediate and cannot be undone
+
+**Example:**
+```bash
+# Delete all tasks
+curl -X DELETE http://localhost:8000/api/tasks
+
+# Verify all tasks are deleted
+curl http://localhost:8000/api/tasks
+# Response: {"tasks": []}
+```
+
+**Use Cases:**
+- Clear all tasks during testing
+- Reset application to initial state
+- Batch cleanup operations
+- Development and testing workflows
+
+⚠️ **Warning**: This operation permanently deletes all tasks and cannot be undone. Use with caution in production environments.
 
 ### GET /health
 Returns the health status of the backend.
@@ -525,6 +567,7 @@ pytest -v
 # Run specific test file
 pytest tests/test_main.py
 pytest tests/test_task_repository.py
+pytest tests/test_bulk_delete.py
 
 # Run with coverage
 pytest --cov=app --cov-report=html
@@ -551,9 +594,11 @@ npm run test:coverage
 
 *Unit Tests:*
 -  All API endpoints (GET, POST, PUT, DELETE)
+-  Bulk delete endpoint (DELETE /api/tasks)
 -  Request validation (empty titles, length limits)
 -  HTTP status codes (200, 201, 204, 404, 422)
 -  Task repository CRUD operations
+-  Repository delete_all() method
 -  MySQL connection and persistence
 -  Error handling for database errors
 -  Service layer business logic
@@ -569,6 +614,8 @@ npm run test:coverage
 -  Invalid update rejection - empty title updates should be rejected
 -  RESTful status codes - operations return correct HTTP status codes
 -  Persistence across restarts - tasks survive backend restarts
+-  Bulk delete removes all tasks - DELETE /api/tasks empties database
+-  Bulk delete idempotence - can be called multiple times safely
 
 **Frontend Test Suite:**
 
@@ -897,6 +944,9 @@ docker compose restart mysql
 # Connect to MySQL and delete all tasks
 docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "DELETE FROM tasks;"
 
+# Or use the API bulk delete endpoint
+curl -X DELETE http://localhost:8000/api/tasks
+
 # Or drop and recreate the database
 docker compose exec mysql mysql -u root -prootpassword -e "DROP DATABASE taskmanager; CREATE DATABASE taskmanager;"
 docker compose restart backend
@@ -1062,6 +1112,13 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Docker volume ensures data persistence
 - Easy to backup and restore
 
+**Bulk Delete Operation:**
+- Single endpoint (DELETE /api/tasks) for deleting all tasks
+- Idempotent: Returns 204 even on empty database
+- Follows RESTful conventions for collection operations
+- Useful for testing, development, and reset workflows
+- No authentication guard (consistent with other endpoints)
+
 **No Authentication:**
 - MVP scope focuses on core CRUD functionality
 - Authentication can be added later without major refactoring
@@ -1115,6 +1172,7 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - **No Pagination**: All tasks loaded at once (could be issue with many tasks)
 - **No Task Deadlines**: No due date tracking
 - **Local Development Only**: Not configured for production deployment
+- **No Undo for Bulk Delete**: DELETE /api/tasks is permanent
 
 ### Future Enhancements
 
@@ -1133,6 +1191,8 @@ Potential improvements for future versions:
    - Task search and filtering
    - Pagination for large task lists
    - Sorting options (priority, due date, etc.)
+   - Undo/redo functionality
+   - Bulk operations (select multiple tasks)
 
 3. **Collaboration**:
    - Task sharing between users
