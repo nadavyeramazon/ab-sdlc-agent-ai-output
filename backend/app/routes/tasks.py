@@ -149,6 +149,26 @@ def update_task(
     return task.model_dump()
 
 
+@router.delete("/tasks", status_code=204)
+def delete_all_tasks(
+    service: TaskService = Depends(get_task_service)
+) -> None:
+    """
+    Delete all tasks.
+
+    Args:
+        service: Injected TaskService instance
+
+    Returns:
+        No content (204 status)
+
+    Example:
+        Response: No content with 204 status code
+    """
+    service.delete_all_tasks()
+    return None
+
+
 @router.delete("/tasks/{task_id}", status_code=204)
 def delete_task(
     task_id: str,
