@@ -40,7 +40,8 @@ project-root/
 │   │       └── task_service.py   # Business logic layer
 │   ├── tests/
 │   │   ├── test_main.py          # API endpoint tests with Hypothesis
-│   │   └── test_task_repository.py # Repository tests with Hypothesis
+│   │   ├── test_task_repository.py # Repository tests with Hypothesis
+│   │   └── test_delete_all_tasks.py # Delete all tasks feature tests
 │   ├── data/
 │   │   └── .gitkeep              # Placeholder for data directory
 │   ├── Dockerfile                # Backend container image
@@ -246,7 +247,8 @@ npm test
 -  **Create Tasks**: Add new tasks with title and description
 -  **View Tasks**: Display all tasks ordered by creation date (newest first)
 -  **Edit Tasks**: Update task title and description
--  **Delete Tasks**: Remove tasks from the list
+-  **Delete Tasks**: Remove individual tasks from the list
+-  **Delete All Tasks**: Remove all tasks at once with a single operation
 -  **Toggle Completion**: Mark tasks as complete or incomplete
 -  **Data Persistence**: Tasks persist in MySQL database across restarts
 -  **Input Validation**: Client and server-side validation for data integrity
@@ -269,6 +271,7 @@ npm test
 ### Backend Features
 -  RESTful API with FastAPI
 -  Full CRUD operations for tasks
+-  Bulk operations (delete all tasks)
 -  Pydantic models for request/response validation
 -  MySQL database persistence with connection pooling
 -  Repository pattern for data access abstraction
@@ -402,8 +405,30 @@ Update an existing task.
 }
 ```
 
+### DELETE /api/tasks
+Delete all tasks from the database.
+
+**Response (204 No Content):**
+No response body.
+
+**Example Usage:**
+```bash
+# Delete all tasks using curl
+curl -X DELETE http://localhost:8000/api/tasks
+
+# Delete all tasks using httpie
+http DELETE http://localhost:8000/api/tasks
+```
+
+**Notes:**
+- This operation is idempotent - calling it multiple times is safe
+- Deletes all tasks regardless of completion status
+- No request body required
+- Returns 204 even if there are no tasks to delete
+- New tasks can be created immediately after deletion
+
 ### DELETE /api/tasks/{task_id}
-Delete a task.
+Delete a specific task by ID.
 
 **Response (204 No Content):**
 No response body.
@@ -525,6 +550,7 @@ pytest -v
 # Run specific test file
 pytest tests/test_main.py
 pytest tests/test_task_repository.py
+pytest tests/test_delete_all_tasks.py
 
 # Run with coverage
 pytest --cov=app --cov-report=html
@@ -551,6 +577,7 @@ npm run test:coverage
 
 *Unit Tests:*
 -  All API endpoints (GET, POST, PUT, DELETE)
+-  Bulk operations (DELETE all tasks)
 -  Request validation (empty titles, length limits)
 -  HTTP status codes (200, 201, 204, 404, 422)
 -  Task repository CRUD operations
@@ -565,6 +592,8 @@ npm run test:coverage
 -  Task retrieval completeness - all stored tasks should be returned
 -  Completion toggle idempotence - toggling twice returns to original state
 -  Delete operation removes task - deleted tasks should not be retrievable
+-  Delete all removes all tasks - all tasks become unretrievable after delete_all
+-  Delete all idempotence - calling delete_all multiple times is safe
 -  Update preserves identity - updates should not change ID or creation time
 -  Invalid update rejection - empty title updates should be rejected
 -  RESTful status codes - operations return correct HTTP status codes
@@ -894,7 +923,10 @@ docker compose restart mysql
 
 **Reset Data:**
 ```bash
-# Connect to MySQL and delete all tasks
+# Delete all tasks using the API
+curl -X DELETE http://localhost:8000/api/tasks
+
+# Or connect to MySQL and delete all tasks
 docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "DELETE FROM tasks;"
 
 # Or drop and recreate the database
@@ -1133,6 +1165,7 @@ Potential improvements for future versions:
    - Task search and filtering
    - Pagination for large task lists
    - Sorting options (priority, due date, etc.)
+   - Bulk operations UI (delete all button in frontend)
 
 3. **Collaboration**:
    - Task sharing between users
