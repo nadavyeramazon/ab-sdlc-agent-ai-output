@@ -7,9 +7,6 @@ import App from '../App';
 // Mock fetch globally
 global.fetch = vi.fn();
 
-// Helper to flush all pending promises
-const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
-
 describe('Delete All Tasks Functionality', () => {
   beforeEach(() => {
     // Clear all mocks before each test
