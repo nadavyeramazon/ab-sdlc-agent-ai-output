@@ -118,10 +118,11 @@ export function useTasks() {
 
     try {
       await taskApi.deleteAllTasks();
-      // Clear local state
+      // Clear local state only on success
       setTasks([]);
       return true;
     } catch (err) {
+      // Do NOT clear tasks on error - keep them visible
       setError(err.message);
       return false;
     }
