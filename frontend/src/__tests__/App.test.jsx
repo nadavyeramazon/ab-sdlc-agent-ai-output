@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 
@@ -26,6 +26,11 @@ describe('App Component', () => {
     });
   });
 
+  afterEach(() => {
+    // Clean up after each test to prevent state leakage and act() warnings
+    cleanup();
+  });
+
   describe('Component Rendering', () => {
     it('should render without crashing', () => {
       render(<App />);
@@ -36,10 +41,14 @@ describe('App Component', () => {
       render(<App />);
 
       // Check for main heading
-      expect(screen.getByRole('heading', { name: /task manager/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: /task manager/i })
+      ).toBeInTheDocument();
 
       // Check for task section
-      expect(screen.getByRole('heading', { name: /my tasks/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: /my tasks/i })
+      ).toBeInTheDocument();
     });
 
     it('should have correct initial state', async () => {
@@ -64,7 +73,9 @@ describe('App Component', () => {
       render(<App />);
 
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/tasks'));
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/tasks')
+        );
       });
     });
 
@@ -112,6 +123,14 @@ describe('App Component', () => {
       render(<App />);
 
       expect(screen.getByText('Loading tasks...')).toBeInTheDocument();
+
+      // Wait for loading to complete
+      await waitFor(
+        () => {
+          expect(screen.queryByText('Loading tasks...')).not.toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should display tasks when API returns task list', async () => {
@@ -278,7 +297,9 @@ describe('App Component', () => {
       await waitFor(() => {
         expect(screen.getByText('Task without description')).toBeInTheDocument();
         // Description paragraph should not be rendered if empty
-        const taskItem = screen.getByText('Task without description').closest('.task-item');
+        const taskItem = screen
+          .getByText('Task without description')
+          .closest('.task-item');
         expect(taskItem.querySelector('.task-description')).not.toBeInTheDocument();
       });
     });
@@ -318,93 +339,104 @@ describe('App Component', () => {
   });
 
   describe('Property-Based Tests', () => {
-    it('Property 10: Task ordering consistency - tasks should be ordered by creation date (newest first)', async () => {
-      /**
-       * Feature: task-manager-app, Property 10: Task ordering consistency
-       * Validates: Requirements 2.4
-       *
-       * For any set of tasks, when retrieved via GET /api/tasks,
-       * the tasks should be ordered by creation timestamp in descending order (newest first).
-       */
-      const fc = await import('fast-check');
+    it(
+      'Property 10: Task ordering consistency - tasks should be ordered by creation date (newest first)',
+      async () => {
+        /**
+         * Feature: task-manager-app, Property 10: Task ordering consistency
+         * Validates: Requirements 2.4
+         *
+         * For any set of tasks, when retrieved via GET /api/tasks,
+         * the tasks should be ordered by creation timestamp in descending order (newest first).
+         */
+        const fc = await import('fast-check');
 
-      await fc.assert(
-        fc.asyncProperty(
-          // Generate an array of 2-10 tasks with random timestamps
-          fc.array(
-            fc.record({
-              id: fc.uuid(),
-              title: fc.string({ minLength: 1, maxLength: 50 }),
-              description: fc.string({ maxLength: 200 }),
-              completed: fc.boolean(),
-              created_at: fc
-                .integer({
-                  min: new Date('2020-01-01').getTime(),
-                  max: new Date('2025-12-31').getTime(),
-                })
-                .map((timestamp) => new Date(timestamp).toISOString()),
-              updated_at: fc
-                .integer({
-                  min: new Date('2020-01-01').getTime(),
-                  max: new Date('2025-12-31').getTime(),
-                })
-                .map((timestamp) => new Date(timestamp).toISOString()),
-            }),
-            { minLength: 2, maxLength: 10 }
-          ),
-          async (generatedTasks) => {
-            // Sort tasks by created_at descending to match backend behavior
-            const sortedTasks = [...generatedTasks].sort(
-              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            );
+        await fc.assert(
+          fc.asyncProperty(
+            // Generate an array of 2-10 tasks with random timestamps
+            fc.array(
+              fc.record({
+                id: fc.uuid(),
+                title: fc.string({ minLength: 1, maxLength: 50 }),
+                description: fc.string({ maxLength: 200 }),
+                completed: fc.boolean(),
+                created_at: fc
+                  .integer({
+                    min: new Date('2020-01-01').getTime(),
+                    max: new Date('2025-12-31').getTime(),
+                  })
+                  .map((timestamp) => new Date(timestamp).toISOString()),
+                updated_at: fc
+                  .integer({
+                    min: new Date('2020-01-01').getTime(),
+                    max: new Date('2025-12-31').getTime(),
+                  })
+                  .map((timestamp) => new Date(timestamp).toISOString()),
+              }),
+              { minLength: 2, maxLength: 10 }
+            ),
+            async (generatedTasks) => {
+              // Sort tasks by created_at descending to match backend behavior
+              const sortedTasks = [...generatedTasks].sort(
+                (a, b) =>
+                  new Date(b.created_at).getTime() -
+                  new Date(a.created_at).getTime()
+              );
 
-            // Mock the API to return the sorted tasks (matching backend behavior)
-            global.fetch.mockImplementation((url) => {
-              if (url.includes('/api/tasks')) {
+              // Mock the API to return the sorted tasks (matching backend behavior)
+              global.fetch.mockImplementation((url) => {
+                if (url.includes('/api/tasks')) {
+                  return Promise.resolve({
+                    ok: true,
+                    json: async () => ({ tasks: sortedTasks }),
+                  });
+                }
                 return Promise.resolve({
                   ok: true,
-                  json: async () => ({ tasks: sortedTasks }),
+                  json: async () => ({ message: 'Default' }),
                 });
-              }
-              return Promise.resolve({
-                ok: true,
-                json: async () => ({ message: 'Default' }),
               });
-            });
 
-            const { unmount } = render(<App />);
+              const { unmount } = render(<App />);
 
-            try {
-              // Wait for tasks to be rendered
-              await waitFor(
-                () => {
-                  const taskItems = document.querySelectorAll('.task-item');
-                  expect(taskItems.length).toBe(generatedTasks.length);
-                },
-                { timeout: 3000 }
-              );
+              try {
+                // Wait for tasks to be rendered
+                await waitFor(
+                  () => {
+                    const taskItems = document.querySelectorAll('.task-item');
+                    expect(taskItems.length).toBe(generatedTasks.length);
+                  },
+                  { timeout: 3000 }
+                );
 
-              // Get the rendered task titles in order
-              const taskItems = document.querySelectorAll('.task-item');
-              const renderedTitles = Array.from(taskItems).map(
-                (item) => item.querySelector('.task-title').textContent
-              );
+                // Get the rendered task titles in order
+                const taskItems = document.querySelectorAll('.task-item');
+                const renderedTitles = Array.from(taskItems).map(
+                  (item) => item.querySelector('.task-title').textContent
+                );
 
-              // Sort the generated tasks by created_at descending (newest first)
-              const expectedOrder = [...generatedTasks]
-                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                .map((task) => task.title);
+                // Sort the generated tasks by created_at descending (newest first)
+                const expectedOrder = [...generatedTasks]
+                  .sort(
+                    (a, b) =>
+                      new Date(b.created_at).getTime() -
+                      new Date(a.created_at).getTime()
+                  )
+                  .map((task) => task.title);
 
-              // Verify the rendered order matches the expected order
-              expect(renderedTitles).toEqual(expectedOrder);
-            } finally {
-              unmount();
+                // Verify the rendered order matches the expected order
+                expect(renderedTitles).toEqual(expectedOrder);
+              } finally {
+                // Properly unmount to avoid act() warnings
+                unmount();
+              }
             }
-          }
-        ),
-        { numRuns: 10 } // Reduced runs for faster test execution
-      );
-    }, 15000); // 15 second timeout
+          ),
+          { numRuns: 10 } // Reduced runs for faster test execution
+        );
+      },
+      15000
+    ); // 15 second timeout
   });
 
   describe('Integration Tests - Complete User Flows', () => {
@@ -459,13 +491,17 @@ describe('App Component', () => {
         await user.type(descriptionInput, 'This is a test description');
 
         // Submit the form
-        const createButton = screen.getByRole('button', { name: /create task/i });
+        const createButton = screen.getByRole('button', {
+          name: /create task/i,
+        });
         await user.click(createButton);
 
         // Verify task appears in the list
         await waitFor(() => {
           expect(screen.getByText('New Integration Test Task')).toBeInTheDocument();
-          expect(screen.getByText('This is a test description')).toBeInTheDocument();
+          expect(
+            screen.getByText('This is a test description')
+          ).toBeInTheDocument();
         });
 
         // Verify form is cleared
@@ -511,7 +547,9 @@ describe('App Component', () => {
         await user.type(titleInput, 'Test');
         await user.clear(titleInput);
 
-        const createButton = screen.getByRole('button', { name: /create task/i });
+        const createButton = screen.getByRole('button', {
+          name: /create task/i,
+        });
         await user.click(createButton);
 
         // Should show client-side validation error
@@ -571,17 +609,23 @@ describe('App Component', () => {
         });
 
         // Click edit button
-        const editButton = screen.getByRole('button', { name: /edit task "original title"/i });
+        const editButton = screen.getByRole('button', {
+          name: /edit task "original title"/i,
+        });
         await user.click(editButton);
 
         // Verify form switches to edit mode
         await waitFor(() => {
-          expect(screen.getByRole('heading', { name: /edit task/i })).toBeInTheDocument();
+          expect(
+            screen.getByRole('heading', { name: /edit task/i })
+          ).toBeInTheDocument();
         });
 
         // Verify form is populated with current data
         const titleInput = screen.getByPlaceholderText(/enter task title/i);
-        const descriptionInput = screen.getByPlaceholderText(/enter task description/i);
+        const descriptionInput = screen.getByPlaceholderText(
+          /enter task description/i
+        );
         expect(titleInput).toHaveValue('Original Title');
         expect(descriptionInput).toHaveValue('Original Description');
 
@@ -592,7 +636,9 @@ describe('App Component', () => {
         await user.type(descriptionInput, 'Updated Description');
 
         // Submit the update
-        const updateButton = screen.getByRole('button', { name: /update task/i });
+        const updateButton = screen.getByRole('button', {
+          name: /update task/i,
+        });
         await user.click(updateButton);
 
         // Verify task is updated in the list
@@ -605,7 +651,9 @@ describe('App Component', () => {
 
         // Verify form returns to create mode
         await waitFor(() => {
-          expect(screen.getByRole('heading', { name: /create new task/i })).toBeInTheDocument();
+          expect(
+            screen.getByRole('heading', { name: /create new task/i })
+          ).toBeInTheDocument();
         });
         expect(titleInput).toHaveValue('');
         expect(descriptionInput).toHaveValue('');
@@ -642,11 +690,15 @@ describe('App Component', () => {
         });
 
         // Start editing
-        const editButton = screen.getByRole('button', { name: /edit task "test task"/i });
+        const editButton = screen.getByRole('button', {
+          name: /edit task "test task"/i,
+        });
         await user.click(editButton);
 
         await waitFor(() => {
-          expect(screen.getByRole('heading', { name: /edit task/i })).toBeInTheDocument();
+          expect(
+            screen.getByRole('heading', { name: /edit task/i })
+          ).toBeInTheDocument();
         });
 
         // Make some changes
@@ -660,7 +712,9 @@ describe('App Component', () => {
 
         // Verify form returns to create mode
         await waitFor(() => {
-          expect(screen.getByRole('heading', { name: /create new task/i })).toBeInTheDocument();
+          expect(
+            screen.getByRole('heading', { name: /create new task/i })
+          ).toBeInTheDocument();
         });
 
         // Verify original task is unchanged
@@ -708,11 +762,15 @@ describe('App Component', () => {
         });
 
         // Start editing
-        const editButton = screen.getByRole('button', { name: /edit task "test task"/i });
+        const editButton = screen.getByRole('button', {
+          name: /edit task "test task"/i,
+        });
         await user.click(editButton);
 
         await waitFor(() => {
-          expect(screen.getByRole('heading', { name: /edit task/i })).toBeInTheDocument();
+          expect(
+            screen.getByRole('heading', { name: /edit task/i })
+          ).toBeInTheDocument();
         });
 
         // Try to update
@@ -720,7 +778,9 @@ describe('App Component', () => {
         await user.clear(titleInput);
         await user.type(titleInput, 'Updated Title');
 
-        const updateButton = screen.getByRole('button', { name: /update task/i });
+        const updateButton = screen.getByRole('button', {
+          name: /update task/i,
+        });
         await user.click(updateButton);
 
         // Should show error message in the form
@@ -773,7 +833,9 @@ describe('App Component', () => {
         });
 
         // Click delete button
-        const deleteButton = screen.getByRole('button', { name: /delete task "task to delete"/i });
+        const deleteButton = screen.getByRole('button', {
+          name: /delete task "task to delete"/i,
+        });
         await user.click(deleteButton);
 
         // Verify task is removed from UI
@@ -820,7 +882,9 @@ describe('App Component', () => {
         });
 
         // Click delete button
-        const deleteButton = screen.getByRole('button', { name: /delete task "task to delete"/i });
+        const deleteButton = screen.getByRole('button', {
+          name: /delete task "task to delete"/i,
+        });
         await user.click(deleteButton);
 
         // Task should still be removed from UI (graceful handling)
@@ -1008,7 +1072,9 @@ describe('App Component', () => {
         const titleInput = screen.getByLabelText(/title/i);
         await user.type(titleInput, 'Test Task');
 
-        const createButton = screen.getByRole('button', { name: /create task/i });
+        const createButton = screen.getByRole('button', {
+          name: /create task/i,
+        });
         await user.click(createButton);
 
         // Should show error in the form
@@ -1055,7 +1121,9 @@ describe('App Component', () => {
         });
 
         // Try to delete
-        const deleteButton = screen.getByRole('button', { name: /delete task "task to delete"/i });
+        const deleteButton = screen.getByRole('button', {
+          name: /delete task "task to delete"/i,
+        });
         await user.click(deleteButton);
 
         // Should show error in task list section
@@ -1113,16 +1181,13 @@ describe('App Component', () => {
           if (url.includes('/api/tasks/1') && options?.method === 'DELETE') {
             deleteStarted = true;
             return new Promise((resolve) =>
-              setTimeout(
-                () => {
-                  taskExists = false;
-                  resolve({
-                    ok: true,
-                    status: 204,
-                  });
-                },
-                100
-              )
+              setTimeout(() => {
+                taskExists = false;
+                resolve({
+                  ok: true,
+                  status: 204,
+                });
+              }, 100)
             );
           }
           if (url.includes('/api/tasks')) {
@@ -1145,7 +1210,9 @@ describe('App Component', () => {
         });
 
         // Get reference to delete button
-        const deleteButton = screen.getByRole('button', { name: /delete task "test task"/i });
+        const deleteButton = screen.getByRole('button', {
+          name: /delete task "test task"/i,
+        });
 
         // Start delete operation
         await user.click(deleteButton);
@@ -1228,7 +1295,9 @@ describe('App Component', () => {
         const titleInput = screen.getByLabelText(/title/i);
         await user.type(titleInput, 'First Task');
 
-        const createButton = screen.getByRole('button', { name: /create task/i });
+        const createButton = screen.getByRole('button', {
+          name: /create task/i,
+        });
         await user.click(createButton);
 
         // Empty state should be gone
