@@ -83,9 +83,12 @@ function App() {
   // Handle delete all tasks
   const handleDeleteAllTasks = async () => {
     setDeleteAllLoading(true);
-    await deleteAllTasks();
+    const success = await deleteAllTasks();
     setDeleteAllLoading(false);
-    setShowDeleteAllConfirm(false);
+    if (success) {
+      setShowDeleteAllConfirm(false);
+    }
+    // On error, keep the confirmation dialog visible so user can retry or cancel
   };
 
   // Start editing a task
