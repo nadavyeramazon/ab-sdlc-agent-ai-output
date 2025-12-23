@@ -617,10 +617,13 @@ describe('App Component', () => {
       const confirmButton = screen.getByRole('button', { name: /yes, delete all/i });
       await user.click(confirmButton);
 
-      // Loading state should be visible
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /deleting\.\.\./i })).toBeInTheDocument();
-      });
+      // Wait for loading state to appear (before resolving the promise)
+      await waitFor(
+        () => {
+          expect(screen.getByRole('button', { name: /deleting\.\.\./i })).toBeInTheDocument();
+        },
+        { timeout: 1000 }
+      );
 
       // Now resolve the delete operation
       resolveDelete();
@@ -688,13 +691,16 @@ describe('App Component', () => {
       const confirmButton = screen.getByRole('button', { name: /yes, delete all/i });
       await user.click(confirmButton);
 
-      // Buttons should be disabled during loading
-      await waitFor(() => {
-        const deletingButton = screen.getByRole('button', { name: /deleting\.\.\./i });
-        const cancelButton = screen.getByRole('button', { name: /cancel/i });
-        expect(deletingButton).toBeDisabled();
-        expect(cancelButton).toBeDisabled();
-      });
+      // Wait for buttons to be disabled during loading (before resolving promise)
+      await waitFor(
+        () => {
+          const deletingButton = screen.getByRole('button', { name: /deleting\.\.\./i });
+          const cancelButton = screen.getByRole('button', { name: /cancel/i });
+          expect(deletingButton).toBeDisabled();
+          expect(cancelButton).toBeDisabled();
+        },
+        { timeout: 1000 }
+      );
 
       // Complete the deletion
       resolveDelete();
@@ -756,18 +762,22 @@ describe('App Component', () => {
       const confirmButton = screen.getByRole('button', { name: /yes, delete all/i });
       await user.click(confirmButton);
 
-      // Wait for the delete operation to complete (and fail)
+      // Wait for the error to be displayed
       await waitFor(
         () => {
-          // The error should be displayed in the task list section
           const taskListSection = document.querySelector('.task-list-section');
           expect(taskListSection.textContent).toMatch(/HTTP error! status: 500/i);
         },
         { timeout: 2000 }
       );
 
-      // Tasks should still be visible (rollback happened)
-      expect(screen.getByText('Task 1')).toBeInTheDocument();
+      // Wait separately for tasks to be rolled back and visible again
+      await waitFor(
+        () => {
+          expect(screen.getByText('Task 1')).toBeInTheDocument();
+        },
+        { timeout: 2000 }
+      );
 
       // Confirmation dialog should still be visible (not hidden on error)
       expect(
