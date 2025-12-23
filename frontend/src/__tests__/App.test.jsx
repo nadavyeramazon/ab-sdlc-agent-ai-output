@@ -118,6 +118,12 @@ describe('App Component', () => {
       render(<App />);
 
       expect(screen.getByText('Loading tasks...')).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(
+          screen.queryByText('Loading tasks...')
+        ).not.toBeInTheDocument();
+      });
     });
 
     it('should display tasks when API returns task list', async () => {
@@ -766,18 +772,24 @@ describe('App Component', () => {
         },
       ];
 
+      // Use controlled promise pattern to manage timing
+      let rejectDelete;
+      const deletePromise = new Promise((resolve, reject) => {
+        rejectDelete = reject;
+      });
+
       global.fetch.mockImplementation((url, options) => {
         if (url.includes('/api/tasks') && options?.method === 'DELETE') {
-          // Simulate API error after a delay
-          return new Promise((resolve) =>
-            setTimeout(
-              () =>
-                resolve({
-                  ok: false,
-                  status: 500,
-                }),
-              50
-            )
+          // Return controlled promise that we'll reject with an error
+          return deletePromise.then(
+            (response) => response,
+            (error) => {
+              // Return a failed response instead of throwing
+              return {
+                ok: false,
+                status: 500,
+              };
+            }
           );
         }
         if (url.includes('/api/tasks')) {
@@ -819,18 +831,18 @@ describe('App Component', () => {
       });
       await user.click(confirmButton);
 
-      // Wait for the loading state to appear (this confirms the delete operation started)
-      await waitFor(
-        () => {
-          const deletingButton = screen.queryByRole('button', {
-            name: /deleting\.\.\./i,
-          });
-          expect(deletingButton).toBeInTheDocument();
-        },
-        { timeout: 1000 }
+      // Wait for the loading state to appear (confirms delete operation started)
+      const deletingButton = await screen.findByRole(
+        'button',
+        { name: /deleting\.\.\./i },
+        { timeout: 2000 }
       );
+      expect(deletingButton).toBeInTheDocument();
 
-      // Wait for the API call to complete and error to be displayed
+      // Now trigger the API error by rejecting the promise
+      rejectDelete(new Error('API Error'));
+
+      // Wait for error to be displayed
       await waitFor(
         () => {
           const taskListSection = document.querySelector('.task-list-section');
