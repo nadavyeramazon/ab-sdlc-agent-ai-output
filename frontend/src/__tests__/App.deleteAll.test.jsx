@@ -913,110 +913,115 @@ describe('Delete All Tasks Functionality', () => {
       expect(confirmButtons).toHaveLength(1);
     });
 
-    it('should handle network errors during deletion', async () => {
-      const mockTasks = [
-        {
-          id: '1',
-          title: 'Task 1',
-          description: 'Description 1',
-          completed: false,
-          created_at: '2024-01-01T00:00:00Z',
-          updated_at: '2024-01-01T00:00:00Z',
-        },
-      ];
+    it(
+      'should handle network errors during deletion',
+      async () => {
+        const mockTasks = [
+          {
+            id: '1',
+            title: 'Task 1',
+            description: 'Description 1',
+            completed: false,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+          },
+        ];
 
-      // Keep track of calls to ensure consistency
-      let deleteCallCount = 0;
+        // Keep track of calls to ensure consistency
+        let deleteCallCount = 0;
 
-      global.fetch.mockImplementation((url, options) => {
-        if (url.includes('/api/tasks') && options?.method === 'DELETE') {
-          deleteCallCount++;
-          return Promise.reject(new Error('Network error'));
-        }
-        // Always return the same tasks on GET regardless of DELETE failures
-        if (url.includes('/api/tasks') && !options?.method) {
+        global.fetch.mockImplementation((url, options) => {
+          if (url.includes('/api/tasks') && options?.method === 'DELETE') {
+            deleteCallCount++;
+            return Promise.reject(new Error('Network error'));
+          }
+          // Always return the same tasks on GET regardless of DELETE failures
+          if (url.includes('/api/tasks') && !options?.method) {
+            return Promise.resolve({
+              ok: true,
+              json: async () => ({ tasks: mockTasks }),
+            });
+          }
           return Promise.resolve({
             ok: true,
-            json: async () => ({ tasks: mockTasks }),
+            json: async () => ({ message: 'Default' }),
           });
-        }
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ message: 'Default' }),
         });
-      });
 
-      const user = userEvent.setup();
-      await act(async () => {
-        render(<App />);
-      });
+        const user = userEvent.setup();
+        await act(async () => {
+          render(<App />);
+        });
 
-      await waitFor(() => {
-        expect(screen.getByText('Task 1')).toBeInTheDocument();
-      });
-
-      // Click Delete All and confirm
-      const deleteAllButton = screen.getByRole('button', {
-        name: /delete all tasks/i,
-      });
-      await act(async () => {
-        await user.click(deleteAllButton);
-      });
-
-      await waitFor(() => {
-        expect(
-          screen.getByRole('button', { name: /confirm delete all/i })
-        ).toBeInTheDocument();
-      });
-
-      const confirmButton = screen.getByRole('button', {
-        name: /confirm delete all/i,
-      });
-
-      // Click confirm and wait for all state updates
-      await act(async () => {
-        await user.click(confirmButton);
-        // Give more time for the error to propagate and state updates to complete
-        await new Promise((resolve) => setTimeout(resolve, 500));
-      });
-
-      // Verify DELETE was attempted
-      await waitFor(
-        () => {
-          expect(deleteCallCount).toBeGreaterThan(0);
-        },
-        { timeout: 10000 }
-      );
-
-      // Wait for error message to appear
-      await waitFor(
-        () => {
-          const taskListSection = document.querySelector('.task-list-section');
-          expect(taskListSection.textContent).toMatch(/Network error/i);
-        },
-        { timeout: 10000 }
-      );
-
-      // Wait for confirmation UI to be dismissed (Delete All button reappears)
-      await waitFor(
-        () => {
-          expect(
-            screen.getByRole('button', { name: /delete all tasks/i })
-          ).toBeInTheDocument();
-        },
-        { timeout: 10000 }
-      );
-
-      // FIX: Tasks should REMAIN after network error (useTasks hook preserves tasks on error)
-      // The hook does NOT clear tasks on error - it keeps them visible
-      await waitFor(
-        () => {
-          const tasksList = screen.queryAllByRole('listitem');
-          expect(tasksList).toHaveLength(1); // Tasks should still be present
+        await waitFor(() => {
           expect(screen.getByText('Task 1')).toBeInTheDocument();
-        },
-        { timeout: 10000 }
-      );
-    });
+        });
+
+        // Click Delete All and confirm
+        const deleteAllButton = screen.getByRole('button', {
+          name: /delete all tasks/i,
+        });
+        await act(async () => {
+          await user.click(deleteAllButton);
+        });
+
+        await waitFor(() => {
+          expect(
+            screen.getByRole('button', { name: /confirm delete all/i })
+          ).toBeInTheDocument();
+        });
+
+        const confirmButton = screen.getByRole('button', {
+          name: /confirm delete all/i,
+        });
+
+        // Click confirm and wait for all state updates
+        await act(async () => {
+          await user.click(confirmButton);
+          // Give more time for the error to propagate and state updates to complete
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        });
+
+        // Verify DELETE was attempted
+        await waitFor(
+          () => {
+            expect(deleteCallCount).toBeGreaterThan(0);
+          },
+          { timeout: 10000 }
+        );
+
+        // Wait for error message to appear
+        await waitFor(
+          () => {
+            const taskListSection =
+              document.querySelector('.task-list-section');
+            expect(taskListSection.textContent).toMatch(/Network error/i);
+          },
+          { timeout: 10000 }
+        );
+
+        // Wait for confirmation UI to be dismissed (Delete All button reappears)
+        await waitFor(
+          () => {
+            expect(
+              screen.getByRole('button', { name: /delete all tasks/i })
+            ).toBeInTheDocument();
+          },
+          { timeout: 10000 }
+        );
+
+        // FIX: Tasks should REMAIN after network error (useTasks hook preserves tasks on error)
+        // The hook does NOT clear tasks on error - it keeps them visible
+        await waitFor(
+          () => {
+            const tasksList = screen.queryAllByRole('listitem');
+            expect(tasksList).toHaveLength(1); // Tasks should still be present
+            expect(screen.getByText('Task 1')).toBeInTheDocument();
+          },
+          { timeout: 10000 }
+        );
+      },
+      25000
+    ); // Add 25 second timeout to handle all waitFor calls with 10s timeouts
   });
 });
