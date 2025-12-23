@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './App.css';
-import logo from './assets/logo.png';
+import logo from './assets/logo-swiftpay.png';
 import { useTasks } from './hooks/useTasks';
 import TaskForm from './components/TaskForm';
 import TaskList from './components/TaskList';
@@ -15,6 +15,7 @@ function App() {
     updateTask,
     deleteTask,
     toggleTaskComplete,
+    deleteAllTasks,
   } = useTasks();
 
   // Local state for edit mode
@@ -26,18 +27,22 @@ function App() {
   const [toggleLoading, setToggleLoading] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(null);
 
+  // State for delete all functionality
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
+
   // Handle task creation
   const handleCreateTask = async (taskData) => {
     setCreateLoading(true);
     setCreateError('');
-    
+
     const success = await createTask(taskData);
-    
+
     setCreateLoading(false);
     if (!success) {
       setCreateError(error || 'Failed to create task');
     }
-    
+
     return success;
   };
 
@@ -51,7 +56,7 @@ function App() {
     const success = await updateTask(editingTask.id, taskData);
 
     setEditLoading(false);
-    
+
     if (success) {
       setEditingTask(null);
     } else {
@@ -73,6 +78,14 @@ function App() {
     setToggleLoading(taskId);
     await toggleTaskComplete(taskId, currentStatus);
     setToggleLoading(null);
+  };
+
+  // Handle delete all tasks
+  const handleDeleteAllTasks = async () => {
+    setDeleteAllLoading(true);
+    await deleteAllTasks();
+    setDeleteAllLoading(false);
+    setShowDeleteAllConfirm(false);
   };
 
   // Start editing a task
@@ -115,6 +128,43 @@ function App() {
           {/* Task List */}
           <div className="task-list-section">
             <h3>Task List</h3>
+
+            {/* Delete All Tasks Section */}
+            {tasks.length > 0 && (
+              <div className="delete-all-section">
+                {!showDeleteAllConfirm ? (
+                  <button
+                    className="btn-delete-all"
+                    onClick={() => setShowDeleteAllConfirm(true)}
+                  >
+                    Delete All Tasks
+                  </button>
+                ) : (
+                  <div className="delete-all-confirm">
+                    <span className="confirm-text">
+                      Are you sure you want to delete all tasks?
+                    </span>
+                    <div className="confirm-actions">
+                      <button
+                        className="btn-confirm-delete"
+                        onClick={handleDeleteAllTasks}
+                        disabled={deleteAllLoading}
+                      >
+                        {deleteAllLoading ? 'Deleting...' : 'Yes, Delete All'}
+                      </button>
+                      <button
+                        className="btn-cancel-delete"
+                        onClick={() => setShowDeleteAllConfirm(false)}
+                        disabled={deleteAllLoading}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <TaskList
               tasks={tasks}
               loading={loading}
