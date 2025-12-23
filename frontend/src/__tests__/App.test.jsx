@@ -40,13 +40,17 @@ describe('App Component', () => {
   });
 
   describe('Component Rendering', () => {
-    it('should render without crashing', () => {
-      render(<App />);
+    it('should render without crashing', async () => {
+      await act(async () => {
+        render(<App />);
+      });
       expect(screen.getByText('Task Manager')).toBeInTheDocument();
     });
 
-    it('should render key UI elements', () => {
-      render(<App />);
+    it('should render key UI elements', async () => {
+      await act(async () => {
+        render(<App />);
+      });
 
       // Check for main heading
       expect(
@@ -60,7 +64,9 @@ describe('App Component', () => {
     });
 
     it('should have correct initial state', async () => {
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       // Wait for tasks to load
       await waitFor(() => {
@@ -68,8 +74,10 @@ describe('App Component', () => {
       });
     });
 
-    it('should render with proper CSS classes', () => {
-      render(<App />);
+    it('should render with proper CSS classes', async () => {
+      await act(async () => {
+        render(<App />);
+      });
 
       expect(document.querySelector('.app')).toBeInTheDocument();
       expect(document.querySelector('.container')).toBeInTheDocument();
@@ -78,7 +86,9 @@ describe('App Component', () => {
 
   describe('Task List Display', () => {
     it('should fetch tasks on component mount', async () => {
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
@@ -101,7 +111,9 @@ describe('App Component', () => {
         });
       });
 
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('No tasks yet')).toBeInTheDocument();
@@ -128,7 +140,9 @@ describe('App Component', () => {
         });
       });
 
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       expect(screen.getByText('Loading tasks...')).toBeInTheDocument();
 
@@ -176,7 +190,9 @@ describe('App Component', () => {
         });
       });
 
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('Test Task 1')).toBeInTheDocument();
@@ -219,7 +235,9 @@ describe('App Component', () => {
         });
       });
 
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('○ Incomplete')).toBeInTheDocument();
@@ -252,7 +270,9 @@ describe('App Component', () => {
         });
       });
 
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText(/Created:/)).toBeInTheDocument();
@@ -270,7 +290,9 @@ describe('App Component', () => {
         });
       });
 
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText(/Network error/i)).toBeInTheDocument();
@@ -302,7 +324,9 @@ describe('App Component', () => {
         });
       });
 
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(
@@ -343,7 +367,9 @@ describe('App Component', () => {
         });
       });
 
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         const taskTitle = screen.getByText('Completed Task');
@@ -411,7 +437,11 @@ describe('App Component', () => {
                 });
               });
 
-              const { unmount } = render(<App />);
+              let unmountFn;
+              await act(async () => {
+                const result = render(<App />);
+                unmountFn = result.unmount;
+              });
 
               try {
                 // Wait for tasks to be rendered
@@ -444,7 +474,7 @@ describe('App Component', () => {
               } finally {
                 // Properly unmount and wait for cleanup to avoid act() warnings
                 await act(async () => {
-                  unmount();
+                  unmountFn();
                   await flushPromises();
                 });
               }
@@ -494,7 +524,9 @@ describe('App Component', () => {
         });
 
         const user = userEvent.setup();
-        render(<App />);
+        await act(async () => {
+          render(<App />);
+        });
 
         // Wait for initial load
         await waitFor(() => {
@@ -505,14 +537,18 @@ describe('App Component', () => {
         const titleInput = screen.getByLabelText(/title/i);
         const descriptionInput = screen.getByLabelText(/description/i);
 
-        await user.type(titleInput, 'New Integration Test Task');
-        await user.type(descriptionInput, 'This is a test description');
+        await act(async () => {
+          await user.type(titleInput, 'New Integration Test Task');
+          await user.type(descriptionInput, 'This is a test description');
+        });
 
         // Submit the form
         const createButton = screen.getByRole('button', {
           name: /create task/i,
         });
-        await user.click(createButton);
+        await act(async () => {
+          await user.click(createButton);
+        });
 
         // Verify task appears in the list
         await waitFor(() => {
@@ -556,7 +592,9 @@ describe('App Component', () => {
         });
 
         const user = userEvent.setup();
-        render(<App />);
+        await act(async () => {
+          render(<App />);
+        });
 
         await waitFor(() => {
           expect(screen.getByText('No tasks yet')).toBeInTheDocument();
@@ -564,13 +602,17 @@ describe('App Component', () => {
 
         // Try to submit with empty title (after typing and clearing)
         const titleInput = screen.getByLabelText(/title/i);
-        await user.type(titleInput, 'Test');
-        await user.clear(titleInput);
+        await act(async () => {
+          await user.type(titleInput, 'Test');
+          await user.clear(titleInput);
+        });
 
         const createButton = screen.getByRole('button', {
           name: /create task/i,
         });
-        await user.click(createButton);
+        await act(async () => {
+          await user.click(createButton);
+        });
 
         // Should show client-side validation error
         await waitFor(() => {
@@ -623,7 +665,9 @@ describe('App Component', () => {
         });
 
         const user = userEvent.setup();
-        render(<App />);
+        await act(async () => {
+          render(<App />);
+        });
 
         // Wait for task to load
         await waitFor(() => {
@@ -634,7 +678,9 @@ describe('App Component', () => {
         const editButton = screen.getByRole('button', {
           name: /edit task "original title"/i,
         });
-        await user.click(editButton);
+        await act(async () => {
+          await user.click(editButton);
+        });
 
         // Verify form switches to edit mode
         await waitFor(() => {
@@ -652,16 +698,20 @@ describe('App Component', () => {
         expect(descriptionInput).toHaveValue('Original Description');
 
         // Update the task
-        await user.clear(titleInput);
-        await user.type(titleInput, 'Updated Title');
-        await user.clear(descriptionInput);
-        await user.type(descriptionInput, 'Updated Description');
+        await act(async () => {
+          await user.clear(titleInput);
+          await user.type(titleInput, 'Updated Title');
+          await user.clear(descriptionInput);
+          await user.type(descriptionInput, 'Updated Description');
+        });
 
         // Submit the update
         const updateButton = screen.getByRole('button', {
           name: /update task/i,
         });
-        await user.click(updateButton);
+        await act(async () => {
+          await user.click(updateButton);
+        });
 
         // Verify task is updated in the list
         await waitFor(() => {
@@ -705,7 +755,9 @@ describe('App Component', () => {
         });
 
         const user = userEvent.setup();
-        render(<App />);
+        await act(async () => {
+          render(<App />);
+        });
 
         await waitFor(() => {
           expect(screen.getByText('Test Task')).toBeInTheDocument();
@@ -715,7 +767,9 @@ describe('App Component', () => {
         const editButton = screen.getByRole('button', {
           name: /edit task "test task"/i,
         });
-        await user.click(editButton);
+        await act(async () => {
+          await user.click(editButton);
+        });
 
         await waitFor(() => {
           expect(
@@ -725,12 +779,16 @@ describe('App Component', () => {
 
         // Make some changes
         const titleInput = screen.getByPlaceholderText(/enter task title/i);
-        await user.clear(titleInput);
-        await user.type(titleInput, 'Changed Title');
+        await act(async () => {
+          await user.clear(titleInput);
+          await user.type(titleInput, 'Changed Title');
+        });
 
         // Click cancel
         const cancelButton = screen.getByRole('button', { name: /cancel/i });
-        await user.click(cancelButton);
+        await act(async () => {
+          await user.click(cancelButton);
+        });
 
         // Verify form returns to create mode
         await waitFor(() => {
@@ -777,7 +835,9 @@ describe('App Component', () => {
         });
 
         const user = userEvent.setup();
-        render(<App />);
+        await act(async () => {
+          render(<App />);
+        });
 
         await waitFor(() => {
           expect(screen.getByText('Test Task')).toBeInTheDocument();
@@ -787,7 +847,9 @@ describe('App Component', () => {
         const editButton = screen.getByRole('button', {
           name: /edit task "test task"/i,
         });
-        await user.click(editButton);
+        await act(async () => {
+          await user.click(editButton);
+        });
 
         await waitFor(() => {
           expect(
@@ -797,13 +859,17 @@ describe('App Component', () => {
 
         // Try to update
         const titleInput = screen.getByPlaceholderText(/enter task title/i);
-        await user.clear(titleInput);
-        await user.type(titleInput, 'Updated Title');
+        await act(async () => {
+          await user.clear(titleInput);
+          await user.type(titleInput, 'Updated Title');
+        });
 
         const updateButton = screen.getByRole('button', {
           name: /update task/i,
         });
-        await user.click(updateButton);
+        await act(async () => {
+          await user.click(updateButton);
+        });
 
         // Should show error message in the form
         await waitFor(() => {
@@ -847,7 +913,9 @@ describe('App Component', () => {
         });
 
         const user = userEvent.setup();
-        render(<App />);
+        await act(async () => {
+          render(<App />);
+        });
 
         // Wait for task to load
         await waitFor(() => {
@@ -858,7 +926,9 @@ describe('App Component', () => {
         const deleteButton = screen.getByRole('button', {
           name: /delete task "task to delete"/i,
         });
-        await user.click(deleteButton);
+        await act(async () => {
+          await user.click(deleteButton);
+        });
 
         // Verify task is removed from UI
         await waitFor(() => {
@@ -899,7 +969,9 @@ describe('App Component', () => {
         });
 
         const user = userEvent.setup();
-        render(<App />);
+        await act(async () => {
+          render(<App />);
+        });
 
         await waitFor(() => {
           expect(screen.getByText('Task to Delete')).toBeInTheDocument();
@@ -909,7 +981,9 @@ describe('App Component', () => {
         const deleteButton = screen.getByRole('button', {
           name: /delete task "task to delete"/i,
         });
-        await user.click(deleteButton);
+        await act(async () => {
+          await user.click(deleteButton);
+        });
 
         // Task should still be removed from UI (graceful handling)
         await waitFor(() => {
@@ -966,7 +1040,9 @@ describe('App Component', () => {
         });
 
         const user = userEvent.setup();
-        render(<App />);
+        await act(async () => {
+          render(<App />);
+        });
 
         // Wait for task to load
         await waitFor(() => {
@@ -978,7 +1054,9 @@ describe('App Component', () => {
         const checkbox = screen.getByRole('checkbox', {
           name: /mark task "task to toggle" as complete/i,
         });
-        await user.click(checkbox);
+        await act(async () => {
+          await user.click(checkbox);
+        });
 
         // Verify status changes to completed
         await waitFor(() => {
@@ -987,7 +1065,9 @@ describe('App Component', () => {
         });
 
         // Toggle back
-        await user.click(checkbox);
+        await act(async () => {
+          await user.click(checkbox);
+        });
 
         // Verify status changes back to incomplete
         await waitFor(() => {
@@ -1026,7 +1106,9 @@ describe('App Component', () => {
         });
 
         const user = userEvent.setup();
-        render(<App />);
+        await act(async () => {
+          render(<App />);
+        });
 
         await waitFor(() => {
           expect(screen.getByText('Task to Toggle')).toBeInTheDocument();
@@ -1036,7 +1118,9 @@ describe('App Component', () => {
         const checkbox = screen.getByRole('checkbox', {
           name: /mark task "task to toggle" as complete/i,
         });
-        await user.click(checkbox);
+        await act(async () => {
+          await user.click(checkbox);
+        });
 
         // Should show error message in task list section
         await waitFor(() => {
@@ -1065,7 +1149,9 @@ describe('App Component', () => {
           });
         });
 
-        render(<App />);
+        await act(async () => {
+          render(<App />);
+        });
 
         await waitFor(() => {
           expect(
@@ -1095,7 +1181,9 @@ describe('App Component', () => {
         });
 
         const user = userEvent.setup();
-        render(<App />);
+        await act(async () => {
+          render(<App />);
+        });
 
         await waitFor(() => {
           expect(screen.getByText('No tasks yet')).toBeInTheDocument();
@@ -1103,12 +1191,16 @@ describe('App Component', () => {
 
         // Try to create a task
         const titleInput = screen.getByLabelText(/title/i);
-        await user.type(titleInput, 'Test Task');
+        await act(async () => {
+          await user.type(titleInput, 'Test Task');
+        });
 
         const createButton = screen.getByRole('button', {
           name: /create task/i,
         });
-        await user.click(createButton);
+        await act(async () => {
+          await user.click(createButton);
+        });
 
         // Should show error in the form
         await waitFor(() => {
@@ -1147,7 +1239,9 @@ describe('App Component', () => {
         });
 
         const user = userEvent.setup();
-        render(<App />);
+        await act(async () => {
+          render(<App />);
+        });
 
         await waitFor(() => {
           expect(screen.getByText('Task to Delete')).toBeInTheDocument();
@@ -1157,7 +1251,9 @@ describe('App Component', () => {
         const deleteButton = screen.getByRole('button', {
           name: /delete task "task to delete"/i,
         });
-        await user.click(deleteButton);
+        await act(async () => {
+          await user.click(deleteButton);
+        });
 
         // Should show error in task list section
         await waitFor(() => {
@@ -1196,7 +1292,9 @@ describe('App Component', () => {
           });
         });
 
-        render(<App />);
+        await act(async () => {
+          render(<App />);
+        });
 
         expect(screen.getByText('Loading tasks...')).toBeInTheDocument();
 
@@ -1246,7 +1344,9 @@ describe('App Component', () => {
         });
 
         const user = userEvent.setup();
-        render(<App />);
+        await act(async () => {
+          render(<App />);
+        });
 
         await waitFor(() => {
           expect(screen.getByText('Test Task')).toBeInTheDocument();
@@ -1258,7 +1358,9 @@ describe('App Component', () => {
         });
 
         // Start delete operation
-        await user.click(deleteButton);
+        await act(async () => {
+          await user.click(deleteButton);
+        });
 
         // Verify delete was initiated
         await waitFor(() => {
@@ -1287,7 +1389,9 @@ describe('App Component', () => {
           });
         });
 
-        render(<App />);
+        await act(async () => {
+          render(<App />);
+        });
 
         await waitFor(() => {
           expect(screen.getByText('No tasks yet')).toBeInTheDocument();
@@ -1328,7 +1432,9 @@ describe('App Component', () => {
         });
 
         const user = userEvent.setup();
-        render(<App />);
+        await act(async () => {
+          render(<App />);
+        });
 
         await waitFor(() => {
           expect(screen.getByText('No tasks yet')).toBeInTheDocument();
@@ -1336,12 +1442,16 @@ describe('App Component', () => {
 
         // Add a task
         const titleInput = screen.getByLabelText(/title/i);
-        await user.type(titleInput, 'First Task');
+        await act(async () => {
+          await user.type(titleInput, 'First Task');
+        });
 
         const createButton = screen.getByRole('button', {
           name: /create task/i,
         });
-        await user.click(createButton);
+        await act(async () => {
+          await user.click(createButton);
+        });
 
         // Empty state should be gone
         await waitFor(() => {
