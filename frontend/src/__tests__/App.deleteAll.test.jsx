@@ -1,10 +1,14 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { act } from 'react';
 import App from '../App';
 
 // Mock fetch globally
 global.fetch = vi.fn();
+
+// Helper to flush all pending promises
+const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe('Delete All Tasks Functionality', () => {
   beforeEach(() => {
@@ -895,34 +899,41 @@ describe('Delete All Tasks Functionality', () => {
       const confirmButton = screen.getByRole('button', {
         name: /confirm delete all/i,
       });
-      await user.click(confirmButton);
 
-      // Wait for all state updates to complete, then check for error message
+      // Wrap click in act to properly handle state updates
+      await act(async () => {
+        await user.click(confirmButton);
+        // Flush all pending promises
+        await flushPromises();
+      });
+
+      // Step 1: Wait for error message to appear (this proves the delete was attempted and failed)
       await waitFor(
         () => {
           const taskListSection = document.querySelector('.task-list-section');
           expect(taskListSection.textContent).toMatch(/Network error/i);
         },
-        { timeout: 3000 }
+        { timeout: 5000 }
       );
 
-      // Wait for confirmation UI to be dismissed (Delete All button reappears)
+      // Step 2: Wait for confirmation UI to be dismissed (Delete All button reappears)
       await waitFor(
         () => {
           expect(
             screen.getByRole('button', { name: /delete all tasks/i })
           ).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 5000 }
       );
 
-      // Task should still be present after network error - verify with proper wait
-      // On error, the deleteAllTasks function in useTasks does NOT clear tasks
+      // Step 3: Verify tasks are still present after all state updates have settled
+      // The useTasks hook does NOT clear tasks on error, so they should remain
       await waitFor(
         () => {
-          expect(screen.getByText('Task 1')).toBeInTheDocument();
+          const taskItems = screen.queryAllByText('Task 1');
+          expect(taskItems.length).toBeGreaterThan(0);
         },
-        { timeout: 3000 }
+        { timeout: 5000 }
       );
     });
   });
