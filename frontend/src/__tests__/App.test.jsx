@@ -1,10 +1,14 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { act } from 'react';
 import App from '../App';
 
 // Mock fetch globally
 global.fetch = vi.fn();
+
+// Helper to flush all pending promises
+const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe('App Component', () => {
   beforeEach(() => {
@@ -127,7 +131,9 @@ describe('App Component', () => {
       // Wait for loading to complete
       await waitFor(
         () => {
-          expect(screen.queryByText('Loading tasks...')).not.toBeInTheDocument();
+          expect(
+            screen.queryByText('Loading tasks...')
+          ).not.toBeInTheDocument();
         },
         { timeout: 3000 }
       );
@@ -295,12 +301,16 @@ describe('App Component', () => {
       render(<App />);
 
       await waitFor(() => {
-        expect(screen.getByText('Task without description')).toBeInTheDocument();
+        expect(
+          screen.getByText('Task without description')
+        ).toBeInTheDocument();
         // Description paragraph should not be rendered if empty
         const taskItem = screen
           .getByText('Task without description')
           .closest('.task-item');
-        expect(taskItem.querySelector('.task-description')).not.toBeInTheDocument();
+        expect(
+          taskItem.querySelector('.task-description')
+        ).not.toBeInTheDocument();
       });
     });
 
@@ -403,7 +413,8 @@ describe('App Component', () => {
                 // Wait for tasks to be rendered
                 await waitFor(
                   () => {
-                    const taskItems = document.querySelectorAll('.task-item');
+                    const taskItems =
+                      document.querySelectorAll('.task-item');
                     expect(taskItems.length).toBe(generatedTasks.length);
                   },
                   { timeout: 3000 }
@@ -427,8 +438,11 @@ describe('App Component', () => {
                 // Verify the rendered order matches the expected order
                 expect(renderedTitles).toEqual(expectedOrder);
               } finally {
-                // Properly unmount to avoid act() warnings
-                unmount();
+                // Properly unmount and wait for cleanup to avoid act() warnings
+                await act(async () => {
+                  unmount();
+                  await flushPromises();
+                });
               }
             }
           ),
@@ -498,7 +512,9 @@ describe('App Component', () => {
 
         // Verify task appears in the list
         await waitFor(() => {
-          expect(screen.getByText('New Integration Test Task')).toBeInTheDocument();
+          expect(
+            screen.getByText('New Integration Test Task')
+          ).toBeInTheDocument();
           expect(
             screen.getByText('This is a test description')
           ).toBeInTheDocument();
@@ -554,7 +570,9 @@ describe('App Component', () => {
 
         // Should show client-side validation error
         await waitFor(() => {
-          expect(screen.getByText('Title cannot be empty')).toBeInTheDocument();
+          expect(
+            screen.getByText('Title cannot be empty')
+          ).toBeInTheDocument();
         });
 
         // Task list should remain empty
@@ -840,7 +858,9 @@ describe('App Component', () => {
 
         // Verify task is removed from UI
         await waitFor(() => {
-          expect(screen.queryByText('Task to Delete')).not.toBeInTheDocument();
+          expect(
+            screen.queryByText('Task to Delete')
+          ).not.toBeInTheDocument();
           expect(screen.getByText('No tasks yet')).toBeInTheDocument();
         });
       });
@@ -889,7 +909,9 @@ describe('App Component', () => {
 
         // Task should still be removed from UI (graceful handling)
         await waitFor(() => {
-          expect(screen.queryByText('Task to Delete')).not.toBeInTheDocument();
+          expect(
+            screen.queryByText('Task to Delete')
+          ).not.toBeInTheDocument();
         });
       });
     });
@@ -1014,7 +1036,8 @@ describe('App Component', () => {
 
         // Should show error message in task list section
         await waitFor(() => {
-          const taskListSection = document.querySelector('.task-list-section');
+          const taskListSection =
+            document.querySelector('.task-list-section');
           expect(taskListSection.textContent).toMatch(/Task not found/i);
         });
 
@@ -1134,8 +1157,11 @@ describe('App Component', () => {
 
         // Should show error in task list section
         await waitFor(() => {
-          const taskListSection = document.querySelector('.task-list-section');
-          expect(taskListSection.textContent).toMatch(/HTTP error! status: 500/i);
+          const taskListSection =
+            document.querySelector('.task-list-section');
+          expect(taskListSection.textContent).toMatch(
+            /HTTP error! status: 500/i
+          );
         });
 
         // Task should still be present after error (rollback on non-404 errors)
@@ -1171,7 +1197,9 @@ describe('App Component', () => {
         expect(screen.getByText('Loading tasks...')).toBeInTheDocument();
 
         await waitFor(() => {
-          expect(screen.queryByText('Loading tasks...')).not.toBeInTheDocument();
+          expect(
+            screen.queryByText('Loading tasks...')
+          ).not.toBeInTheDocument();
         });
       });
 
