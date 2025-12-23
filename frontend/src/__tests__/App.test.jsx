@@ -783,7 +783,7 @@ describe('App Component', () => {
           // Return controlled promise that we'll reject with an error
           return deletePromise.then(
             (response) => response,
-            (error) => {
+            (_error) => {
               // Return a failed response instead of throwing
               return {
                 ok: false,
