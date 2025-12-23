@@ -861,11 +861,16 @@ describe('Delete All Tasks Functionality', () => {
         },
       ];
 
+      // Keep track of calls to ensure consistency
+      let deleteCallCount = 0;
+
       global.fetch.mockImplementation((url, options) => {
         if (url.includes('/api/tasks') && options?.method === 'DELETE') {
+          deleteCallCount++;
           return Promise.reject(new Error('Network error'));
         }
-        if (url.includes('/api/tasks')) {
+        // Always return the same tasks on GET regardless of DELETE failures
+        if (url.includes('/api/tasks') && !options?.method) {
           return Promise.resolve({
             ok: true,
             json: async () => ({ tasks: mockTasks }),
@@ -900,14 +905,17 @@ describe('Delete All Tasks Functionality', () => {
         name: /confirm delete all/i,
       });
 
-      // Wrap click in act to properly handle state updates
+      // Click confirm and wait for all state updates
       await act(async () => {
         await user.click(confirmButton);
-        // Flush all pending promises
-        await flushPromises();
+        // Give time for the error to propagate
+        await new Promise((resolve) => setTimeout(resolve, 100));
       });
 
-      // Step 1: Wait for error message to appear (this proves the delete was attempted and failed)
+      // Verify DELETE was attempted
+      expect(deleteCallCount).toBeGreaterThan(0);
+
+      // Wait for error message to appear
       await waitFor(
         () => {
           const taskListSection = document.querySelector('.task-list-section');
@@ -916,7 +924,7 @@ describe('Delete All Tasks Functionality', () => {
         { timeout: 5000 }
       );
 
-      // Step 2: Wait for confirmation UI to be dismissed (Delete All button reappears)
+      // Wait for confirmation UI to be dismissed (Delete All button reappears)
       await waitFor(
         () => {
           expect(
@@ -926,12 +934,10 @@ describe('Delete All Tasks Functionality', () => {
         { timeout: 5000 }
       );
 
-      // Step 3: Verify tasks are still present after all state updates have settled
-      // The useTasks hook does NOT clear tasks on error, so they should remain
+      // Verify tasks are still present (useTasks hook does NOT clear on error)
       await waitFor(
         () => {
-          const taskItems = screen.queryAllByText('Task 1');
-          expect(taskItems.length).toBeGreaterThan(0);
+          expect(screen.getByText('Task 1')).toBeInTheDocument();
         },
         { timeout: 5000 }
       );
