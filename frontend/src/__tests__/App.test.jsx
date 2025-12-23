@@ -618,12 +618,9 @@ describe('App Component', () => {
       await user.click(confirmButton);
 
       // Loading state should be visible
-      await waitFor(
-        () => {
-          expect(screen.getByRole('button', { name: /deleting\.\.\./i })).toBeInTheDocument();
-        },
-        { timeout: 1000 }
-      );
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /deleting\.\.\./i })).toBeInTheDocument();
+      });
 
       // Now resolve the delete operation
       resolveDelete();
@@ -692,15 +689,12 @@ describe('App Component', () => {
       await user.click(confirmButton);
 
       // Buttons should be disabled during loading
-      await waitFor(
-        () => {
-          const deletingButton = screen.getByRole('button', { name: /deleting\.\.\./i });
-          const cancelButton = screen.getByRole('button', { name: /cancel/i });
-          expect(deletingButton).toBeDisabled();
-          expect(cancelButton).toBeDisabled();
-        },
-        { timeout: 1000 }
-      );
+      await waitFor(() => {
+        const deletingButton = screen.getByRole('button', { name: /deleting\.\.\./i });
+        const cancelButton = screen.getByRole('button', { name: /cancel/i });
+        expect(deletingButton).toBeDisabled();
+        expect(cancelButton).toBeDisabled();
+      });
 
       // Complete the deletion
       resolveDelete();
@@ -762,22 +756,29 @@ describe('App Component', () => {
       const confirmButton = screen.getByRole('button', { name: /yes, delete all/i });
       await user.click(confirmButton);
 
-      // Should show error in task list section
+      // Wait for the delete operation to complete (and fail)
       await waitFor(
         () => {
+          // The error should be displayed in the task list section
           const taskListSection = document.querySelector('.task-list-section');
           expect(taskListSection.textContent).toMatch(/HTTP error! status: 500/i);
         },
         { timeout: 2000 }
       );
 
-      // Tasks should still be visible (rollback)
-      await waitFor(
-        () => {
-          expect(screen.getByText('Task 1')).toBeInTheDocument();
-        },
-        { timeout: 2000 }
-      );
+      // Tasks should still be visible (rollback happened)
+      expect(screen.getByText('Task 1')).toBeInTheDocument();
+
+      // Confirmation dialog should still be visible (not hidden on error)
+      expect(
+        screen.getByText(/are you sure you want to delete all tasks\?/i)
+      ).toBeInTheDocument();
+
+      // Buttons should be enabled again (not loading anymore)
+      const yesButton = screen.getByRole('button', { name: /yes, delete all/i });
+      const cancelButton = screen.getByRole('button', { name: /cancel/i });
+      expect(yesButton).not.toBeDisabled();
+      expect(cancelButton).not.toBeDisabled();
     });
   });
 
