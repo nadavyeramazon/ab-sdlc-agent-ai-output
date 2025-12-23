@@ -537,7 +537,7 @@ describe('Delete All Tasks Functionality', () => {
       // Button text should change to "Deleting..."
       await waitFor(() => {
         expect(
-          screen.getByRole('button', { name: /deleting\.\.\./ i})
+          screen.getByRole('button', { name: /deleting\.\.\./i })
         ).toBeInTheDocument();
       });
     });
@@ -606,7 +606,7 @@ describe('Delete All Tasks Functionality', () => {
       // Buttons should be disabled
       await waitFor(() => {
         const deletingButton = screen.getByRole('button', {
-          name: /deleting\.\.\./ i,
+          name: /deleting\.\.\./i,
         });
         expect(deletingButton).toBeDisabled();
 
