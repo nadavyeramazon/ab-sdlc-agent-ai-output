@@ -141,9 +141,7 @@ describe('useTasks Hook - deleteAllTasks', () => {
 
     it('should clear error state before deletion attempt', async () => {
       // First, create an error state
-      taskApi.createTask.mockRejectedValue(
-        new Error('Previous error')
-      );
+      taskApi.createTask.mockRejectedValue(new Error('Previous error'));
 
       const { result } = renderHook(() => useTasks());
 
@@ -181,7 +179,10 @@ describe('useTasks Hook - deleteAllTasks', () => {
       const success = await result.current.deleteAllTasks();
 
       expect(success).toBe(false);
-      expect(result.current.error).toBe('Network connection failed');
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Network connection failed');
+      });
     });
 
     it('should handle 500 Internal Server Error', async () => {
@@ -198,7 +199,10 @@ describe('useTasks Hook - deleteAllTasks', () => {
       const success = await result.current.deleteAllTasks();
 
       expect(success).toBe(false);
-      expect(result.current.error).toBe('HTTP error! status: 500');
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('HTTP error! status: 500');
+      });
     });
 
     it('should handle 403 Forbidden error', async () => {
@@ -215,7 +219,10 @@ describe('useTasks Hook - deleteAllTasks', () => {
       const success = await result.current.deleteAllTasks();
 
       expect(success).toBe(false);
-      expect(result.current.error).toBe('HTTP error! status: 403');
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('HTTP error! status: 403');
+      });
     });
 
     it('should not affect other tasks operations', async () => {
@@ -379,7 +386,10 @@ describe('useTasks Hook - deleteAllTasks', () => {
       const success = await result.current.deleteAllTasks();
 
       expect(success).toBe(false);
-      expect(result.current.error).toBe('Request timeout');
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Request timeout');
+      });
     });
 
     it('should pass no arguments to taskApi.deleteAllTasks', async () => {
