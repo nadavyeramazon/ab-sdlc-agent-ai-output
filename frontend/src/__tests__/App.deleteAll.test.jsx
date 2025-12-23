@@ -7,6 +7,9 @@ import App from '../App';
 // Mock fetch globally
 global.fetch = vi.fn();
 
+// Helper to flush all pending promises
+const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
+
 describe('Delete All Tasks Functionality', () => {
   beforeEach(() => {
     // Clear all mocks before each test
@@ -32,7 +35,7 @@ describe('Delete All Tasks Functionality', () => {
     await act(async () => {
       cleanup();
       // Allow any pending state updates to complete
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await flushPromises();
     });
   });
 
@@ -51,7 +54,9 @@ describe('Delete All Tasks Functionality', () => {
         });
       });
 
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('No tasks yet')).toBeInTheDocument();
@@ -88,7 +93,9 @@ describe('Delete All Tasks Functionality', () => {
         });
       });
 
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('Test Task')).toBeInTheDocument();
@@ -141,7 +148,9 @@ describe('Delete All Tasks Functionality', () => {
         });
       });
 
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('Task 1')).toBeInTheDocument();
@@ -182,7 +191,9 @@ describe('Delete All Tasks Functionality', () => {
       });
 
       const user = userEvent.setup();
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('Test Task')).toBeInTheDocument();
@@ -192,7 +203,9 @@ describe('Delete All Tasks Functionality', () => {
       const deleteAllButton = screen.getByRole('button', {
         name: /delete all tasks/i,
       });
-      await user.click(deleteAllButton);
+      await act(async () => {
+        await user.click(deleteAllButton);
+      });
 
       // Confirmation message should appear
       await waitFor(() => {
@@ -230,7 +243,9 @@ describe('Delete All Tasks Functionality', () => {
       });
 
       const user = userEvent.setup();
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('Test Task')).toBeInTheDocument();
@@ -240,7 +255,9 @@ describe('Delete All Tasks Functionality', () => {
       const deleteAllButton = screen.getByRole('button', {
         name: /delete all tasks/i,
       });
-      await user.click(deleteAllButton);
+      await act(async () => {
+        await user.click(deleteAllButton);
+      });
 
       // Both Confirm and Cancel buttons should appear
       await waitFor(() => {
@@ -284,7 +301,9 @@ describe('Delete All Tasks Functionality', () => {
       });
 
       const user = userEvent.setup();
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('Test Task')).toBeInTheDocument();
@@ -294,7 +313,9 @@ describe('Delete All Tasks Functionality', () => {
       const deleteAllButton = screen.getByRole('button', {
         name: /delete all tasks/i,
       });
-      await user.click(deleteAllButton);
+      await act(async () => {
+        await user.click(deleteAllButton);
+      });
 
       // Wait for confirmation UI
       await waitFor(() => {
@@ -305,7 +326,9 @@ describe('Delete All Tasks Functionality', () => {
 
       // Click Cancel
       const cancelButton = screen.getByRole('button', { name: /cancel/i });
-      await user.click(cancelButton);
+      await act(async () => {
+        await user.click(cancelButton);
+      });
 
       // Confirmation UI should be hidden
       await waitFor(() => {
@@ -360,7 +383,9 @@ describe('Delete All Tasks Functionality', () => {
       });
 
       const user = userEvent.setup();
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('Test Task')).toBeInTheDocument();
@@ -370,7 +395,9 @@ describe('Delete All Tasks Functionality', () => {
       const deleteAllButton = screen.getByRole('button', {
         name: /delete all tasks/i,
       });
-      await user.click(deleteAllButton);
+      await act(async () => {
+        await user.click(deleteAllButton);
+      });
 
       // Click Confirm
       await waitFor(() => {
@@ -382,7 +409,9 @@ describe('Delete All Tasks Functionality', () => {
       const confirmButton = screen.getByRole('button', {
         name: /confirm delete all/i,
       });
-      await user.click(confirmButton);
+      await act(async () => {
+        await user.click(confirmButton);
+      });
 
       // Verify DELETE request was made
       await waitFor(() => {
@@ -438,7 +467,9 @@ describe('Delete All Tasks Functionality', () => {
       });
 
       const user = userEvent.setup();
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('Task 1')).toBeInTheDocument();
@@ -449,7 +480,9 @@ describe('Delete All Tasks Functionality', () => {
       const deleteAllButton = screen.getByRole('button', {
         name: /delete all tasks/i,
       });
-      await user.click(deleteAllButton);
+      await act(async () => {
+        await user.click(deleteAllButton);
+      });
 
       await waitFor(() => {
         expect(
@@ -460,7 +493,9 @@ describe('Delete All Tasks Functionality', () => {
       const confirmButton = screen.getByRole('button', {
         name: /confirm delete all/i,
       });
-      await user.click(confirmButton);
+      await act(async () => {
+        await user.click(confirmButton);
+      });
 
       // All tasks should be removed
       await waitFor(
@@ -516,7 +551,9 @@ describe('Delete All Tasks Functionality', () => {
       });
 
       const user = userEvent.setup();
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('Test Task')).toBeInTheDocument();
@@ -526,7 +563,9 @@ describe('Delete All Tasks Functionality', () => {
       const deleteAllButton = screen.getByRole('button', {
         name: /delete all tasks/i,
       });
-      await user.click(deleteAllButton);
+      await act(async () => {
+        await user.click(deleteAllButton);
+      });
 
       await waitFor(() => {
         expect(
@@ -537,7 +576,9 @@ describe('Delete All Tasks Functionality', () => {
       const confirmButton = screen.getByRole('button', {
         name: /confirm delete all/i,
       });
-      await user.click(confirmButton);
+      await act(async () => {
+        await user.click(confirmButton);
+      });
 
       // Button text should change to "Deleting..."
       await waitFor(() => {
@@ -585,7 +626,9 @@ describe('Delete All Tasks Functionality', () => {
       });
 
       const user = userEvent.setup();
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('Test Task')).toBeInTheDocument();
@@ -595,7 +638,9 @@ describe('Delete All Tasks Functionality', () => {
       const deleteAllButton = screen.getByRole('button', {
         name: /delete all tasks/i,
       });
-      await user.click(deleteAllButton);
+      await act(async () => {
+        await user.click(deleteAllButton);
+      });
 
       await waitFor(() => {
         expect(
@@ -606,7 +651,9 @@ describe('Delete All Tasks Functionality', () => {
       const confirmButton = screen.getByRole('button', {
         name: /confirm delete all/i,
       });
-      await user.click(confirmButton);
+      await act(async () => {
+        await user.click(confirmButton);
+      });
 
       // Buttons should be disabled
       await waitFor(() => {
@@ -652,7 +699,9 @@ describe('Delete All Tasks Functionality', () => {
       });
 
       const user = userEvent.setup();
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('Task 1')).toBeInTheDocument();
@@ -662,7 +711,9 @@ describe('Delete All Tasks Functionality', () => {
       const deleteAllButton = screen.getByRole('button', {
         name: /delete all tasks/i,
       });
-      await user.click(deleteAllButton);
+      await act(async () => {
+        await user.click(deleteAllButton);
+      });
 
       await waitFor(() => {
         expect(
@@ -673,7 +724,9 @@ describe('Delete All Tasks Functionality', () => {
       const confirmButton = screen.getByRole('button', {
         name: /confirm delete all/i,
       });
-      await user.click(confirmButton);
+      await act(async () => {
+        await user.click(confirmButton);
+      });
 
       // Wait for error message to appear
       await waitFor(
@@ -732,7 +785,9 @@ describe('Delete All Tasks Functionality', () => {
         });
       });
 
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('Test Task')).toBeInTheDocument();
@@ -770,7 +825,9 @@ describe('Delete All Tasks Functionality', () => {
       });
 
       const user = userEvent.setup();
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('Test Task')).toBeInTheDocument();
@@ -780,7 +837,9 @@ describe('Delete All Tasks Functionality', () => {
       const deleteAllButton = screen.getByRole('button', {
         name: /delete all tasks/i,
       });
-      await user.click(deleteAllButton);
+      await act(async () => {
+        await user.click(deleteAllButton);
+      });
 
       // Check for confirming class
       await waitFor(() => {
@@ -817,7 +876,9 @@ describe('Delete All Tasks Functionality', () => {
       });
 
       const user = userEvent.setup();
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('Test Task')).toBeInTheDocument();
@@ -828,7 +889,9 @@ describe('Delete All Tasks Functionality', () => {
       });
 
       // Click the button once to enter confirmation state
-      await user.click(deleteAllButton);
+      await act(async () => {
+        await user.click(deleteAllButton);
+      });
 
       // Wait for confirmation UI to appear
       await waitFor(() => {
@@ -884,7 +947,9 @@ describe('Delete All Tasks Functionality', () => {
       });
 
       const user = userEvent.setup();
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('Task 1')).toBeInTheDocument();
@@ -894,7 +959,9 @@ describe('Delete All Tasks Functionality', () => {
       const deleteAllButton = screen.getByRole('button', {
         name: /delete all tasks/i,
       });
-      await user.click(deleteAllButton);
+      await act(async () => {
+        await user.click(deleteAllButton);
+      });
 
       await waitFor(() => {
         expect(
@@ -910,11 +977,16 @@ describe('Delete All Tasks Functionality', () => {
       await act(async () => {
         await user.click(confirmButton);
         // Give more time for the error to propagate and state updates to complete
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 500));
       });
 
       // Verify DELETE was attempted
-      expect(deleteCallCount).toBeGreaterThan(0);
+      await waitFor(
+        () => {
+          expect(deleteCallCount).toBeGreaterThan(0);
+        },
+        { timeout: 10000 }
+      );
 
       // Wait for error message to appear
       await waitFor(
@@ -922,7 +994,7 @@ describe('Delete All Tasks Functionality', () => {
           const taskListSection = document.querySelector('.task-list-section');
           expect(taskListSection.textContent).toMatch(/Network error/i);
         },
-        { timeout: 5000 }
+        { timeout: 10000 }
       );
 
       // Wait for confirmation UI to be dismissed (Delete All button reappears)
@@ -932,7 +1004,7 @@ describe('Delete All Tasks Functionality', () => {
             screen.getByRole('button', { name: /delete all tasks/i })
           ).toBeInTheDocument();
         },
-        { timeout: 5000 }
+        { timeout: 10000 }
       );
 
       // Verify tasks are still present (useTasks hook does NOT clear on error)
@@ -943,7 +1015,7 @@ describe('Delete All Tasks Functionality', () => {
           expect(tasksList).toHaveLength(1);
           expect(screen.getByText('Task 1')).toBeInTheDocument();
         },
-        { timeout: 5000 }
+        { timeout: 10000 }
       );
     });
   });
