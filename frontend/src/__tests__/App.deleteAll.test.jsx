@@ -1007,12 +1007,12 @@ describe('Delete All Tasks Functionality', () => {
         { timeout: 10000 }
       );
 
-      // Verify tasks are still present (useTasks hook does NOT clear on error)
-      // Query all list items and verify count
+      // FIX: Tasks should REMAIN after network error (useTasks hook preserves tasks on error)
+      // The hook does NOT clear tasks on error - it keeps them visible
       await waitFor(
         () => {
           const tasksList = screen.queryAllByRole('listitem');
-          expect(tasksList).toHaveLength(1);
+          expect(tasksList).toHaveLength(1); // Tasks should still be present
           expect(screen.getByText('Task 1')).toBeInTheDocument();
         },
         { timeout: 10000 }
