@@ -916,11 +916,11 @@ describe('Delete All Tasks Functionality', () => {
         { timeout: 3000 }
       );
 
-      // Task should still be present - verify with a proper wait
+      // Task should still be present after network error - verify with proper wait
+      // On error, the deleteAllTasks function in useTasks does NOT clear tasks
       await waitFor(
         () => {
-          const tasks = screen.queryAllByText('Task 1');
-          expect(tasks.length).toBeGreaterThan(0);
+          expect(screen.getByText('Task 1')).toBeInTheDocument();
         },
         { timeout: 3000 }
       );
