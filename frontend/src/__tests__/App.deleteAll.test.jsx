@@ -27,9 +27,13 @@ describe('Delete All Tasks Functionality', () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     // Clean up after each test to prevent state leakage and act() warnings
-    cleanup();
+    await act(async () => {
+      cleanup();
+      // Allow any pending state updates to complete
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
   });
 
   describe('Delete All Button Visibility', () => {
@@ -905,8 +909,8 @@ describe('Delete All Tasks Functionality', () => {
       // Click confirm and wait for all state updates
       await act(async () => {
         await user.click(confirmButton);
-        // Give time for the error to propagate
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // Give more time for the error to propagate and state updates to complete
+        await new Promise((resolve) => setTimeout(resolve, 200));
       });
 
       // Verify DELETE was attempted
@@ -932,8 +936,11 @@ describe('Delete All Tasks Functionality', () => {
       );
 
       // Verify tasks are still present (useTasks hook does NOT clear on error)
+      // Query all list items and verify count
       await waitFor(
         () => {
+          const tasksList = screen.queryAllByRole('listitem');
+          expect(tasksList).toHaveLength(1);
           expect(screen.getByText('Task 1')).toBeInTheDocument();
         },
         { timeout: 5000 }
