@@ -1014,8 +1014,8 @@ describe('Delete All Tasks Functionality', () => {
         // The hook does NOT clear tasks on error - it keeps them visible
         await waitFor(
           () => {
-            const tasksList = screen.queryAllByRole('listitem');
-            expect(tasksList).toHaveLength(1); // Tasks should still be present
+            const taskItems = document.querySelectorAll('.task-item');
+            expect(taskItems).toHaveLength(1); // Tasks should still be present
             expect(screen.getByText('Task 1')).toBeInTheDocument();
           },
           { timeout: 10000 }
