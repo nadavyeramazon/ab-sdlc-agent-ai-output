@@ -669,7 +669,9 @@ describe('Delete All Tasks Functionality', () => {
       });
 
       // Tasks should still be present (no optimistic removal on error)
-      expect(screen.getByText('Test Task')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Test Task')).toBeInTheDocument();
+      });
     });
   });
 
@@ -867,7 +869,9 @@ describe('Delete All Tasks Functionality', () => {
       });
 
       // Task should still be present
-      expect(screen.getByText('Test Task')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Test Task')).toBeInTheDocument();
+      });
     });
   });
 });
