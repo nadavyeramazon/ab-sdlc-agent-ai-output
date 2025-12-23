@@ -16,11 +16,11 @@ export const taskApi = {
    */
   async getAllTasks() {
     const response = await fetch(`${API_URL}/api/tasks`);
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     return response.json();
   },
 
@@ -106,11 +106,26 @@ export const taskApi = {
   },
 
   /**
+   * Delete all tasks
+   * @returns {Promise<void>}
+   * @throws {Error} If the request fails
+   */
+  async deleteAllTasks() {
+    const response = await fetch(`${API_URL}/api/tasks`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+  },
+
+  /**
    * Get a single task by ID
    * @param {string} taskId - ID of the task to retrieve
    * @returns {Promise<Object>} The task object
    * @throws {Error} If task not found or request fails
-   */
+ */
   async getTaskById(taskId) {
     const response = await fetch(`${API_URL}/api/tasks/${taskId}`);
 
