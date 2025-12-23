@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
+import { act } from 'react';
 import { useTasks } from '../useTasks';
 import { taskApi } from '../../services/api';
 
@@ -43,7 +44,9 @@ describe('useTasks Hook - deleteAllTasks', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      await result.current.deleteAllTasks();
+      await act(async () => {
+        await result.current.deleteAllTasks();
+      });
 
       expect(taskApi.deleteAllTasks).toHaveBeenCalledTimes(1);
     });
@@ -80,7 +83,9 @@ describe('useTasks Hook - deleteAllTasks', () => {
       expect(result.current.tasks).toEqual(mockTasks);
 
       // Delete all tasks
-      await result.current.deleteAllTasks();
+      await act(async () => {
+        await result.current.deleteAllTasks();
+      });
 
       await waitFor(() => {
         expect(result.current.tasks).toHaveLength(0);
@@ -98,7 +103,10 @@ describe('useTasks Hook - deleteAllTasks', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      const success = await result.current.deleteAllTasks();
+      let success;
+      await act(async () => {
+        success = await result.current.deleteAllTasks();
+      });
 
       expect(success).toBe(true);
     });
@@ -114,7 +122,10 @@ describe('useTasks Hook - deleteAllTasks', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      const success = await result.current.deleteAllTasks();
+      let success;
+      await act(async () => {
+        success = await result.current.deleteAllTasks();
+      });
 
       expect(success).toBe(false);
     });
@@ -132,7 +143,9 @@ describe('useTasks Hook - deleteAllTasks', () => {
 
       expect(result.current.error).toBeNull();
 
-      await result.current.deleteAllTasks();
+      await act(async () => {
+        await result.current.deleteAllTasks();
+      });
 
       await waitFor(() => {
         expect(result.current.error).toBe('Server error occurred');
@@ -150,7 +163,9 @@ describe('useTasks Hook - deleteAllTasks', () => {
       });
 
       // Create an error
-      await result.current.createTask({ title: 'Test' });
+      await act(async () => {
+        await result.current.createTask({ title: 'Test' });
+      });
 
       await waitFor(() => {
         expect(result.current.error).toBe('Previous error');
@@ -158,7 +173,9 @@ describe('useTasks Hook - deleteAllTasks', () => {
 
       // Now attempt deleteAllTasks (which will succeed)
       taskApi.deleteAllTasks.mockResolvedValue(undefined);
-      await result.current.deleteAllTasks();
+      await act(async () => {
+        await result.current.deleteAllTasks();
+      });
 
       await waitFor(() => {
         expect(result.current.error).toBeNull();
@@ -176,7 +193,10 @@ describe('useTasks Hook - deleteAllTasks', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      const success = await result.current.deleteAllTasks();
+      let success;
+      await act(async () => {
+        success = await result.current.deleteAllTasks();
+      });
 
       expect(success).toBe(false);
 
@@ -196,7 +216,10 @@ describe('useTasks Hook - deleteAllTasks', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      const success = await result.current.deleteAllTasks();
+      let success;
+      await act(async () => {
+        success = await result.current.deleteAllTasks();
+      });
 
       expect(success).toBe(false);
 
@@ -216,7 +239,10 @@ describe('useTasks Hook - deleteAllTasks', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      const success = await result.current.deleteAllTasks();
+      let success;
+      await act(async () => {
+        success = await result.current.deleteAllTasks();
+      });
 
       expect(success).toBe(false);
 
@@ -254,7 +280,9 @@ describe('useTasks Hook - deleteAllTasks', () => {
       expect(result.current.fetchTasks).toBeDefined();
 
       // Delete all tasks
-      await result.current.deleteAllTasks();
+      await act(async () => {
+        await result.current.deleteAllTasks();
+      });
 
       await waitFor(() => {
         expect(result.current.tasks).toHaveLength(0);
@@ -276,13 +304,19 @@ describe('useTasks Hook - deleteAllTasks', () => {
       });
 
       // Call deleteAllTasks multiple times
-      await result.current.deleteAllTasks();
+      await act(async () => {
+        await result.current.deleteAllTasks();
+      });
       expect(taskApi.deleteAllTasks).toHaveBeenCalledTimes(1);
 
-      await result.current.deleteAllTasks();
+      await act(async () => {
+        await result.current.deleteAllTasks();
+      });
       expect(taskApi.deleteAllTasks).toHaveBeenCalledTimes(2);
 
-      await result.current.deleteAllTasks();
+      await act(async () => {
+        await result.current.deleteAllTasks();
+      });
       expect(taskApi.deleteAllTasks).toHaveBeenCalledTimes(3);
     });
 
@@ -298,7 +332,10 @@ describe('useTasks Hook - deleteAllTasks', () => {
 
       expect(result.current.tasks).toHaveLength(0);
 
-      const success = await result.current.deleteAllTasks();
+      let success;
+      await act(async () => {
+        success = await result.current.deleteAllTasks();
+      });
 
       expect(success).toBe(true);
       expect(result.current.tasks).toHaveLength(0);
@@ -326,10 +363,13 @@ describe('useTasks Hook - deleteAllTasks', () => {
       });
 
       // Make concurrent calls
-      const promise1 = result.current.deleteAllTasks();
-      const promise2 = result.current.deleteAllTasks();
+      let success1, success2;
+      await act(async () => {
+        const promise1 = result.current.deleteAllTasks();
+        const promise2 = result.current.deleteAllTasks();
 
-      const [success1, success2] = await Promise.all([promise1, promise2]);
+        [success1, success2] = await Promise.all([promise1, promise2]);
+      });
 
       expect(success1).toBe(true);
       expect(success2).toBe(true);
@@ -365,11 +405,14 @@ describe('useTasks Hook - deleteAllTasks', () => {
         expect(result.current.tasks).toHaveLength(2);
       });
 
-      const success = await result.current.deleteAllTasks();
+      let success;
+      await act(async () => {
+        success = await result.current.deleteAllTasks();
+      });
 
       expect(success).toBe(false);
 
-      // Tasks should still be present in state
+      // Tasks should still be present in state (hook preserves tasks on error)
       expect(result.current.tasks).toHaveLength(2);
       expect(result.current.tasks).toEqual(mockTasks);
     });
@@ -383,7 +426,10 @@ describe('useTasks Hook - deleteAllTasks', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      const success = await result.current.deleteAllTasks();
+      let success;
+      await act(async () => {
+        success = await result.current.deleteAllTasks();
+      });
 
       expect(success).toBe(false);
 
@@ -401,7 +447,9 @@ describe('useTasks Hook - deleteAllTasks', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      await result.current.deleteAllTasks();
+      await act(async () => {
+        await result.current.deleteAllTasks();
+      });
 
       expect(taskApi.deleteAllTasks).toHaveBeenCalledWith();
     });
@@ -433,14 +481,19 @@ describe('useTasks Hook - deleteAllTasks', () => {
       });
 
       // Update a task first
-      await result.current.updateTask('1', { completed: true });
+      await act(async () => {
+        await result.current.updateTask('1', { completed: true });
+      });
 
       await waitFor(() => {
         expect(result.current.tasks[0].completed).toBe(true);
       });
 
       // Then delete all tasks
-      const success = await result.current.deleteAllTasks();
+      let success;
+      await act(async () => {
+        success = await result.current.deleteAllTasks();
+      });
 
       expect(success).toBe(true);
       expect(result.current.tasks).toHaveLength(0);
@@ -468,9 +521,11 @@ describe('useTasks Hook - deleteAllTasks', () => {
       });
 
       // Create a task
-      await result.current.createTask({
-        title: 'New Task',
-        description: 'New Description',
+      await act(async () => {
+        await result.current.createTask({
+          title: 'New Task',
+          description: 'New Description',
+        });
       });
 
       await waitFor(() => {
@@ -478,7 +533,9 @@ describe('useTasks Hook - deleteAllTasks', () => {
       });
 
       // Delete all tasks
-      await result.current.deleteAllTasks();
+      await act(async () => {
+        await result.current.deleteAllTasks();
+      });
 
       await waitFor(() => {
         expect(result.current.tasks).toHaveLength(0);
@@ -495,7 +552,9 @@ describe('useTasks Hook - deleteAllTasks', () => {
       });
 
       // deleteAllTasks should not set loading to true (it's for initial fetch)
-      await result.current.deleteAllTasks();
+      await act(async () => {
+        await result.current.deleteAllTasks();
+      });
 
       expect(result.current.loading).toBe(false);
     });
