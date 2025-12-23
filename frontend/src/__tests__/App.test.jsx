@@ -572,18 +572,17 @@ describe('App Component', () => {
         },
       ];
 
+      let resolveDelete;
+      const deletePromise = new Promise((resolve) => {
+        resolveDelete = resolve;
+      });
+
       global.fetch.mockImplementation((url, options) => {
         if (url.includes('/api/tasks') && options?.method === 'DELETE') {
-          return new Promise((resolve) =>
-            setTimeout(
-              () =>
-                resolve({
-                  ok: true,
-                  status: 204,
-                }),
-              100
-            )
-          );
+          return deletePromise.then(() => ({
+            ok: true,
+            status: 204,
+          }));
         }
         if (url.includes('/api/tasks')) {
           return Promise.resolve({
@@ -619,9 +618,15 @@ describe('App Component', () => {
       await user.click(confirmButton);
 
       // Loading state should be visible
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /deleting\.\.\./i })).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByRole('button', { name: /deleting\.\.\./i })).toBeInTheDocument();
+        },
+        { timeout: 1000 }
+      );
+
+      // Now resolve the delete operation
+      resolveDelete();
 
       // Wait for deletion to complete
       await waitFor(() => {
@@ -642,11 +647,16 @@ describe('App Component', () => {
       ];
 
       let resolveDelete;
+      const deletePromise = new Promise((resolve) => {
+        resolveDelete = resolve;
+      });
+
       global.fetch.mockImplementation((url, options) => {
         if (url.includes('/api/tasks') && options?.method === 'DELETE') {
-          return new Promise((resolve) => {
-            resolveDelete = resolve;
-          });
+          return deletePromise.then(() => ({
+            ok: true,
+            status: 204,
+          }));
         }
         if (url.includes('/api/tasks')) {
           return Promise.resolve({
@@ -681,19 +691,19 @@ describe('App Component', () => {
       const confirmButton = screen.getByRole('button', { name: /yes, delete all/i });
       await user.click(confirmButton);
 
-      // Buttons should be disabled
-      await waitFor(() => {
-        const deletingButton = screen.getByRole('button', { name: /deleting\.\.\./i });
-        const cancelButton = screen.getByRole('button', { name: /cancel/i });
-        expect(deletingButton).toBeDisabled();
-        expect(cancelButton).toBeDisabled();
-      });
+      // Buttons should be disabled during loading
+      await waitFor(
+        () => {
+          const deletingButton = screen.getByRole('button', { name: /deleting\.\.\./i });
+          const cancelButton = screen.getByRole('button', { name: /cancel/i });
+          expect(deletingButton).toBeDisabled();
+          expect(cancelButton).toBeDisabled();
+        },
+        { timeout: 1000 }
+      );
 
       // Complete the deletion
-      resolveDelete({
-        ok: true,
-        status: 204,
-      });
+      resolveDelete();
 
       await waitFor(() => {
         expect(screen.queryByText('Task 1')).not.toBeInTheDocument();
@@ -753,13 +763,21 @@ describe('App Component', () => {
       await user.click(confirmButton);
 
       // Should show error in task list section
-      await waitFor(() => {
-        const taskListSection = document.querySelector('.task-list-section');
-        expect(taskListSection.textContent).toMatch(/HTTP error! status: 500/i);
-      });
+      await waitFor(
+        () => {
+          const taskListSection = document.querySelector('.task-list-section');
+          expect(taskListSection.textContent).toMatch(/HTTP error! status: 500/i);
+        },
+        { timeout: 2000 }
+      );
 
       // Tasks should still be visible (rollback)
-      expect(screen.getByText('Task 1')).toBeInTheDocument();
+      await waitFor(
+        () => {
+          expect(screen.getByText('Task 1')).toBeInTheDocument();
+        },
+        { timeout: 2000 }
+      );
     });
   });
 
