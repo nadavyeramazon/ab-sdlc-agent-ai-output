@@ -36,10 +36,14 @@ describe('App Component', () => {
       render(<App />);
 
       // Check for main heading
-      expect(screen.getByRole('heading', { name: /task manager/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: /task manager/i })
+      ).toBeInTheDocument();
 
       // Check for task section
-      expect(screen.getByRole('heading', { name: /my tasks/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: /my tasks/i })
+      ).toBeInTheDocument();
     });
 
     it('should have correct initial state', async () => {
@@ -64,7 +68,9 @@ describe('App Component', () => {
       render(<App />);
 
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/tasks'));
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/tasks')
+        );
       });
     });
 
@@ -276,10 +282,16 @@ describe('App Component', () => {
       render(<App />);
 
       await waitFor(() => {
-        expect(screen.getByText('Task without description')).toBeInTheDocument();
+        expect(
+          screen.getByText('Task without description')
+        ).toBeInTheDocument();
         // Description paragraph should not be rendered if empty
-        const taskItem = screen.getByText('Task without description').closest('.task-item');
-        expect(taskItem.querySelector('.task-description')).not.toBeInTheDocument();
+        const taskItem = screen
+          .getByText('Task without description')
+          .closest('.task-item');
+        expect(
+          taskItem.querySelector('.task-description')
+        ).not.toBeInTheDocument();
       });
     });
 
@@ -339,7 +351,9 @@ describe('App Component', () => {
       });
 
       // Delete all button should not be visible
-      expect(screen.queryByRole('button', { name: /delete all tasks/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /delete all tasks/i })
+      ).not.toBeInTheDocument();
     });
 
     it('should show delete all button when tasks exist', async () => {
@@ -374,7 +388,9 @@ describe('App Component', () => {
       });
 
       // Delete all button should be visible
-      expect(screen.getByRole('button', { name: /delete all tasks/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /delete all tasks/i })
+      ).toBeInTheDocument();
     });
 
     it('should show confirmation dialog when delete all button is clicked', async () => {
@@ -410,7 +426,9 @@ describe('App Component', () => {
       });
 
       // Click delete all button
-      const deleteAllButton = screen.getByRole('button', { name: /delete all tasks/i });
+      const deleteAllButton = screen.getByRole('button', {
+        name: /delete all tasks/i,
+      });
       await user.click(deleteAllButton);
 
       // Confirmation dialog should appear
@@ -418,12 +436,18 @@ describe('App Component', () => {
         expect(
           screen.getByText(/are you sure you want to delete all tasks\?/i)
         ).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /yes, delete all/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /yes, delete all/i })
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /cancel/i })
+        ).toBeInTheDocument();
       });
 
       // Original delete all button should be hidden
-      expect(screen.queryByRole('button', { name: /delete all tasks/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /delete all tasks/i })
+      ).not.toBeInTheDocument();
     });
 
     it('should hide confirmation dialog when cancel button is clicked', async () => {
@@ -459,7 +483,9 @@ describe('App Component', () => {
       });
 
       // Click delete all button
-      const deleteAllButton = screen.getByRole('button', { name: /delete all tasks/i });
+      const deleteAllButton = screen.getByRole('button', {
+        name: /delete all tasks/i,
+      });
       await user.click(deleteAllButton);
 
       // Wait for confirmation dialog
@@ -481,7 +507,9 @@ describe('App Component', () => {
       });
 
       // Delete all button should reappear
-      expect(screen.getByRole('button', { name: /delete all tasks/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /delete all tasks/i })
+      ).toBeInTheDocument();
 
       // Tasks should still be visible
       expect(screen.getByText('Task 1')).toBeInTheDocument();
@@ -535,7 +563,9 @@ describe('App Component', () => {
       });
 
       // Click delete all button
-      const deleteAllButton = screen.getByRole('button', { name: /delete all tasks/i });
+      const deleteAllButton = screen.getByRole('button', {
+        name: /delete all tasks/i,
+      });
       await user.click(deleteAllButton);
 
       // Wait for confirmation dialog
@@ -546,7 +576,9 @@ describe('App Component', () => {
       });
 
       // Click confirm
-      const confirmButton = screen.getByRole('button', { name: /yes, delete all/i });
+      const confirmButton = screen.getByRole('button', {
+        name: /yes, delete all/i,
+      });
       await user.click(confirmButton);
 
       // All tasks should be removed
@@ -557,7 +589,9 @@ describe('App Component', () => {
       });
 
       // Delete all button should not be visible anymore
-      expect(screen.queryByRole('button', { name: /delete all tasks/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /delete all tasks/i })
+      ).not.toBeInTheDocument();
     });
 
     it('should show loading state during delete all operation', async () => {
@@ -605,7 +639,9 @@ describe('App Component', () => {
       });
 
       // Click delete all button
-      const deleteAllButton = screen.getByRole('button', { name: /delete all tasks/i });
+      const deleteAllButton = screen.getByRole('button', {
+        name: /delete all tasks/i,
+      });
       await user.click(deleteAllButton);
 
       // Click confirm
@@ -615,7 +651,9 @@ describe('App Component', () => {
         ).toBeInTheDocument();
       });
 
-      const confirmButton = screen.getByRole('button', { name: /yes, delete all/i });
+      const confirmButton = screen.getByRole('button', {
+        name: /yes, delete all/i,
+      });
       await user.click(confirmButton);
 
       // Wait for loading state to appear using findByRole (async query)
@@ -680,7 +718,9 @@ describe('App Component', () => {
       });
 
       // Click delete all button
-      const deleteAllButton = screen.getByRole('button', { name: /delete all tasks/i });
+      const deleteAllButton = screen.getByRole('button', {
+        name: /delete all tasks/i,
+      });
       await user.click(deleteAllButton);
 
       // Click confirm
@@ -690,7 +730,9 @@ describe('App Component', () => {
         ).toBeInTheDocument();
       });
 
-      const confirmButton = screen.getByRole('button', { name: /yes, delete all/i });
+      const confirmButton = screen.getByRole('button', {
+        name: /yes, delete all/i,
+      });
       await user.click(confirmButton);
 
       // Wait for loading state and verify buttons are disabled using findByRole
@@ -726,7 +768,7 @@ describe('App Component', () => {
 
       global.fetch.mockImplementation((url, options) => {
         if (url.includes('/api/tasks') && options?.method === 'DELETE') {
-          // Add a slight delay to simulate real network call
+          // Simulate API error after a delay
           return new Promise((resolve) =>
             setTimeout(
               () =>
@@ -753,34 +795,54 @@ describe('App Component', () => {
       const user = userEvent.setup();
       render(<App />);
 
+      // Wait for initial tasks to load
       await waitFor(() => {
         expect(screen.getByText('Task 1')).toBeInTheDocument();
       });
 
       // Click delete all button
-      const deleteAllButton = screen.getByRole('button', { name: /delete all tasks/i });
+      const deleteAllButton = screen.getByRole('button', {
+        name: /delete all tasks/i,
+      });
       await user.click(deleteAllButton);
 
-      // Click confirm
+      // Wait for confirmation dialog to appear
       await waitFor(() => {
         expect(
           screen.getByText(/are you sure you want to delete all tasks\?/i)
         ).toBeInTheDocument();
       });
 
-      const confirmButton = screen.getByRole('button', { name: /yes, delete all/i });
+      // Click confirm button
+      const confirmButton = screen.getByRole('button', {
+        name: /yes, delete all/i,
+      });
       await user.click(confirmButton);
 
-      // Wait for the error to be displayed in the task list section
+      // Wait for the loading state to appear (this confirms the delete operation started)
+      await waitFor(
+        () => {
+          const deletingButton = screen.queryByRole('button', {
+            name: /deleting\.\.\./i,
+          });
+          expect(deletingButton).toBeInTheDocument();
+        },
+        { timeout: 1000 }
+      );
+
+      // Wait for the API call to complete and error to be displayed
       await waitFor(
         () => {
           const taskListSection = document.querySelector('.task-list-section');
-          expect(taskListSection.textContent).toMatch(/HTTP error! status: 500/i);
+          expect(taskListSection).toBeInTheDocument();
+          expect(taskListSection.textContent).toMatch(
+            /HTTP error! status: 500/i
+          );
         },
         { timeout: 3000 }
       );
 
-      // Wait for tasks to be rolled back and visible again
+      // Verify tasks are rolled back and visible again
       await waitFor(
         () => {
           expect(screen.getByText('Task 1')).toBeInTheDocument();
@@ -794,7 +856,9 @@ describe('App Component', () => {
       ).toBeInTheDocument();
 
       // Buttons should be enabled again (not loading anymore)
-      const yesButton = screen.getByRole('button', { name: /yes, delete all/i });
+      const yesButton = screen.getByRole('button', {
+        name: /yes, delete all/i,
+      });
       const cancelButton = screen.getByRole('button', { name: /cancel/i });
       expect(yesButton).not.toBeDisabled();
       expect(cancelButton).not.toBeDisabled();
@@ -839,7 +903,9 @@ describe('App Component', () => {
           async (generatedTasks) => {
             // Sort tasks by created_at descending to match backend behavior
             const sortedTasks = [...generatedTasks].sort(
-              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+              (a, b) =>
+                new Date(b.created_at).getTime() -
+                new Date(a.created_at).getTime()
             );
 
             // Mock the API to return the sorted tasks (matching backend behavior)
@@ -876,7 +942,11 @@ describe('App Component', () => {
 
               // Sort the generated tasks by created_at descending (newest first)
               const expectedOrder = [...generatedTasks]
-                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                .sort(
+                  (a, b) =>
+                    new Date(b.created_at).getTime() -
+                    new Date(a.created_at).getTime()
+                )
                 .map((task) => task.title);
 
               // Verify the rendered order matches the expected order
@@ -943,13 +1013,19 @@ describe('App Component', () => {
         await user.type(descriptionInput, 'This is a test description');
 
         // Submit the form
-        const createButton = screen.getByRole('button', { name: /create task/i });
+        const createButton = screen.getByRole('button', {
+          name: /create task/i,
+        });
         await user.click(createButton);
 
         // Verify task appears in the list
         await waitFor(() => {
-          expect(screen.getByText('New Integration Test Task')).toBeInTheDocument();
-          expect(screen.getByText('This is a test description')).toBeInTheDocument();
+          expect(
+            screen.getByText('New Integration Test Task')
+          ).toBeInTheDocument();
+          expect(
+            screen.getByText('This is a test description')
+          ).toBeInTheDocument();
         });
 
         // Verify form is cleared
@@ -995,12 +1071,16 @@ describe('App Component', () => {
         await user.type(titleInput, 'Test');
         await user.clear(titleInput);
 
-        const createButton = screen.getByRole('button', { name: /create task/i });
+        const createButton = screen.getByRole('button', {
+          name: /create task/i,
+        });
         await user.click(createButton);
 
         // Should show client-side validation error
         await waitFor(() => {
-          expect(screen.getByText('Title cannot be empty')).toBeInTheDocument();
+          expect(
+            screen.getByText('Title cannot be empty')
+          ).toBeInTheDocument();
         });
 
         // Task list should remain empty
@@ -1055,17 +1135,23 @@ describe('App Component', () => {
         });
 
         // Click edit button
-        const editButton = screen.getByRole('button', { name: /edit task "original title"/i });
+        const editButton = screen.getByRole('button', {
+          name: /edit task "original title"/i,
+        });
         await user.click(editButton);
 
         // Verify form switches to edit mode
         await waitFor(() => {
-          expect(screen.getByRole('heading', { name: /edit task/i })).toBeInTheDocument();
+          expect(
+            screen.getByRole('heading', { name: /edit task/i })
+          ).toBeInTheDocument();
         });
 
         // Verify form is populated with current data
         const titleInput = screen.getByPlaceholderText(/enter task title/i);
-        const descriptionInput = screen.getByPlaceholderText(/enter task description/i);
+        const descriptionInput = screen.getByPlaceholderText(
+          /enter task description/i
+        );
         expect(titleInput).toHaveValue('Original Title');
         expect(descriptionInput).toHaveValue('Original Description');
 
@@ -1076,7 +1162,9 @@ describe('App Component', () => {
         await user.type(descriptionInput, 'Updated Description');
 
         // Submit the update
-        const updateButton = screen.getByRole('button', { name: /update task/i });
+        const updateButton = screen.getByRole('button', {
+          name: /update task/i,
+        });
         await user.click(updateButton);
 
         // Verify task is updated in the list
@@ -1089,7 +1177,9 @@ describe('App Component', () => {
 
         // Verify form returns to create mode
         await waitFor(() => {
-          expect(screen.getByRole('heading', { name: /create new task/i })).toBeInTheDocument();
+          expect(
+            screen.getByRole('heading', { name: /create new task/i })
+          ).toBeInTheDocument();
         });
         expect(titleInput).toHaveValue('');
         expect(descriptionInput).toHaveValue('');
@@ -1126,11 +1216,15 @@ describe('App Component', () => {
         });
 
         // Start editing
-        const editButton = screen.getByRole('button', { name: /edit task "test task"/i });
+        const editButton = screen.getByRole('button', {
+          name: /edit task "test task"/i,
+        });
         await user.click(editButton);
 
         await waitFor(() => {
-          expect(screen.getByRole('heading', { name: /edit task/i })).toBeInTheDocument();
+          expect(
+            screen.getByRole('heading', { name: /edit task/i })
+          ).toBeInTheDocument();
         });
 
         // Make some changes
@@ -1144,7 +1238,9 @@ describe('App Component', () => {
 
         // Verify form returns to create mode
         await waitFor(() => {
-          expect(screen.getByRole('heading', { name: /create new task/i })).toBeInTheDocument();
+          expect(
+            screen.getByRole('heading', { name: /create new task/i })
+          ).toBeInTheDocument();
         });
 
         // Verify original task is unchanged
@@ -1192,11 +1288,15 @@ describe('App Component', () => {
         });
 
         // Start editing
-        const editButton = screen.getByRole('button', { name: /edit task "test task"/i });
+        const editButton = screen.getByRole('button', {
+          name: /edit task "test task"/i,
+        });
         await user.click(editButton);
 
         await waitFor(() => {
-          expect(screen.getByRole('heading', { name: /edit task/i })).toBeInTheDocument();
+          expect(
+            screen.getByRole('heading', { name: /edit task/i })
+          ).toBeInTheDocument();
         });
 
         // Try to update
@@ -1204,7 +1304,9 @@ describe('App Component', () => {
         await user.clear(titleInput);
         await user.type(titleInput, 'Updated Title');
 
-        const updateButton = screen.getByRole('button', { name: /update task/i });
+        const updateButton = screen.getByRole('button', {
+          name: /update task/i,
+        });
         await user.click(updateButton);
 
         // Should show error message in the form
@@ -1257,12 +1359,16 @@ describe('App Component', () => {
         });
 
         // Click delete button
-        const deleteButton = screen.getByRole('button', { name: /delete task "task to delete"/i });
+        const deleteButton = screen.getByRole('button', {
+          name: /delete task "task to delete"/i,
+        });
         await user.click(deleteButton);
 
         // Verify task is removed from UI
         await waitFor(() => {
-          expect(screen.queryByText('Task to Delete')).not.toBeInTheDocument();
+          expect(
+            screen.queryByText('Task to Delete')
+          ).not.toBeInTheDocument();
           expect(screen.getByText('No tasks yet')).toBeInTheDocument();
         });
       });
@@ -1304,12 +1410,16 @@ describe('App Component', () => {
         });
 
         // Click delete button
-        const deleteButton = screen.getByRole('button', { name: /delete task "task to delete"/i });
+        const deleteButton = screen.getByRole('button', {
+          name: /delete task "task to delete"/i,
+        });
         await user.click(deleteButton);
 
         // Task should still be removed from UI (graceful handling)
         await waitFor(() => {
-          expect(screen.queryByText('Task to Delete')).not.toBeInTheDocument();
+          expect(
+            screen.queryByText('Task to Delete')
+          ).not.toBeInTheDocument();
         });
       });
     });
@@ -1434,7 +1544,8 @@ describe('App Component', () => {
 
         // Should show error message in task list section
         await waitFor(() => {
-          const taskListSection = document.querySelector('.task-list-section');
+          const taskListSection =
+            document.querySelector('.task-list-section');
           expect(taskListSection.textContent).toMatch(/Task not found/i);
         });
       });
@@ -1455,7 +1566,9 @@ describe('App Component', () => {
         render(<App />);
 
         await waitFor(() => {
-          expect(screen.getByText(/Network connection failed/i)).toBeInTheDocument();
+          expect(
+            screen.getByText(/Network connection failed/i)
+          ).toBeInTheDocument();
         });
       });
 
@@ -1490,7 +1603,9 @@ describe('App Component', () => {
         const titleInput = screen.getByLabelText(/title/i);
         await user.type(titleInput, 'Test Task');
 
-        const createButton = screen.getByRole('button', { name: /create task/i });
+        const createButton = screen.getByRole('button', {
+          name: /create task/i,
+        });
         await user.click(createButton);
 
         // Should show error in the form
@@ -1537,13 +1652,18 @@ describe('App Component', () => {
         });
 
         // Try to delete
-        const deleteButton = screen.getByRole('button', { name: /delete task "task to delete"/i });
+        const deleteButton = screen.getByRole('button', {
+          name: /delete task "task to delete"/i,
+        });
         await user.click(deleteButton);
 
         // Should show error in task list section
         await waitFor(() => {
-          const taskListSection = document.querySelector('.task-list-section');
-          expect(taskListSection.textContent).toMatch(/HTTP error! status: 500/i);
+          const taskListSection =
+            document.querySelector('.task-list-section');
+          expect(taskListSection.textContent).toMatch(
+            /HTTP error! status: 500/i
+          );
         });
       });
     });
@@ -1574,7 +1694,9 @@ describe('App Component', () => {
         expect(screen.getByText('Loading tasks...')).toBeInTheDocument();
 
         await waitFor(() => {
-          expect(screen.queryByText('Loading tasks...')).not.toBeInTheDocument();
+          expect(
+            screen.queryByText('Loading tasks...')
+          ).not.toBeInTheDocument();
         });
       });
 
@@ -1627,7 +1749,9 @@ describe('App Component', () => {
         });
 
         // Get reference to delete button
-        const deleteButton = screen.getByRole('button', { name: /delete task "test task"/i });
+        const deleteButton = screen.getByRole('button', {
+          name: /delete task "test task"/i,
+        });
 
         // Start delete operation
         await user.click(deleteButton);
@@ -1710,7 +1834,9 @@ describe('App Component', () => {
         const titleInput = screen.getByLabelText(/title/i);
         await user.type(titleInput, 'First Task');
 
-        const createButton = screen.getByRole('button', { name: /create task/i });
+        const createButton = screen.getByRole('button', {
+          name: /create task/i,
+        });
         await user.click(createButton);
 
         // Empty state should be gone
