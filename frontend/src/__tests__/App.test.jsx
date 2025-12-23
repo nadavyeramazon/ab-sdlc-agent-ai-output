@@ -773,24 +773,21 @@ describe('App Component', () => {
       ];
 
       // Use controlled promise pattern to manage timing
-      let rejectDelete;
-      const deletePromise = new Promise((resolve, reject) => {
-        rejectDelete = reject;
+      let resolveDelete;
+      const deletePromise = new Promise((resolve) => {
+        resolveDelete = resolve;
       });
 
       global.fetch.mockImplementation((url, options) => {
         if (url.includes('/api/tasks') && options?.method === 'DELETE') {
-          // Return controlled promise that we'll reject with an error
-          return deletePromise.then(
-            (response) => response,
-            (_error) => {
-              // Return a failed response instead of throwing
-              return {
-                ok: false,
-                status: 500,
-              };
-            }
-          );
+          // Return controlled promise that will resolve with an error response
+          return deletePromise.then(() => {
+            // Return a failed response
+            return {
+              ok: false,
+              status: 500,
+            };
+          });
         }
         if (url.includes('/api/tasks')) {
           return Promise.resolve({
@@ -839,8 +836,8 @@ describe('App Component', () => {
       );
       expect(deletingButton).toBeInTheDocument();
 
-      // Now trigger the API error by rejecting the promise
-      rejectDelete(new Error('API Error'));
+      // Now trigger the API error by resolving the promise with error response
+      resolveDelete();
 
       // Wait for error to be displayed
       await waitFor(
