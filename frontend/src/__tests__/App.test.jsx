@@ -1017,6 +1017,12 @@ describe('App Component', () => {
           const taskListSection = document.querySelector('.task-list-section');
           expect(taskListSection.textContent).toMatch(/Task not found/i);
         });
+
+        // Task should still be present (not removed on 404 during toggle)
+        // The updateTask function in useTasks.js rolls back on error
+        await waitFor(() => {
+          expect(screen.getByText('Task to Toggle')).toBeInTheDocument();
+        });
       });
     });
 
@@ -1130,6 +1136,11 @@ describe('App Component', () => {
         await waitFor(() => {
           const taskListSection = document.querySelector('.task-list-section');
           expect(taskListSection.textContent).toMatch(/HTTP error! status: 500/i);
+        });
+
+        // Task should still be present after error (rollback on non-404 errors)
+        await waitFor(() => {
+          expect(screen.getByText('Task to Delete')).toBeInTheDocument();
         });
       });
     });
