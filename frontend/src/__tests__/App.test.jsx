@@ -30,9 +30,13 @@ describe('App Component', () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     // Clean up after each test to prevent state leakage and act() warnings
-    cleanup();
+    await act(async () => {
+      cleanup();
+      // Allow any pending state updates to complete
+      await flushPromises();
+    });
   });
 
   describe('Component Rendering', () => {
