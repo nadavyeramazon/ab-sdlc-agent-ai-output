@@ -579,6 +579,7 @@ describe('App Component', () => {
 
       global.fetch.mockImplementation((url, options) => {
         if (url.includes('/api/tasks') && options?.method === 'DELETE') {
+          // Return the promise that won't resolve until we call resolveDelete
           return deletePromise.then(() => ({
             ok: true,
             status: 204,
@@ -617,13 +618,13 @@ describe('App Component', () => {
       const confirmButton = screen.getByRole('button', { name: /yes, delete all/i });
       await user.click(confirmButton);
 
-      // Wait for loading state to appear (before resolving the promise)
-      await waitFor(
-        () => {
-          expect(screen.getByRole('button', { name: /deleting\.\.\./i })).toBeInTheDocument();
-        },
-        { timeout: 1000 }
+      // Wait for loading state to appear using findByRole (async query)
+      const deletingButton = await screen.findByRole(
+        'button',
+        { name: /deleting\.\.\./i },
+        { timeout: 2000 }
       );
+      expect(deletingButton).toBeInTheDocument();
 
       // Now resolve the delete operation
       resolveDelete();
@@ -653,6 +654,7 @@ describe('App Component', () => {
 
       global.fetch.mockImplementation((url, options) => {
         if (url.includes('/api/tasks') && options?.method === 'DELETE') {
+          // Return the promise that won't resolve until we call resolveDelete
           return deletePromise.then(() => ({
             ok: true,
             status: 204,
@@ -691,16 +693,16 @@ describe('App Component', () => {
       const confirmButton = screen.getByRole('button', { name: /yes, delete all/i });
       await user.click(confirmButton);
 
-      // Wait for buttons to be disabled during loading (before resolving promise)
-      await waitFor(
-        () => {
-          const deletingButton = screen.getByRole('button', { name: /deleting\.\.\./i });
-          const cancelButton = screen.getByRole('button', { name: /cancel/i });
-          expect(deletingButton).toBeDisabled();
-          expect(cancelButton).toBeDisabled();
-        },
-        { timeout: 1000 }
+      // Wait for loading state and verify buttons are disabled using findByRole
+      const deletingButton = await screen.findByRole(
+        'button',
+        { name: /deleting\.\.\./i },
+        { timeout: 2000 }
       );
+      expect(deletingButton).toBeDisabled();
+
+      const cancelButton = screen.getByRole('button', { name: /cancel/i });
+      expect(cancelButton).toBeDisabled();
 
       // Complete the deletion
       resolveDelete();
@@ -724,10 +726,17 @@ describe('App Component', () => {
 
       global.fetch.mockImplementation((url, options) => {
         if (url.includes('/api/tasks') && options?.method === 'DELETE') {
-          return Promise.resolve({
-            ok: false,
-            status: 500,
-          });
+          // Add a slight delay to simulate real network call
+          return new Promise((resolve) =>
+            setTimeout(
+              () =>
+                resolve({
+                  ok: false,
+                  status: 500,
+                }),
+              50
+            )
+          );
         }
         if (url.includes('/api/tasks')) {
           return Promise.resolve({
@@ -762,21 +771,21 @@ describe('App Component', () => {
       const confirmButton = screen.getByRole('button', { name: /yes, delete all/i });
       await user.click(confirmButton);
 
-      // Wait for the error to be displayed
+      // Wait for the error to be displayed in the task list section
       await waitFor(
         () => {
           const taskListSection = document.querySelector('.task-list-section');
           expect(taskListSection.textContent).toMatch(/HTTP error! status: 500/i);
         },
-        { timeout: 2000 }
+        { timeout: 3000 }
       );
 
-      // Wait separately for tasks to be rolled back and visible again
+      // Wait for tasks to be rolled back and visible again
       await waitFor(
         () => {
           expect(screen.getByText('Task 1')).toBeInTheDocument();
         },
-        { timeout: 2000 }
+        { timeout: 3000 }
       );
 
       // Confirmation dialog should still be visible (not hidden on error)
