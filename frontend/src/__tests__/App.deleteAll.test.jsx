@@ -670,16 +670,34 @@ describe('Delete All Tasks Functionality', () => {
       });
       await user.click(confirmButton);
 
-      // Error message should be displayed
-      await waitFor(() => {
-        const taskListSection = document.querySelector('.task-list-section');
-        expect(taskListSection.textContent).toMatch(/HTTP error! status: 500/i);
-      });
+      // Wait for error message to appear
+      await waitFor(
+        () => {
+          const taskListSection = document.querySelector('.task-list-section');
+          expect(taskListSection.textContent).toMatch(
+            /HTTP error! status: 500/i
+          );
+        },
+        { timeout: 3000 }
+      );
 
-      // Tasks should still be present (no optimistic removal on error)
-      await waitFor(() => {
-        expect(screen.getByText('Task 1')).toBeInTheDocument();
-      });
+      // Wait for confirmation UI to be dismissed (Delete All button reappears)
+      await waitFor(
+        () => {
+          expect(
+            screen.getByRole('button', { name: /delete all tasks/i })
+          ).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
+
+      // Tasks should still be present (no removal on error)
+      await waitFor(
+        () => {
+          expect(screen.getByText('Task 1')).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
     });
   });
 
@@ -870,16 +888,32 @@ describe('Delete All Tasks Functionality', () => {
       });
       await user.click(confirmButton);
 
-      // Error message should be displayed
-      await waitFor(() => {
-        const taskListSection = document.querySelector('.task-list-section');
-        expect(taskListSection.textContent).toMatch(/Network error/i);
-      });
+      // Wait for error message to appear
+      await waitFor(
+        () => {
+          const taskListSection = document.querySelector('.task-list-section');
+          expect(taskListSection.textContent).toMatch(/Network error/i);
+        },
+        { timeout: 3000 }
+      );
+
+      // Wait for confirmation UI to be dismissed (Delete All button reappears)
+      await waitFor(
+        () => {
+          expect(
+            screen.getByRole('button', { name: /delete all tasks/i })
+          ).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
 
       // Task should still be present
-      await waitFor(() => {
-        expect(screen.getByText('Task 1')).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByText('Task 1')).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
     });
   });
 });
