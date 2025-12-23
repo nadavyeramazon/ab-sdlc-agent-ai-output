@@ -133,7 +133,7 @@ function App() {
             <h3>Task List</h3>
 
             {/* Delete All Tasks Section */}
-            {tasks.length > 0 && (
+            {(tasks.length > 0 || deleteAllLoading || showDeleteAllConfirm) && (
               <div className="delete-all-section">
                 {!showDeleteAllConfirm ? (
                   <button
