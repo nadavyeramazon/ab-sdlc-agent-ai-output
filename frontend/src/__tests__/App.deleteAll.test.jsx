@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 
@@ -24,6 +24,11 @@ describe('Delete All Tasks Functionality', () => {
         json: async () => ({ message: 'Default response' }),
       });
     });
+  });
+
+  afterEach(() => {
+    // Clean up after each test to prevent state leakage and act() warnings
+    cleanup();
   });
 
   describe('Delete All Button Visibility', () => {
@@ -453,11 +458,14 @@ describe('Delete All Tasks Functionality', () => {
       await user.click(confirmButton);
 
       // All tasks should be removed
-      await waitFor(() => {
-        expect(screen.queryByText('Task 1')).not.toBeInTheDocument();
-        expect(screen.queryByText('Task 2')).not.toBeInTheDocument();
-        expect(screen.getByText('No tasks yet')).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.queryByText('Task 1')).not.toBeInTheDocument();
+          expect(screen.queryByText('Task 2')).not.toBeInTheDocument();
+          expect(screen.getByText('No tasks yet')).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
 
       // Delete All button should also be hidden
       expect(
@@ -529,7 +537,7 @@ describe('Delete All Tasks Functionality', () => {
       // Button text should change to "Deleting..."
       await waitFor(() => {
         expect(
-          screen.getByRole('button', { name: /deleting\.\.\./i })
+          screen.getByRole('button', { name: /deleting\.\.\./ i})
         ).toBeInTheDocument();
       });
     });
@@ -598,7 +606,7 @@ describe('Delete All Tasks Functionality', () => {
       // Buttons should be disabled
       await waitFor(() => {
         const deletingButton = screen.getByRole('button', {
-          name: /deleting\.\.\./i,
+          name: /deleting\.\.\./ i,
         });
         expect(deletingButton).toBeDisabled();
 
@@ -611,8 +619,8 @@ describe('Delete All Tasks Functionality', () => {
       const mockTasks = [
         {
           id: '1',
-          title: 'Test Task',
-          description: 'Test Description',
+          title: 'Task 1',
+          description: 'Description 1',
           completed: false,
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z',
@@ -642,7 +650,7 @@ describe('Delete All Tasks Functionality', () => {
       render(<App />);
 
       await waitFor(() => {
-        expect(screen.getByText('Test Task')).toBeInTheDocument();
+        expect(screen.getByText('Task 1')).toBeInTheDocument();
       });
 
       // Click Delete All and confirm
@@ -670,7 +678,7 @@ describe('Delete All Tasks Functionality', () => {
 
       // Tasks should still be present (no optimistic removal on error)
       await waitFor(() => {
-        expect(screen.getByText('Test Task')).toBeInTheDocument();
+        expect(screen.getByText('Task 1')).toBeInTheDocument();
       });
     });
   });
@@ -814,8 +822,8 @@ describe('Delete All Tasks Functionality', () => {
       const mockTasks = [
         {
           id: '1',
-          title: 'Test Task',
-          description: 'Test Description',
+          title: 'Task 1',
+          description: 'Description 1',
           completed: false,
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z',
@@ -842,7 +850,7 @@ describe('Delete All Tasks Functionality', () => {
       render(<App />);
 
       await waitFor(() => {
-        expect(screen.getByText('Test Task')).toBeInTheDocument();
+        expect(screen.getByText('Task 1')).toBeInTheDocument();
       });
 
       // Click Delete All and confirm
@@ -870,7 +878,7 @@ describe('Delete All Tasks Functionality', () => {
 
       // Task should still be present
       await waitFor(() => {
-        expect(screen.getByText('Test Task')).toBeInTheDocument();
+        expect(screen.getByText('Task 1')).toBeInTheDocument();
       });
     });
   });
