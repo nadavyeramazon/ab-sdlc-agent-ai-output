@@ -88,7 +88,7 @@ function App() {
   // Handle delete all confirmation
   const handleDeleteAllConfirm = async () => {
     setDeleteAllLoading(true);
-    const success = await deleteAllTasks();
+    await deleteAllTasks();
     setDeleteAllLoading(false);
     setShowDeleteAllConfirm(false);
   };
