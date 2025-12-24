@@ -85,11 +85,10 @@ function App() {
     setDeleteAllLoading(true);
     const success = await deleteAllTasks();
     setDeleteAllLoading(false);
-    
-    // Only close confirmation dialog on success
-    if (success) {
-      setShowDeleteAllConfirm(false);
-    }
+
+    // Always close confirmation dialog
+    // On error, the tasks will be rolled back by the useTasks hook
+    setShowDeleteAllConfirm(false);
   };
 
   // Start editing a task
