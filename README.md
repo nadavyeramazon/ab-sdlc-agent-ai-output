@@ -246,7 +246,8 @@ npm test
 -  **Create Tasks**: Add new tasks with title and description
 -  **View Tasks**: Display all tasks ordered by creation date (newest first)
 -  **Edit Tasks**: Update task title and description
--  **Delete Tasks**: Remove tasks from the list
+-  **Delete Tasks**: Remove individual tasks from the list
+-  **Delete All Tasks**: Remove all tasks at once
 -  **Toggle Completion**: Mark tasks as complete or incomplete
 -  **Data Persistence**: Tasks persist in MySQL database across restarts
 -  **Input Validation**: Client and server-side validation for data integrity
@@ -269,12 +270,13 @@ npm test
 ### Backend Features
 -  RESTful API with FastAPI
 -  Full CRUD operations for tasks
+-  Bulk delete operation (delete all tasks)
 -  Pydantic models for request/response validation
 -  MySQL database persistence with connection pooling
 -  Repository pattern for data access abstraction
 -  Dependency injection for testability
 -  Centralized configuration management
--  Proper HTTP status codes (200, 201, 204, 404, 422)
+-  Proper HTTP status codes (200, 201, 204, 404, 422, 500)
 -  CORS enabled for frontend communication
 -  Auto-reload during development
 -  Comprehensive test coverage with property-based testing
@@ -402,8 +404,42 @@ Update an existing task.
 }
 ```
 
+### DELETE /api/tasks
+Delete all tasks at once.
+
+**Request Body:**
+None
+
+**Response (204 No Content):**
+No response body. Successfully deleted all tasks.
+
+**Response (500 Internal Server Error):**
+```json
+{
+  "detail": "Failed to delete tasks"
+}
+```
+
+**Usage Examples:**
+```bash
+# Using curl
+curl -X DELETE http://localhost:8000/api/tasks
+
+# Using httpie
+http DELETE http://localhost:8000/api/tasks
+
+# Using JavaScript fetch
+fetch('http://localhost:8000/api/tasks', {
+  method: 'DELETE'
+}).then(response => {
+  if (response.status === 204) {
+    console.log('All tasks deleted successfully');
+  }
+});
+```
+
 ### DELETE /api/tasks/{task_id}
-Delete a task.
+Delete a specific task by ID.
 
 **Response (204 No Content):**
 No response body.
@@ -551,13 +587,16 @@ npm run test:coverage
 
 *Unit Tests:*
 -  All API endpoints (GET, POST, PUT, DELETE)
+-  Delete all tasks endpoint (DELETE /api/tasks)
 -  Request validation (empty titles, length limits)
--  HTTP status codes (200, 201, 204, 404, 422)
+-  HTTP status codes (200, 201, 204, 404, 422, 500)
 -  Task repository CRUD operations
+-  Delete all repository operation
 -  MySQL connection and persistence
 -  Error handling for database errors
 -  Service layer business logic
 -  Dependency injection
+-  Routing conflict prevention (DELETE /api/tasks vs DELETE /api/tasks/{id})
 
 *Property-Based Tests:*
 -  Task creation persistence - any valid task should be retrievable after creation
@@ -565,6 +604,7 @@ npm run test:coverage
 -  Task retrieval completeness - all stored tasks should be returned
 -  Completion toggle idempotence - toggling twice returns to original state
 -  Delete operation removes task - deleted tasks should not be retrievable
+-  Delete all returns correct count - delete_all returns the exact number of tasks deleted
 -  Update preserves identity - updates should not change ID or creation time
 -  Invalid update rejection - empty title updates should be rejected
 -  RESTful status codes - operations return correct HTTP status codes
@@ -1133,6 +1173,7 @@ Potential improvements for future versions:
    - Task search and filtering
    - Pagination for large task lists
    - Sorting options (priority, due date, etc.)
+   - Bulk operations (select multiple tasks to delete, update, etc.)
 
 3. **Collaboration**:
    - Task sharing between users
