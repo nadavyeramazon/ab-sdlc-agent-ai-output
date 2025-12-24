@@ -27,15 +27,20 @@ describe('API Service Property Tests', () => {
    */
   it('Property 1: API error handling consistency - all failed operations throw Error with message', async () => {
     // Generator for HTTP error status codes (excluding 404 for delete which is handled specially)
-    const httpErrorStatusArb = fc.integer({ min: 400, max: 599 }).filter(status => status !== 404);
-    
+    const httpErrorStatusArb = fc
+      .integer({ min: 400, max: 599 })
+      .filter((status) => status !== 404);
+
     // Generator for 422 validation errors
     const validationErrorArb = fc.record({
-      detail: fc.array(fc.record({
-        msg: fc.string({ minLength: 1, maxLength: 100 }),
-        loc: fc.array(fc.string()),
-        type: fc.string(),
-      }), { minLength: 1, maxLength: 3 }),
+      detail: fc.array(
+        fc.record({
+          msg: fc.string({ minLength: 1, maxLength: 100 }),
+          loc: fc.array(fc.string()),
+          type: fc.string(),
+        }),
+        { minLength: 1, maxLength: 3 }
+      ),
     });
 
     // Generator for task IDs
@@ -110,6 +115,12 @@ describe('API Service Property Tests', () => {
             hasValidationError: fc.constant(false),
             taskId: taskIdArb,
           }),
+          // Test deleteAllTasks with errors
+          fc.record({
+            method: fc.constant('deleteAllTasks'),
+            status: httpErrorStatusArb,
+            hasValidationError: fc.constant(false),
+          }),
           // Test getTaskById with 404 errors
           fc.record({
             method: fc.constant('getTaskById'),
@@ -130,7 +141,7 @@ describe('API Service Property Tests', () => {
           global.fetch = vi.fn().mockResolvedValue({
             ok: false,
             status: testCase.status,
-            json: async () => testCase.hasValidationError ? testCase.validationError : {},
+            json: async () => (testCase.hasValidationError ? testCase.validationError : {}),
           });
 
           let thrownError = null;
@@ -149,6 +160,9 @@ describe('API Service Property Tests', () => {
                 break;
               case 'deleteTask':
                 await taskApi.deleteTask(testCase.taskId);
+                break;
+              case 'deleteAllTasks':
+                await taskApi.deleteAllTasks();
                 break;
               case 'getTaskById':
                 await taskApi.getTaskById(testCase.taskId);
@@ -179,21 +193,54 @@ describe('API Service Property Tests', () => {
    */
   it('Edge case: deleteTask with 404 returns gracefully without error', async () => {
     await fc.assert(
-      fc.asyncProperty(
-        fc.uuid(),
-        async (taskId) => {
-          // Mock fetch to return 404
-          global.fetch = vi.fn().mockResolvedValue({
-            ok: false,
-            status: 404,
-            json: async () => ({}),
-          });
+      fc.asyncProperty(fc.uuid(), async (taskId) => {
+        // Mock fetch to return 404
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: false,
+          status: 404,
+          json: async () => ({}),
+        });
 
-          // Should not throw
-          await expect(taskApi.deleteTask(taskId)).resolves.toBeUndefined();
-        }
-      ),
+        // Should not throw
+        await expect(taskApi.deleteTask(taskId)).resolves.toBeUndefined();
+      }),
       { numRuns: 100 }
     );
+  });
+
+  /**
+   * Unit Test: deleteAllTasks success
+   * Tests that deleteAllTasks makes correct API call
+   */
+  it('Unit: deleteAllTasks makes DELETE request to /api/tasks', async () => {
+    // Mock successful response
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 204,
+    });
+
+    await taskApi.deleteAllTasks();
+
+    // Verify fetch was called with correct parameters
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/tasks'),
+      expect.objectContaining({
+        method: 'DELETE',
+      })
+    );
+  });
+
+  /**
+   * Unit Test: deleteAllTasks error handling
+   * Tests that deleteAllTasks throws error on failure
+   */
+  it('Unit: deleteAllTasks throws error on failure', async () => {
+    // Mock error response
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+    });
+
+    await expect(taskApi.deleteAllTasks()).rejects.toThrow('Failed to delete all tasks');
   });
 });
