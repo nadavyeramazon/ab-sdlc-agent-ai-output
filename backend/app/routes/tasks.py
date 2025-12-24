@@ -1,1 +1,196 @@
-"""\nTask management route module.\n\nThis module provides RESTful API endpoints for task CRUD operations.\n"""\n\nfrom fastapi import APIRouter, HTTPException, Depends\n\nfrom app.models.task import TaskCreate, TaskUpdate\nfrom app.services.task_service import TaskService\nfrom app.dependencies import get_task_service\n\nrouter = APIRouter(tags=[\"Tasks\"])\n\n\n@router.get(\"/tasks\")\ndef get_all_tasks(\n    service: TaskService = Depends(get_task_service)\n) -> dict[str, list[dict]]:\n    \"\"\"\n    Retrieve all tasks.\n\n    Args:\n        service: Injected TaskService instance\n\n    Returns:\n        JSON response containing list of all tasks ordered by creation date (newest first)\n\n    Example:\n        Response: {\n            \"tasks\": [\n                {\n                    \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n                    \"title\": \"Buy groceries\",\n                    \"description\": \"Milk, eggs, bread\",\n                    \"completed\": false,\n                    \"created_at\": \"2024-01-15T10:30:00.000000Z\",\n                    \"updated_at\": \"2024-01-15T10:30:00.000000Z\"\n                }\n            ]\n        }\n    \"\"\"\n    tasks = service.get_all_tasks()\n    return {\"tasks\": [task.model_dump() for task in tasks]}\n\n\n@router.post(\"/tasks\", status_code=201)\ndef create_task(\n    task_data: TaskCreate,\n    service: TaskService = Depends(get_task_service)\n) -> dict:\n    \"\"\"\n    Create a new task.\n\n    Args:\n        task_data: TaskCreate object with title and description\n        service: Injected TaskService instance\n\n    Returns:\n        Created task object with generated ID and timestamps\n\n    Raises:\n        HTTPException 422: If validation fails (empty title, too long, etc.)\n\n    Example:\n        Request: {\"title\": \"Buy groceries\", \"description\": \"Milk, eggs, bread\"}\n        Response: {\n            \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n            \"title\": \"Buy groceries\",\n            \"description\": \"Milk, eggs, bread\",\n            \"completed\": false,\n            \"created_at\": \"2024-01-15T10:30:00.000000Z\",\n            \"updated_at\": \"2024-01-15T10:30:00.000000Z\"\n        }\n    \"\"\"\n    task = service.create_task(task_data)\n    return task.model_dump()\n\n\n@router.delete(\"/tasks\", status_code=204)\ndef delete_all_tasks(\n    service: TaskService = Depends(get_task_service)\n) -> None:\n    \"\"\"\n    Delete all tasks.\n\n    Args:\n        service: Injected TaskService instance\n\n    Returns:\n        No content (204 status)\n\n    Example:\n        Response: No content with 204 status code\n    \"\"\"\n    service.delete_all_tasks()\n    return None\n\n\n@router.get(\"/tasks/{task_id}\")\ndef get_task(\n    task_id: str,\n    service: TaskService = Depends(get_task_service)\n) -> dict:\n    \"\"\"\n    Retrieve a single task by ID.\n\n    Args:\n        task_id: The unique identifier of the task\n        service: Injected TaskService instance\n\n    Returns:\n        Task object if found\n\n    Raises:\n        HTTPException 404: If task with given ID is not found\n\n    Example:\n        Response: {\n            \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n            \"title\": \"Buy groceries\",\n            \"description\": \"Milk, eggs, bread\",\n            \"completed\": false,\n            \"created_at\": \"2024-01-15T10:30:00.000000Z\",\n            \"updated_at\": \"2024-01-15T10:30:00.000000Z\"\n        }\n    \"\"\"\n    task = service.get_task_by_id(task_id)\n    if task is None:\n        raise HTTPException(status_code=404, detail=\"Task not found\")\n    return task.model_dump()\n\n\n@router.put(\"/tasks/{task_id}\")\ndef update_task(\n    task_id: str,\n    task_data: TaskUpdate,\n    service: TaskService = Depends(get_task_service)\n) -> dict:\n    \"\"\"\n    Update an existing task.\n\n    Args:\n        task_id: The unique identifier of the task to update\n        task_data: TaskUpdate object with fields to update\n        service: Injected TaskService instance\n\n    Returns:\n        Updated task object\n\n    Raises:\n        HTTPException 404: If task with given ID is not found\n        HTTPException 422: If validation fails (empty title, too long, etc.)\n\n    Example:\n        Request: {\"title\": \"Buy groceries and cook\", \"completed\": true}\n        Response: {\n            \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n            \"title\": \"Buy groceries and cook\",\n            \"description\": \"Milk, eggs, bread\",\n            \"completed\": true,\n            \"created_at\": \"2024-01-15T10:30:00.000000Z\",\n            \"updated_at\": \"2024-01-15T10:35:00.000000Z\"\n        }\n    \"\"\"\n    task = service.update_task(task_id, task_data)\n    if task is None:\n        raise HTTPException(status_code=404, detail=\"Task not found\")\n    return task.model_dump()\n\n\n@router.delete(\"/tasks/{task_id}\", status_code=204)\ndef delete_task(\n    task_id: str,\n    service: TaskService = Depends(get_task_service)\n) -> None:\n    \"\"\"\n    Delete a task.\n\n    Args:\n        task_id: The unique identifier of the task to delete\n        service: Injected TaskService instance\n\n    Returns:\n        No content (204 status)\n\n    Raises:\n        HTTPException 404: If task with given ID is not found\n\n    Example:\n        Response: No content with 204 status code\n    \"\"\"\n    success = service.delete_task(task_id)\n    if not success:\n        raise HTTPException(status_code=404, detail=\"Task not found\")\n    return None\n
+"""
+Task management route module.
+
+This module provides RESTful API endpoints for task CRUD operations.
+"""
+
+from fastapi import APIRouter, HTTPException, Depends
+
+from app.models.task import TaskCreate, TaskUpdate
+from app.services.task_service import TaskService
+from app.dependencies import get_task_service
+
+router = APIRouter(tags=["Tasks"])
+
+
+@router.get("/tasks")
+def get_all_tasks(
+    service: TaskService = Depends(get_task_service)
+) -> dict[str, list[dict]]:
+    """
+    Retrieve all tasks.
+
+    Args:
+        service: Injected TaskService instance
+
+    Returns:
+        JSON response containing list of all tasks ordered by creation date (newest first)
+
+    Example:
+        Response: {
+            "tasks": [
+                {
+                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                    "title": "Buy groceries",
+                    "description": "Milk, eggs, bread",
+                    "completed": false,
+                    "created_at": "2024-01-15T10:30:00.000000Z",
+                    "updated_at": "2024-01-15T10:30:00.000000Z"
+                }
+            ]
+        }
+    """
+    tasks = service.get_all_tasks()
+    return {"tasks": [task.model_dump() for task in tasks]}
+
+
+@router.post("/tasks", status_code=201)
+def create_task(
+    task_data: TaskCreate,
+    service: TaskService = Depends(get_task_service)
+) -> dict:
+    """
+    Create a new task.
+
+    Args:
+        task_data: TaskCreate object with title and description
+        service: Injected TaskService instance
+
+    Returns:
+        Created task object with generated ID and timestamps
+
+    Raises:
+        HTTPException 422: If validation fails (empty title, too long, etc.)
+
+    Example:
+        Request: {"title": "Buy groceries", "description": "Milk, eggs, bread"}
+        Response: {
+            "id": "123e4567-e89b-12d3-a456-426614174000",
+            "title": "Buy groceries",
+            "description": "Milk, eggs, bread",
+            "completed": false,
+            "created_at": "2024-01-15T10:30:00.000000Z",
+            "updated_at": "2024-01-15T10:30:00.000000Z"
+        }
+    """
+    task = service.create_task(task_data)
+    return task.model_dump()
+
+
+@router.delete("/tasks", status_code=204)
+def delete_all_tasks(
+    service: TaskService = Depends(get_task_service)
+) -> None:
+    """
+    Delete all tasks.
+
+    Args:
+        service: Injected TaskService instance
+
+    Returns:
+        No content (204 status)
+
+    Example:
+        Response: No content with 204 status code
+    """
+    service.delete_all_tasks()
+    return None
+
+
+@router.get("/tasks/{task_id}")
+def get_task(
+    task_id: str,
+    service: TaskService = Depends(get_task_service)
+) -> dict:
+    """
+    Retrieve a single task by ID.
+
+    Args:
+        task_id: The unique identifier of the task
+        service: Injected TaskService instance
+
+    Returns:
+        Task object if found
+
+    Raises:
+        HTTPException 404: If task with given ID is not found
+
+    Example:
+        Response: {
+            "id": "123e4567-e89b-12d3-a456-426614174000",
+            "title": "Buy groceries",
+            "description": "Milk, eggs, bread",
+            "completed": false,
+            "created_at": "2024-01-15T10:30:00.000000Z",
+            "updated_at": "2024-01-15T10:30:00.000000Z"
+        }
+    """
+    task = service.get_task_by_id(task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task.model_dump()
+
+
+@router.put("/tasks/{task_id}")
+def update_task(
+    task_id: str,
+    task_data: TaskUpdate,
+    service: TaskService = Depends(get_task_service)
+) -> dict:
+    """
+    Update an existing task.
+
+    Args:
+        task_id: The unique identifier of the task to update
+        task_data: TaskUpdate object with fields to update
+        service: Injected TaskService instance
+
+    Returns:
+        Updated task object
+
+    Raises:
+        HTTPException 404: If task with given ID is not found
+        HTTPException 422: If validation fails (empty title, too long, etc.)
+
+    Example:
+        Request: {"title": "Buy groceries and cook", "completed": true}
+        Response: {
+            "id": "123e4567-e89b-12d3-a456-426614174000",
+            "title": "Buy groceries and cook",
+            "description": "Milk, eggs, bread",
+            "completed": true,
+            "created_at": "2024-01-15T10:30:00.000000Z",
+            "updated_at": "2024-01-15T10:35:00.000000Z"
+        }
+    """
+    task = service.update_task(task_id, task_data)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task.model_dump()
+
+
+@router.delete("/tasks/{task_id}", status_code=204)
+def delete_task(
+    task_id: str,
+    service: TaskService = Depends(get_task_service)
+) -> None:
+    """
+    Delete a task.
+
+    Args:
+        task_id: The unique identifier of the task to delete
+        service: Injected TaskService instance
+
+    Returns:
+        No content (204 status)
+
+    Raises:
+        HTTPException 404: If task with given ID is not found
+
+    Example:
+        Response: No content with 204 status code
+    """
+    success = service.delete_task(task_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return None
