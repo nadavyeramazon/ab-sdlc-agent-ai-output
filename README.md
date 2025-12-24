@@ -40,7 +40,8 @@ project-root/
 │   │       └── task_service.py   # Business logic layer
 │   ├── tests/
 │   │   ├── test_main.py          # API endpoint tests with Hypothesis
-│   │   └── test_task_repository.py # Repository tests with Hypothesis
+│   │   ├── test_task_repository.py # Repository tests with Hypothesis
+│   │   └── test_delete_all_tasks.py # Bulk delete endpoint tests
 │   ├── data/
 │   │   └── .gitkeep              # Placeholder for data directory
 │   ├── Dockerfile                # Backend container image
@@ -246,7 +247,8 @@ npm test
 -  **Create Tasks**: Add new tasks with title and description
 -  **View Tasks**: Display all tasks ordered by creation date (newest first)
 -  **Edit Tasks**: Update task title and description
--  **Delete Tasks**: Remove tasks from the list
+-  **Delete Tasks**: Remove individual tasks from the list
+-  **Delete All Tasks**: Remove all tasks at once (bulk delete)
 -  **Toggle Completion**: Mark tasks as complete or incomplete
 -  **Data Persistence**: Tasks persist in MySQL database across restarts
 -  **Input Validation**: Client and server-side validation for data integrity
@@ -269,6 +271,7 @@ npm test
 ### Backend Features
 -  RESTful API with FastAPI
 -  Full CRUD operations for tasks
+-  Bulk delete operation for all tasks
 -  Pydantic models for request/response validation
 -  MySQL database persistence with connection pooling
 -  Repository pattern for data access abstraction
@@ -403,7 +406,7 @@ Update an existing task.
 ```
 
 ### DELETE /api/tasks/{task_id}
-Delete a task.
+Delete a specific task by ID.
 
 **Response (204 No Content):**
 No response body.
@@ -414,6 +417,31 @@ No response body.
   "detail": "Task not found"
 }
 ```
+
+### DELETE /api/tasks
+Delete all tasks at once (bulk delete operation).
+
+**Request Body:** None
+
+**Response (204 No Content):**
+No response body.
+
+**Example:**
+```bash
+# Using curl
+curl -X DELETE http://localhost:8000/api/tasks
+
+# Using fetch (JavaScript)
+fetch('http://localhost:8000/api/tasks', {
+  method: 'DELETE'
+})
+```
+
+**Notes:**
+- This endpoint removes all tasks from the database
+- Works even when no tasks exist (returns 204)
+- New tasks can be created after bulk deletion
+- Does not conflict with DELETE /api/tasks/{task_id} (different route pattern)
 
 ### GET /health
 Returns the health status of the backend.
@@ -525,6 +553,7 @@ pytest -v
 # Run specific test file
 pytest tests/test_main.py
 pytest tests/test_task_repository.py
+pytest tests/test_delete_all_tasks.py
 
 # Run with coverage
 pytest --cov=app --cov-report=html
@@ -551,9 +580,11 @@ npm run test:coverage
 
 *Unit Tests:*
 -  All API endpoints (GET, POST, PUT, DELETE)
+-  Bulk delete endpoint (DELETE /api/tasks)
 -  Request validation (empty titles, length limits)
 -  HTTP status codes (200, 201, 204, 404, 422)
 -  Task repository CRUD operations
+-  Repository bulk delete operation
 -  MySQL connection and persistence
 -  Error handling for database errors
 -  Service layer business logic
@@ -569,6 +600,17 @@ npm run test:coverage
 -  Invalid update rejection - empty title updates should be rejected
 -  RESTful status codes - operations return correct HTTP status codes
 -  Persistence across restarts - tasks survive backend restarts
+
+*Bulk Delete Tests:*
+-  Repository delete_all removes all tasks
+-  Service delete_all_tasks delegates correctly
+-  API endpoint returns 204 No Content
+-  Works on empty task list
+-  New tasks can be created after bulk delete
+-  No routing conflicts with individual delete
+-  Handles varying task counts (1, 5, 10+ tasks)
+-  Handles completed and incomplete tasks
+-  Effect persists across multiple requests
 
 **Frontend Test Suite:**
 
@@ -662,6 +704,7 @@ The CI pipeline executes in three distinct stages, each acting as a quality gate
 - **Backend Tests**: Runs pytest with coverage reporting
   - Unit tests for API endpoints and repository operations
   - Property-based tests using Hypothesis (100+ iterations)
+  - Bulk delete endpoint tests
 - **Frontend Tests**: Runs Vitest with React Testing Library
   - Integration tests for UI components
   - Property-based tests using fast-check (100+ iterations)
@@ -900,6 +943,9 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager -e "DELET
 # Or drop and recreate the database
 docker compose exec mysql mysql -u root -prootpassword -e "DROP DATABASE taskmanager; CREATE DATABASE taskmanager;"
 docker compose restart backend
+
+# Or use the bulk delete API endpoint
+curl -X DELETE http://localhost:8000/api/tasks
 ```
 
 **Access MySQL CLI:**
