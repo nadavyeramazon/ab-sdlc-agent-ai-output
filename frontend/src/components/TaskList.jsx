@@ -15,7 +15,8 @@ function TaskList({
     return <div className="loading">Loading tasks...</div>;
   }
 
-  if (error) {
+  // Show error only if no tasks exist
+  if (error && tasks.length === 0) {
     return <div className="error">{error}</div>;
   }
 
@@ -24,23 +25,28 @@ function TaskList({
   }
 
   return (
-    <div className="task-list">
-      {tasks.map((task) => {
-        const isDisabled =
-          toggleLoading === task.id || deleteLoading === task.id || editLoading === task.id;
-        
-        return (
-          <TaskItem
-            key={task.id}
-            task={task}
-            onToggle={onToggleComplete}
-            onDelete={onDelete}
-            onEdit={onEdit}
-            disabled={isDisabled}
-          />
-        );
-      })}
-    </div>
+    <>
+      {error && <div className="error">{error}</div>}
+      <div className="task-list">
+        {tasks.map((task) => {
+          const isDisabled =
+            toggleLoading === task.id ||
+            deleteLoading === task.id ||
+            editLoading === task.id;
+
+          return (
+            <TaskItem
+              key={task.id}
+              task={task}
+              onToggle={onToggleComplete}
+              onDelete={onDelete}
+              onEdit={onEdit}
+              disabled={isDisabled}
+            />
+          );
+        })}
+      </div>
+    </>
   );
 }
 
