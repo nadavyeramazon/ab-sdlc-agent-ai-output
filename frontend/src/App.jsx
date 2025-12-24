@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './App.css';
-import logo from './assets/logo.png';
+import logo from './assets/logo-swiftpay.png';
 import { useTasks } from './hooks/useTasks';
 import TaskForm from './components/TaskForm';
 import TaskList from './components/TaskList';
@@ -14,6 +14,7 @@ function App() {
     createTask,
     updateTask,
     deleteTask,
+    deleteAllTasks,
     toggleTaskComplete,
   } = useTasks();
 
@@ -26,18 +27,22 @@ function App() {
   const [toggleLoading, setToggleLoading] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(null);
 
+  // State for delete all confirmation
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
+
   // Handle task creation
   const handleCreateTask = async (taskData) => {
     setCreateLoading(true);
     setCreateError('');
-    
+
     const success = await createTask(taskData);
-    
+
     setCreateLoading(false);
     if (!success) {
       setCreateError(error || 'Failed to create task');
     }
-    
+
     return success;
   };
 
@@ -51,7 +56,7 @@ function App() {
     const success = await updateTask(editingTask.id, taskData);
 
     setEditLoading(false);
-    
+
     if (success) {
       setEditingTask(null);
     } else {
@@ -75,6 +80,24 @@ function App() {
     setToggleLoading(null);
   };
 
+  // Handle delete all click
+  const handleDeleteAllClick = () => {
+    setShowDeleteAllConfirm(true);
+  };
+
+  // Handle delete all confirmation
+  const handleDeleteAllConfirm = async () => {
+    setDeleteAllLoading(true);
+    const success = await deleteAllTasks();
+    setDeleteAllLoading(false);
+    setShowDeleteAllConfirm(false);
+  };
+
+  // Handle delete all cancel
+  const handleDeleteAllCancel = () => {
+    setShowDeleteAllConfirm(false);
+  };
+
   // Start editing a task
   const startEditTask = (task) => {
     setEditingTask(task);
@@ -91,7 +114,7 @@ function App() {
     <div className="app">
       <div className="container">
         <div className="app-header">
-          <img src={logo} alt="Task Manager Logo" className="app-logo" />
+          <img src={logo} alt="SwiftPay Logo" className="app-logo" />
           <h1>Task Manager</h1>
         </div>
 
@@ -111,6 +134,41 @@ function App() {
               isEditing={!!editingTask}
             />
           </div>
+
+          {/* Delete All Section */}
+          {tasks.length > 0 && !showDeleteAllConfirm && (
+            <div className="delete-all-section">
+              <button
+                className="btn-danger"
+                onClick={handleDeleteAllClick}
+                disabled={deleteAllLoading}
+              >
+                {deleteAllLoading ? 'Deleting...' : 'Delete All Tasks'}
+              </button>
+            </div>
+          )}
+
+          {/* Delete All Confirmation */}
+          {showDeleteAllConfirm && (
+            <div className="delete-all-confirm">
+              <p className="delete-all-warning">
+                Are you sure you want to delete ALL tasks? This action cannot be
+                undone.
+              </p>
+              <div className="delete-all-actions">
+                <button className="btn-secondary" onClick={handleDeleteAllCancel}>
+                  Cancel
+                </button>
+                <button
+                  className="btn-danger-filled"
+                  onClick={handleDeleteAllConfirm}
+                  disabled={deleteAllLoading}
+                >
+                  {deleteAllLoading ? 'Deleting...' : 'Yes, Delete All'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Task List */}
           <div className="task-list-section">
