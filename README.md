@@ -36,6 +36,7 @@ The application features a modern, clean interface with **SwiftPay green brandin
 - **Inline Confirmations**: Custom confirmation dialogs (no browser alerts)
 - **Loading States**: Visual feedback for all asynchronous operations
 - **Error Handling**: User-friendly error messages with clear visual indicators
+- **Optimistic Updates with Rollback**: Immediate UI feedback that rolls back on errors
 
 ### Delete All Tasks Feature
 
@@ -51,7 +52,7 @@ The bulk delete feature uses a custom inline confirmation dialog instead of brow
    - Disabled buttons during operation
    - Loading text changes to "Deleting..."
    - Tasks removed immediately (optimistic update)
-   - Rollback on error with error message
+   - **Rollback on error with error message displayed above tasks**
 
 **User Flow:**
 ```
@@ -69,8 +70,16 @@ Tasks Exist → Delete All Button Visible
                     ↓
               API Call Completes
                     ↓
-    Success: Tasks Gone | Error: Tasks Restored
+    Success: Tasks Gone + Empty State
+    Error: Tasks Restored + Error Message Above List
 ```
+
+**Error Handling:**
+- When an error occurs during delete all, the UI displays:
+  - Error message at the top (e.g., "Failed to delete all tasks")
+  - All tasks are automatically restored (rollback)
+  - Both error and tasks are visible simultaneously for user clarity
+  - Users can see what went wrong while their data remains intact
 
 ## 📁 Project Structure
 
@@ -115,6 +124,8 @@ project-root/
 │   │   │   ├── logo.png          # Original logo
 │   │   │   └── logo-swiftpay.png # SwiftPay branded logo
 │   │   ├── components/
+│   │   │   ├── __tests__/
+│   │   │   │   └── TaskList.test.jsx # TaskList unit tests
 │   │   │   ├── TaskForm.jsx      # Task creation/edit form component
 │   │   │   ├── TaskItem.jsx      # Individual task display component
 │   │   │   └── TaskList.jsx      # Task list container component
@@ -209,7 +220,7 @@ App.jsx
   ├── useTasks hook (state management)
   │   └── api.js (HTTP client with deleteAllTasks)
   ├── TaskForm component (create/edit)
-  ├── TaskList component (list container)
+  ├── TaskList component (list container with error display)
   │   └── TaskItem component (individual task)
   ├── Delete All confirmation UI
   └── CSS styles (SwiftPay green theme)
@@ -221,6 +232,46 @@ App.jsx
 - **Props Down, Events Up**: Data flows down via props, events bubble up
 - **Separation of Concerns**: API logic separated from UI components
 - **Optimistic Updates**: Immediate UI updates with server sync and rollback
+
+### TaskList Component
+
+The `TaskList` component is responsible for displaying tasks, loading states, and errors:
+
+**Display Logic:**
+- **Loading State**: Shows "Loading tasks..." when `loading` prop is true
+- **Empty State**: Shows "No tasks yet" when no tasks exist and no error
+- **Error + Tasks**: Shows error message ABOVE task list when both error and tasks exist
+- **Error Only**: Shows error message and "No tasks yet" when error exists but no tasks
+
+**Error Handling:**
+```jsx
+// When delete all fails:
+1. useTasks hook rolls back tasks to original state
+2. useTasks hook sets error message
+3. TaskList receives both error and tasks props
+4. TaskList displays error message at the top
+5. TaskList displays all tasks below the error
+6. User sees both what went wrong AND their preserved data
+```
+
+**Props:**
+- `tasks`: Array of task objects
+- `loading`: Boolean indicating loading state
+- `error`: Error message string (or null/empty)
+- `onToggleComplete`: Function to toggle task completion
+- `toggleLoading`: ID of task currently being toggled
+- `onDelete`: Function to delete a task
+- `deleteLoading`: ID of task currently being deleted
+- `onEdit`: Function to start editing a task
+- `editLoading`: ID of task currently being edited
+
+**Behavior:**
+- If `loading` is true: Display only loading message (takes precedence)
+- If `error` exists: Display error message (always visible when present)
+- If `tasks` exist: Display task list (can coexist with error)
+- If no tasks and no error: Display empty state message
+
+This design ensures users always see their data after a failed operation, preventing confusion and data loss concerns.
 
 ## 🚀 Quick Start
 
@@ -323,6 +374,7 @@ npm test
 -  Loading state indicators for all operations
 -  **Inline Confirmation Dialogs**: Custom confirmation UI (no browser popups)
 -  **Bulk Delete**: Delete all tasks with confirmation and loading states
+-  **Smart Error Display**: Error messages shown alongside preserved data
 -  Error handling with user-friendly messages
 -  Empty state messaging
 -  Hot Module Replacement (HMR) for development
@@ -507,7 +559,7 @@ The frontend implements this endpoint with:
 - Inline confirmation dialog (no browser popups)
 - Loading states ("Deleting..." text)
 - Optimistic updates (immediate UI change)
-- Automatic rollback on error
+- Automatic rollback on error with error message displayed above restored tasks
 - User-friendly error messages
 
 ### DELETE /api/tasks/{task_id}
@@ -693,6 +745,7 @@ npm run test:coverage
 -  **Delete all confirmation dialog (show, cancel, confirm)**
 -  **Delete all loading states and disabled buttons**
 -  **Delete all error handling and rollback**
+-  **Delete all displays error AND tasks simultaneously after rollback**
 -  **No window.confirm() verification (inline UI only)**
 -  Error handling for failed API calls
 -  Loading states for all operations
@@ -710,6 +763,9 @@ npm run test:coverage
 -  **deleteAllTasks API function (success and error cases)**
 -  **deleteAllTasks hook function (state management and rollback)**
 -  **Delete all button visibility (based on task count)**
+-  **TaskList component rendering (loading, error, empty states)**
+-  **TaskList error display alongside tasks (rollback scenario)**
+-  **TaskList loading precedence over other states**
 
 For detailed testing documentation:
 - Backend: See inline test documentation in `backend/tests/`
@@ -1219,6 +1275,13 @@ docker compose exec mysql mysql -u taskuser -ptaskpassword taskmanager
 - Consistent styling with app theme
 - Accessibility-friendly implementation
 - Testable UI components
+
+**Smart Error Display (TaskList):**
+- Shows errors alongside preserved data after rollback
+- Prevents user confusion about data loss
+- Clear visual indication of what went wrong
+- Tasks remain visible and actionable after errors
+- Improves trust and confidence in the application
 
 ### Development Philosophy
 
