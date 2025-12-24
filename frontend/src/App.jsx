@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './App.css';
-import logo from './assets/logo.png';
+import logo from './assets/logo-swiftpay.png';
 import { useTasks } from './hooks/useTasks';
 import TaskForm from './components/TaskForm';
 import TaskList from './components/TaskList';
