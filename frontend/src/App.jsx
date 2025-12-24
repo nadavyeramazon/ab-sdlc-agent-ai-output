@@ -83,7 +83,7 @@ function App() {
   // Handle delete all tasks
   const handleDeleteAllTasks = async () => {
     setDeleteAllLoading(true);
-    const success = await deleteAllTasks();
+    await deleteAllTasks();
     setDeleteAllLoading(false);
 
     // Always close confirmation dialog
