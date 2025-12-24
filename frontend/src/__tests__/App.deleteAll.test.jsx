@@ -339,8 +339,10 @@ describe('Delete All Tasks Feature', () => {
       expect(taskApi.deleteAllTasks).toHaveBeenCalledTimes(1);
     });
 
-    // Task should still be visible (rollback)
-    expect(screen.getByText('Task 1')).toBeInTheDocument();
+    // Task should still be visible (rollback) - wait for async state update
+    await waitFor(() => {
+      expect(screen.getByText('Task 1')).toBeInTheDocument();
+    });
 
     // Confirmation dialog should be closed
     await waitFor(() => {
