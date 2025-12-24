@@ -132,9 +132,9 @@ class TestRepositoryDeleteAll:
     def test_delete_all_removes_all_tasks(self, test_repo) -> None:
         """Test that delete_all removes all tasks from repository"""
         # Create multiple tasks
-        task1 = test_repo.create(TaskCreate(title="Task 1", description="Description 1"))
-        task2 = test_repo.create(TaskCreate(title="Task 2", description="Description 2"))
-        task3 = test_repo.create(TaskCreate(title="Task 3", description="Description 3"))
+        test_repo.create(TaskCreate(title="Task 1", description="Description 1"))
+        test_repo.create(TaskCreate(title="Task 2", description="Description 2"))
+        test_repo.create(TaskCreate(title="Task 3", description="Description 3"))
 
         # Verify tasks exist
         all_tasks = test_repo.get_all()
@@ -356,8 +356,7 @@ class TestDeleteAllEdgeCases:
     ) -> None:
         """Test that delete_all removes both completed and incomplete tasks"""
         # Create incomplete task
-        response1 = client.post("/api/tasks", json={"title": "Task 1", "description": "Desc 1"})
-        task1_id = response1.json()["id"]
+        client.post("/api/tasks", json={"title": "Task 1", "description": "Desc 1"})
 
         # Create and complete another task
         response2 = client.post("/api/tasks", json={"title": "Task 2", "description": "Desc 2"})
