@@ -67,11 +67,17 @@ def create_mock_repository():
             return True
         return False
 
+    def delete_all():
+        count = len(mock_tasks)
+        mock_tasks.clear()
+        return count
+
     repo.get_all = get_all
     repo.get_by_id = get_by_id
     repo.create = create
     repo.update = update
     repo.delete = delete
+    repo.delete_all = delete_all
 
     return repo
 
@@ -197,5 +203,84 @@ class TestPersistenceAcrossRestarts:
                 assert loaded.completed == expected["completed"]
                 assert loaded.created_at == expected["created_at"]
                 assert loaded.updated_at == expected["updated_at"]
+
+        mock_tasks = {}
+
+
+class TestDeleteAllTasks:
+    """
+    Unit tests for delete_all functionality.
+
+    **Feature: task-manager-app, Delete all tasks**
+    **Validates: Delete all tasks from the repository**
+    """
+
+    def test_delete_all_removes_all_tasks(self, test_repo):
+        """Test that delete_all removes all tasks from the repository."""
+        # Create multiple tasks
+        test_repo.create(TaskCreate(title="Task 1", description="Description 1"))
+        test_repo.create(TaskCreate(title="Task 2", description="Description 2"))
+        test_repo.create(TaskCreate(title="Task 3", description="Description 3"))
+
+        # Verify tasks exist
+        assert len(test_repo.get_all()) == 3
+
+        # Delete all tasks
+        deleted_count = test_repo.delete_all()
+
+        # Verify all tasks were deleted
+        assert deleted_count == 3
+        assert len(test_repo.get_all()) == 0
+
+    def test_delete_all_returns_zero_when_no_tasks(self, test_repo):
+        """Test that delete_all returns 0 when there are no tasks."""
+        # Verify no tasks exist
+        assert len(test_repo.get_all()) == 0
+
+        # Delete all tasks
+        deleted_count = test_repo.delete_all()
+
+        # Verify count is zero
+        assert deleted_count == 0
+
+    def test_delete_all_allows_new_tasks_after_deletion(self, test_repo):
+        """Test that new tasks can be created after delete_all."""
+        # Create and delete tasks
+        test_repo.create(TaskCreate(title="Task 1", description="Description 1"))
+        test_repo.delete_all()
+
+        # Create new task after deletion
+        new_task = test_repo.create(TaskCreate(title="New Task", description="New Description"))
+
+        # Verify new task exists
+        all_tasks = test_repo.get_all()
+        assert len(all_tasks) == 1
+        assert all_tasks[0].id == new_task.id
+        assert all_tasks[0].title == "New Task"
+
+    @settings(max_examples=10, deadline=2000)
+    @given(tasks_data=st.lists(task_create_strategy(), min_size=1, max_size=10))
+    def test_delete_all_returns_correct_count(self, tasks_data):
+        """
+        Property: delete_all should return the exact number of tasks deleted.
+        """
+        global mock_tasks
+        mock_tasks = {}
+
+        with patch('app.repositories.task_repository.TaskRepository._initialize_database'):
+            repo = create_mock_repository()
+
+            # Create tasks
+            for task_data in tasks_data:
+                repo.create(task_data)
+
+            expected_count = len(tasks_data)
+
+            # Delete all and verify count
+            deleted_count = repo.delete_all()
+            assert deleted_count == expected_count
+
+            # Verify all tasks are gone
+            assert len(repo.get_all()) == 0
 
         mock_tasks = {}
