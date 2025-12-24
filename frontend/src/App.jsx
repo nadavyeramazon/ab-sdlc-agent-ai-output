@@ -15,6 +15,7 @@ function App() {
     updateTask,
     deleteTask,
     toggleTaskComplete,
+    deleteAllTasks,
   } = useTasks();
 
   // Local state for edit mode
@@ -26,18 +27,22 @@ function App() {
   const [toggleLoading, setToggleLoading] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(null);
 
+  // Delete all state
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+
   // Handle task creation
   const handleCreateTask = async (taskData) => {
     setCreateLoading(true);
     setCreateError('');
-    
+
     const success = await createTask(taskData);
-    
+
     setCreateLoading(false);
     if (!success) {
       setCreateError(error || 'Failed to create task');
     }
-    
+
     return success;
   };
 
@@ -51,7 +56,7 @@ function App() {
     const success = await updateTask(editingTask.id, taskData);
 
     setEditLoading(false);
-    
+
     if (success) {
       setEditingTask(null);
     } else {
@@ -75,6 +80,14 @@ function App() {
     setToggleLoading(null);
   };
 
+  // Handle delete all tasks
+  const handleDeleteAllTasks = async () => {
+    setIsDeletingAll(true);
+    await deleteAllTasks();
+    setIsDeletingAll(false);
+    setShowDeleteAllConfirm(false);
+  };
+
   // Start editing a task
   const startEditTask = (task) => {
     setEditingTask(task);
@@ -91,7 +104,7 @@ function App() {
     <div className="app">
       <div className="container">
         <div className="app-header">
-          <img src={logo} alt="Task Manager Logo" className="app-logo" />
+          <img src={logo} alt="SwiftPay Logo" className="app-logo" />
           <h1>Task Manager</h1>
         </div>
 
@@ -127,6 +140,44 @@ function App() {
               editLoading={editLoading}
             />
           </div>
+
+          {/* Delete All Tasks Section */}
+          {tasks.length > 0 && (
+            <div className="delete-all-section">
+              {!showDeleteAllConfirm ? (
+                <button
+                  className="btn-danger"
+                  onClick={() => setShowDeleteAllConfirm(true)}
+                  disabled={isDeletingAll}
+                >
+                  Delete All Tasks
+                </button>
+              ) : (
+                <div className="delete-all-confirm">
+                  <p className="confirm-message">
+                    Are you sure you want to delete ALL tasks? This action
+                    cannot be undone.
+                  </p>
+                  <div className="confirm-actions">
+                    <button
+                      className="btn-secondary"
+                      onClick={() => setShowDeleteAllConfirm(false)}
+                      disabled={isDeletingAll}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="btn-danger-confirm"
+                      onClick={handleDeleteAllTasks}
+                      disabled={isDeletingAll}
+                    >
+                      {isDeletingAll ? 'Deleting...' : 'Confirm Delete All'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
