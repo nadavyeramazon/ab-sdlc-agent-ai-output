@@ -235,9 +235,7 @@ describe('Delete All Tasks Feature', () => {
     });
 
     // Should show empty state
-    expect(
-      screen.getByText('No tasks yet. Create your first task above!')
-    ).toBeInTheDocument();
+    expect(screen.getByText('No tasks yet')).toBeInTheDocument();
   });
 
   /**
@@ -317,7 +315,9 @@ describe('Delete All Tasks Feature', () => {
     });
 
     // Mock deleteAllTasks to fail
-    taskApi.deleteAllTasks.mockRejectedValue(new Error('Failed to delete all tasks'));
+    taskApi.deleteAllTasks.mockRejectedValue(
+      new Error('Failed to delete all tasks')
+    );
 
     render(<App />);
 
