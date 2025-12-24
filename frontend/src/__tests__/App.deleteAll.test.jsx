@@ -334,21 +334,32 @@ describe('Delete All Tasks Feature', () => {
     const confirmButton = screen.getByText('Confirm Delete');
     await user.click(confirmButton);
 
-    // Wait for error handling
+    // Wait for API call to complete and error to be handled
     await waitFor(() => {
       expect(taskApi.deleteAllTasks).toHaveBeenCalledTimes(1);
     });
 
-    // Task should still be visible (rollback) - wait for async state update
-    await waitFor(() => {
-      expect(screen.getByText('Task 1')).toBeInTheDocument();
-    });
-
-    // Confirmation dialog should be closed
+    // Wait for confirmation dialog to close first
     await waitFor(() => {
       expect(
         screen.queryByText('Are you sure you want to delete all 1 task(s)?')
       ).not.toBeInTheDocument();
+    });
+
+    // Task should be rolled back and visible again - use findByText for better async handling
+    await waitFor(
+      async () => {
+        const task = await screen.findByText('Task 1');
+        expect(task).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+
+    // Error should be displayed in the task list
+    await waitFor(() => {
+      expect(
+        screen.getByText('Failed to delete all tasks')
+      ).toBeInTheDocument();
     });
   });
 
