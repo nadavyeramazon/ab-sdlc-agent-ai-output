@@ -752,8 +752,11 @@ describe('Delete All Tasks Feature', () => {
       });
 
       // Tasks should still be present (no optimistic update on error)
-      expect(screen.getByText('Task 1')).toBeInTheDocument();
-      expect(screen.getByText('Task 2')).toBeInTheDocument();
+      // Wrap in waitFor to handle async rendering
+      await waitFor(() => {
+        expect(screen.getByText('Task 1')).toBeInTheDocument();
+        expect(screen.getByText('Task 2')).toBeInTheDocument();
+      });
 
       // Confirmation dialog should remain open
       expect(
@@ -815,11 +818,16 @@ describe('Delete All Tasks Feature', () => {
       // Should display network error
       await waitFor(() => {
         const taskListSection = document.querySelector('.task-list-section');
-        expect(taskListSection.textContent).toMatch(/Network connection failed/i);
+        expect(taskListSection.textContent).toMatch(
+          /Network connection failed/i
+        );
       });
 
       // Task should still be present
-      expect(screen.getByText('Task 1')).toBeInTheDocument();
+      // Wrap in waitFor to handle async rendering
+      await waitFor(() => {
+        expect(screen.getByText('Task 1')).toBeInTheDocument();
+      });
     });
   });
 
@@ -981,12 +989,16 @@ describe('Delete All Tasks Feature', () => {
       const titleInput = screen.getByLabelText(/title/i);
       await user.type(titleInput, 'New Task After Delete All');
 
-      const createButton = screen.getByRole('button', { name: /create task/i });
+      const createButton = screen.getByRole('button', {
+        name: /create task/i,
+      });
       await user.click(createButton);
 
       // New task should appear
       await waitFor(() => {
-        expect(screen.getByText('New Task After Delete All')).toBeInTheDocument();
+        expect(
+          screen.getByText('New Task After Delete All')
+        ).toBeInTheDocument();
         expect(screen.queryByText('No tasks yet')).not.toBeInTheDocument();
       });
 
