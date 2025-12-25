@@ -23,7 +23,9 @@ def create_mock_repository():
     repo.db_config = {}
 
     def get_all():
-        return sorted(mock_tasks.values(), key=lambda t: t.created_at, reverse=True)
+        return sorted(
+            mock_tasks.values(), key=lambda t: t.created_at, reverse=True
+        )
 
     def get_by_id(task_id: str):
         return mock_tasks.get(task_id)
@@ -87,8 +89,14 @@ class TestDeleteAllTasksEndpoint:
     def test_delete_all_tasks_returns_204(self, client: TestClient):
         """Test that DELETE /api/tasks returns 204 No Content"""
         # Create some tasks first
-        client.post("/api/tasks", json={"title": "Task 1", "description": "Description 1"})
-        client.post("/api/tasks", json={"title": "Task 2", "description": "Description 2"})
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 1", "description": "Description 1"}
+        )
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 2", "description": "Description 2"}
+        )
 
         # Delete all tasks
         response = client.delete("/api/tasks")
@@ -99,9 +107,18 @@ class TestDeleteAllTasksEndpoint:
     def test_delete_all_tasks_removes_all_tasks(self, client: TestClient):
         """Test that DELETE /api/tasks removes all tasks from database"""
         # Create multiple tasks
-        client.post("/api/tasks", json={"title": "Task 1", "description": "Description 1"})
-        client.post("/api/tasks", json={"title": "Task 2", "description": "Description 2"})
-        client.post("/api/tasks", json={"title": "Task 3", "description": "Description 3"})
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 1", "description": "Description 1"}
+        )
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 2", "description": "Description 2"}
+        )
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 3", "description": "Description 3"}
+        )
 
         # Verify tasks exist
         get_response = client.get("/api/tasks")
@@ -126,10 +143,16 @@ class TestDeleteAllTasksEndpoint:
         assert response.status_code == 204
 
     def test_delete_all_tasks_idempotency(self, client: TestClient):
-        """Test that DELETE /api/tasks is idempotent (can be called multiple times)"""
+        """Test that DELETE /api/tasks is idempotent"""
         # Create tasks
-        client.post("/api/tasks", json={"title": "Task 1", "description": "Description 1"})
-        client.post("/api/tasks", json={"title": "Task 2", "description": "Description 2"})
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 1", "description": "Description 1"}
+        )
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 2", "description": "Description 2"}
+        )
 
         # Delete all tasks first time
         response1 = client.delete("/api/tasks")
@@ -146,12 +169,16 @@ class TestDeleteAllTasksEndpoint:
     def test_delete_all_tasks_can_create_after(self, client: TestClient):
         """Test that tasks can be created after DELETE /api/tasks"""
         # Create and delete tasks
-        client.post("/api/tasks", json={"title": "Task 1", "description": "Description 1"})
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 1", "description": "Description 1"}
+        )
         client.delete("/api/tasks")
 
         # Create new task after deletion
         create_response = client.post(
-            "/api/tasks", json={"title": "New Task", "description": "New Description"}
+            "/api/tasks",
+            json={"title": "New Task", "description": "New Description"}
         )
         assert create_response.status_code == 201
 
@@ -163,14 +190,20 @@ class TestDeleteAllTasksEndpoint:
 
     def test_delete_all_tasks_cors_headers(self, client: TestClient):
         """Test that DELETE /api/tasks includes CORS headers"""
-        response = client.delete("/api/tasks", headers={"Origin": "http://localhost:3000"})
+        response = client.delete(
+            "/api/tasks",
+            headers={"Origin": "http://localhost:3000"}
+        )
 
         assert response.status_code == 204
         assert "access-control-allow-origin" in response.headers
 
     def test_delete_all_tasks_content_type(self, client: TestClient):
-        """Test that DELETE /api/tasks returns no content type (204 No Content)"""
-        client.post("/api/tasks", json={"title": "Task 1", "description": "Description 1"})
+        """Test that DELETE /api/tasks returns no content type"""
+        client.post(
+            "/api/tasks",
+            json={"title": "Task 1", "description": "Description 1"}
+        )
 
         response = client.delete("/api/tasks")
 
@@ -181,13 +214,14 @@ class TestDeleteAllTasksEndpoint:
     def test_delete_all_tasks_with_various_task_states(self, client: TestClient):
         """Test that DELETE /api/tasks deletes tasks in all states"""
         # Create tasks with different states
-        task1 = client.post(
-            "/api/tasks", json={"title": "Incomplete Task", "description": "Not done"}
+        client.post(
+            "/api/tasks",
+            json={"title": "Incomplete Task", "description": "Not done"}
         )
-        task1_id = task1.json()["id"]
 
         task2 = client.post(
-            "/api/tasks", json={"title": "Complete Task", "description": "Done"}
+            "/api/tasks",
+            json={"title": "Complete Task", "description": "Done"}
         )
         task2_id = task2.json()["id"]
 
@@ -211,7 +245,10 @@ class TestDeleteAllTasksEndpoint:
         """Test that DELETE /api/tasks handles large datasets efficiently"""
         # Create many tasks
         for i in range(50):
-            client.post("/api/tasks", json={"title": f"Task {i}", "description": f"Desc {i}"})
+            client.post(
+                "/api/tasks",
+                json={"title": f"Task {i}", "description": f"Desc {i}"}
+            )
 
         # Verify all tasks created
         get_response = client.get("/api/tasks")
@@ -226,14 +263,15 @@ class TestDeleteAllTasksEndpoint:
         assert len(get_response.json()["tasks"]) == 0
 
     def test_delete_all_tasks_wrong_method(self, client: TestClient):
-        """Test that only DELETE method is allowed on /api/tasks (for delete all)"""
+        """Test that only DELETE method is allowed on /api/tasks"""
         # GET should work (returns list)
         get_response = client.get("/api/tasks")
         assert get_response.status_code == 200
 
         # POST should work (creates task)
         post_response = client.post(
-            "/api/tasks", json={"title": "Task", "description": "Desc"}
+            "/api/tasks",
+            json={"title": "Task", "description": "Desc"}
         )
         assert post_response.status_code == 201
 
@@ -337,10 +375,12 @@ class TestDeleteAllTasksIntegration:
         """Test complete workflow: create -> delete all -> create again"""
         # Step 1: Create initial tasks
         task1 = client.post(
-            "/api/tasks", json={"title": "First Batch Task 1", "description": "Desc 1"}
+            "/api/tasks",
+            json={"title": "First Batch Task 1", "description": "Desc 1"}
         )
         task2 = client.post(
-            "/api/tasks", json={"title": "First Batch Task 2", "description": "Desc 2"}
+            "/api/tasks",
+            json={"title": "First Batch Task 2", "description": "Desc 2"}
         )
         assert task1.status_code == 201
         assert task2.status_code == 201
@@ -359,10 +399,12 @@ class TestDeleteAllTasksIntegration:
 
         # Step 5: Create new batch of tasks
         task3 = client.post(
-            "/api/tasks", json={"title": "Second Batch Task 1", "description": "New Desc 1"}
+            "/api/tasks",
+            json={"title": "Second Batch Task 1", "description": "New Desc 1"}
         )
         task4 = client.post(
-            "/api/tasks", json={"title": "Second Batch Task 2", "description": "New Desc 2"}
+            "/api/tasks",
+            json={"title": "Second Batch Task 2", "description": "New Desc 2"}
         )
         assert task3.status_code == 201
         assert task4.status_code == 201
