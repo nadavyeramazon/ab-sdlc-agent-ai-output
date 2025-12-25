@@ -66,15 +66,15 @@ export function useTasks() {
 
     // Optimistic update: update task in the list immediately
     setTasks(
-      tasks.map((task) => (task.id === taskId ? { ...task, ...taskData } : task))
+      tasks.map((task) =>
+        task.id === taskId ? { ...task, ...taskData } : task
+      )
     );
 
     try {
       const updatedTask = await taskApi.updateTask(taskId, taskData);
       // Replace optimistic update with actual server response
-      setTasks(
-        tasks.map((task) => (task.id === taskId ? updatedTask : task))
-      );
+      setTasks(tasks.map((task) => (task.id === taskId ? updatedTask : task)));
       return true;
     } catch (err) {
       // Rollback on error
@@ -118,11 +118,16 @@ export function useTasks() {
   const deleteAllTasks = async () => {
     setError(null);
 
+    // Store original tasks for rollback on error
+    const originalTasks = [...tasks];
+
     try {
       await taskApi.deleteAllTasks();
       setTasks([]);
       return true;
     } catch (err) {
+      // Rollback on error - keep original tasks
+      setTasks(originalTasks);
       setError(err.message);
       return false;
     }
